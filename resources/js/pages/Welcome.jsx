@@ -21,7 +21,7 @@ export default function Welcome({ auth }) {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
             <Head title="Welcome - CED E-Services" />
-            
+
             <Header />
 
             <main className="flex-grow">
