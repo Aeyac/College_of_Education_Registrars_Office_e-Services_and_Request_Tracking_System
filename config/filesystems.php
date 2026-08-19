@@ -2,6 +2,15 @@
 
 return [
 
+    //Used by RequestDocumentController and AlumniVerificationController for 
+    // requirement/verification/output documents and alumni identity proofs
+    'private' => [
+        'driver' => 'local',
+        'root' => storage_path('app/private'),
+        'visibility' => 'private',
+        'throw' => false,
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Default Filesystem Disk
@@ -41,7 +50,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/').'/storage',
+            'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/') . '/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
