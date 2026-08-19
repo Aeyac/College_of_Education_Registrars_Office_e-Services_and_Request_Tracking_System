@@ -2,59 +2,60 @@ import { Link } from '@inertiajs/react';
 
 export default function Footer() {
     return (
-        <footer className="bg-[#1e3a5f] text-white py-12 px-6 md:px-12 w-full mt-auto">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <footer className="bg-slate-950 text-slate-300 py-16 px-6 md:px-12 w-full mt-auto border-t-[6px] border-yellow-400">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
                 {/* University Section */}
-                <div className="flex flex-col gap-2">
-                    <h4 className="font-bold text-lg mb-2">University</h4>
-                    <Link href="#" className="text-gray-300 hover:text-white text-sm transition-colors">Home</Link>
-                    <Link href="#" className="text-gray-300 hover:text-white text-sm transition-colors">Central Luzon State University</Link>
-                    <Link href="#" className="text-gray-300 hover:text-white text-sm transition-colors">Course Study</Link>
-                    <Link href="#" className="text-gray-300 hover:text-white text-sm transition-colors">CLSU</Link>
+                <div className="flex flex-col gap-3">
+                    <h4 className="font-bold text-white text-xl mb-2 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-yellow-400"></span> University
+                    </h4>
+                    <Link href="#" className="hover:text-yellow-400 text-sm transition-colors w-fit">Home</Link>
+                    <Link href="#" className="hover:text-yellow-400 text-sm transition-colors w-fit">Central Luzon State University</Link>
+                    <Link href="#" className="hover:text-yellow-400 text-sm transition-colors w-fit">Course Study</Link>
+                    <Link href="#" className="hover:text-yellow-400 text-sm transition-colors w-fit">CLSU</Link>
                 </div>
 
                 {/* Community Links */}
-                <div className="flex flex-col gap-2">
-                    <h4 className="font-bold text-lg mb-2">Community Links</h4>
-                    <Link href="#" className="text-gray-300 hover:text-white text-sm transition-colors">Home</Link>
-                    <Link href="#" className="text-gray-300 hover:text-white text-sm transition-colors">Contact</Link>
-                    <Link href="#" className="text-gray-300 hover:text-white text-sm transition-colors">Privacy Policy</Link>
-                    <Link href="#" className="text-gray-300 hover:text-white text-sm transition-colors">Terms of Policy</Link>
+                <div className="flex flex-col gap-3">
+                    <h4 className="font-bold text-white text-xl mb-2 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-yellow-400"></span> Community
+                    </h4>
+                    <Link href="#" className="hover:text-yellow-400 text-sm transition-colors w-fit">Home</Link>
+                    <Link href="#" className="hover:text-yellow-400 text-sm transition-colors w-fit">Contact</Link>
+                    <Link href="#" className="hover:text-yellow-400 text-sm transition-colors w-fit">Privacy Policy</Link>
+                    <Link href="#" className="hover:text-yellow-400 text-sm transition-colors w-fit">Terms of Policy</Link>
                 </div>
 
                 {/* Contact */}
-                <div className="flex flex-col gap-2">
-                    <h4 className="font-bold text-lg mb-2">Contact</h4>
-                    <span className="text-gray-300 text-sm">+1 234 567 8789</span>
-                    <span className="text-gray-300 text-sm">+1 234 567 3308</span>
-                    <span className="text-gray-300 text-sm">info@socialalex.com</span>
+                <div className="flex flex-col gap-3">
+                    <h4 className="font-bold text-white text-xl mb-2 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-yellow-400"></span> Contact
+                    </h4>
+                    <span className="text-sm flex items-center gap-2"><span className="text-yellow-400">📞</span> +1 234 567 8789</span>
+                    <span className="text-sm flex items-center gap-2"><span className="text-yellow-400">📞</span> +1 234 567 3308</span>
+                    <span className="text-sm flex items-center gap-2"><span className="text-yellow-400">✉️</span> info@cedservices.com</span>
                 </div>
 
                 {/* Social Media */}
-                <div className="flex flex-col gap-2">
-                    <h4 className="font-bold text-lg mb-2">Social Media</h4>
+                <div className="flex flex-col gap-4">
+                    <h4 className="font-bold text-white text-xl mb-2">Follow Us</h4>
                     <div className="flex gap-4">
-                        {/* Placeholder icons using simple circles for now */}
-                        <a href="#" className="w-8 h-8 rounded-full bg-white text-[#1e3a5f] flex items-center justify-center hover:bg-blue-200 transition-colors">
-                            <span className="font-bold text-xs">f</span>
-                        </a>
-                        <a href="#" className="w-8 h-8 rounded-full bg-white text-[#1e3a5f] flex items-center justify-center hover:bg-blue-200 transition-colors">
-                            <span className="font-bold text-xs">X</span>
-                        </a>
-                        <a href="#" className="w-8 h-8 rounded-full bg-white text-[#1e3a5f] flex items-center justify-center hover:bg-blue-200 transition-colors">
-                            <span className="font-bold text-xs">in</span>
-                        </a>
-                        <a href="#" className="w-8 h-8 rounded-full bg-white text-[#1e3a5f] flex items-center justify-center hover:bg-blue-200 transition-colors">
-                            <span className="font-bold text-xs">ig</span>
-                        </a>
+                        {['f', 'X', 'in', 'ig'].map((icon, i) => (
+                            <a key={i} href="#" className="w-10 h-10 rounded-full bg-slate-800 text-white flex items-center justify-center hover:bg-yellow-400 hover:text-slate-900 transition-all duration-300 hover:-translate-y-1">
+                                <span className="font-bold text-sm">{icon}</span>
+                            </a>
+                        ))}
                     </div>
                 </div>
             </div>
 
             {/* Bottom Bar */}
-            <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-slate-600 flex flex-col md:flex-row justify-between text-xs text-gray-400">
-                <p>College of Education, CLSU</p>
-                <p>College of Education, CLSU</p>
+            <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center text-sm text-slate-500 gap-4">
+                <p>&copy; {new Date().getFullYear()} College of Education, CLSU. All rights reserved.</p>
+                <div className="flex gap-4">
+                    <Link href="#" className="hover:text-yellow-400 transition-colors">Privacy</Link>
+                    <Link href="#" className="hover:text-yellow-400 transition-colors">Terms</Link>
+                </div>
             </div>
         </footer>
     );
