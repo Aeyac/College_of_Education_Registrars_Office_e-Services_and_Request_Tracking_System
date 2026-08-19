@@ -44,7 +44,7 @@ export default function Welcome({ auth }) {
                             <div className="absolute inset-0 bg-blue-100 rounded-full blur-3xl opacity-50"></div>
                             {/* Placeholder for the vector illustration in the image */}
                             <div className="relative w-full max-w-lg aspect-video bg-white/40 backdrop-blur-sm border border-white rounded-2xl shadow-sm flex items-center justify-center p-8">
-                                <p className="text-slate-400 font-medium">[Vector Illustration Placeholder]</p>
+                                <p className="text-slate-400 font-medium">[Replace with picture of CED New Building]</p>
                             </div>
                         </div>
                     </div>
