@@ -20,6 +20,20 @@ export default function Register() {
         user_type: '',
     });
 
+    // Courses and Majors Data mapping based on Welcome.jsx
+    const coursesData = [
+        { title: "Bachelor of Culture and Arts Education", majors: [] },
+        { title: "Bachelor of Early Childhood Education", majors: [] },
+        { title: "Bachelor of Elementary Education", majors: [] },
+        { title: "Bachelor of Physical Education", majors: [] },
+        { title: "Bachelor of Secondary Education", majors: ["English", "Filipino", "Mathematics", "Science", "Social Studies", "Values Education"] },
+        { title: "Bachelor of Technology and Livelihood Education", majors: ["Agri-Fisheries and Arts", "Home Economics", "Industrial Arts"] }
+    ];
+
+    // Find the currently selected course object to determine available majors
+    const selectedCourseObj = coursesData.find(c => c.title === data.course);
+    const availableMajors = selectedCourseObj ? selectedCourseObj.majors : [];
+
     const selectUserType = (value) => {
         setData((prevData) => ({
             ...prevData,
@@ -221,39 +235,52 @@ export default function Register() {
                                     </div>
                                 )}
 
-                                {/* Course & Major */}
+                                {/* Dynamic Course Selection */}
                                 <div>
                                     <InputLabel htmlFor="course" value="Course" className="text-slate-800 font-semibold mb-1.5" />
                                     <select
                                         id="course"
                                         value={data.course}
-                                        onChange={(e) => setData('course', e.target.value)}
+                                        onChange={(e) => {
+                                            // Reset major to empty string when course changes
+                                            setData(prevData => ({
+                                                ...prevData,
+                                                course: e.target.value,
+                                                major: ''
+                                            }));
+                                        }}
                                         className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer"
                                         required
                                     >
                                         <option value="" disabled>Select course</option>
-                                        <option value="bse">Bachelor of Secondary Education</option>
-                                        <option value="bee">Bachelor of Elementary Education</option>
+                                        {coursesData.map((course, index) => (
+                                            <option key={index} value={course.title}>{course.title}</option>
+                                        ))}
                                     </select>
                                     <InputError message={errors.course} className="mt-1 text-red-600" />
                                 </div>
 
+                                {/* Dynamic Major Selection */}
                                 <div>
                                     <InputLabel htmlFor="major" value="Major" className="text-slate-800 font-semibold mb-1.5" />
                                     <select
                                         id="major"
                                         value={data.major}
                                         onChange={(e) => setData('major', e.target.value)}
-                                        className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer"
-                                        required
+                                        className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                        required={availableMajors.length > 0}
+                                        disabled={availableMajors.length === 0}
                                     >
-                                        <option value="" disabled>Select major</option>
-                                        <option value="English">English</option>
-                                        <option value="Mathematics">Mathematics</option>
-                                        <option value="Science">Science</option>
-                                        <option value="Social Studies">Social Studies</option>
-                                        <option value="Filipino">Filipino</option>
-                                        <option value="General Education">General Education</option>
+                                        <option value="" disabled>
+                                            {data.course === '' 
+                                                ? "Select a course first" 
+                                                : availableMajors.length > 0 
+                                                    ? "Select major" 
+                                                    : "No major for this course"}
+                                        </option>
+                                        {availableMajors.map((majorOption, index) => (
+                                            <option key={index} value={majorOption}>{majorOption}</option>
+                                        ))}
                                     </select>
                                     <InputError message={errors.major} className="mt-1 text-red-600" />
                                 </div>
@@ -273,7 +300,7 @@ export default function Register() {
                                             max="2099"
                                             value={data.year_level}
                                             onChange={(e) => setData('year_level', e.target.value)}
-                                            placeholder="e.g. 2016"
+                                            placeholder="e.g. 2026"
                                             className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
                                             required
                                         />
