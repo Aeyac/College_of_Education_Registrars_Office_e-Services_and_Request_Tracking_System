@@ -35,7 +35,7 @@ export default function Header() {
                     <Link href={route('login')} className="px-6 py-2.5 text-slate-700 hover:text-yellow-600 transition-colors">
                         Login
                     </Link>
-                    <Link href={route('register')} className="px-6 py-2.5 bg-yellow-400 text-slate-900 rounded-full hover:bg-yellow-500 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                    <Link href={route('register')} className="px-6 py-2.5 bg-yellow-400 text-slate-900 rounded-full hover:bg-yellow-500 transition-all shadow-md hover:shadow-lg">
                         Register
                     </Link>
                 </div>

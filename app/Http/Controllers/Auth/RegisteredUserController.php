@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Course;
 use App\Models\User;
+use Illuminate\Validation\Rule;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,16 +33,63 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
+            'user_type' => ['required', Rule::in(['student', 'alumni'])], // wil put back admin if we decided that admin registration is created/added by another admin
+            'student_number' => ['nullable', 'string', 'regex:/^\d{2}-\d{4}$/'],
+            'course_id' => [
+                Rule::requiredIf(fn() => in_array($request->input('user_type'), ['student', 'alumni'])),
+                'nullable',
+                'exists:courses,id',
+            ],
+            'major_id' => [
+                'nullable',
+                'exists:majors,id',
+                Rule::requiredIf(function () use ($request) {
+                    $course = Course::find($request->input('course_id'));
+                    return $course && $course->majors()->exists();
+                }),
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($value && !Course::find($request->input('course_id'))?->majors()->where('id', $value)->exists()) {
+                        $fail('The selected major does not belong to the selected course.');
+                    }
+                },
+            ],
+            'year_level' => [
+                Rule::requiredIf(fn() => $request->input('user_type') === 'student'),
+                'nullable',
+                'integer',
+                'between:1,6',
+            ],
+            'batch_year' => [
+                Rule::requiredIf(fn() => $request->input('user_type') === 'alumni'),
+                'nullable',
+                'integer',
+                'digits:4',
+                'min:1900',
+            ],
+            'contact_number' => [
+                'required',
+                'string',
+                'regex:/^(09|\+639)\d{9}$|^(02|\+632)?\d{8}$/'
+            ],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'email' => $validated['email'],
+            'user_type' => $validated['user_type'],
+            'student_number' => $validated['student_number'] ?? null,
+            'course_id' => $validated['course_id'] ?? null,
+            'major_id' => $validated['major_id'] ?? null,
+            'year_level' => $validated['year_level'] ?? null,
+            'batch_year' => $validated['batch_year'] ?? null,
+            'contact_number' => $validated['contact_number'],
+            'password' => Hash::make($validated['password']),
         ]);
 
         event(new Registered($user));

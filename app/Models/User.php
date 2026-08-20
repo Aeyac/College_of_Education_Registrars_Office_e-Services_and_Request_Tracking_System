@@ -13,16 +13,20 @@ class User extends Authenticatable
     use HasFactory, Notifiable, SoftDeletes, HasRoles;
 
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
         'user_type', // student | alumni | admin
         'student_number',
-        'program',
-        'year_level_or_batch',
+        'course_id',
+        'major_id',
+        'year_level',
+        'batch_year',
         'contact_number',
     ];
-
+ 
+    
     protected $hidden = [
         'password',
         'remember_token',
@@ -49,6 +53,16 @@ class User extends Authenticatable
     public function feedback()
     {
         return $this->hasMany(Feedback::class);
+    }
+
+    public function major()
+    {
+        return $this->belongsTo(Major::class);
+    }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class);
     }
 
     public function isAdmin(): bool
