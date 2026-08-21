@@ -4,48 +4,50 @@ import TextInput from '@/Components/TextInput';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function Register() {
-    const [step, setStep] = useState(1); // 1 = choose role, 2 = fill form
+export default function Register({ courses = [] }) {
+    const [step, setStep] = useState(1);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         first_name: '',
         last_name: '',
-        student_id: '',
         email: '',
+        student_number: '',
+        course_id: '',
+        major_id: '',
+        year_level: '',
+        batch_year: '',
+        contact_number: '',
         password: '',
         password_confirmation: '',
-        course: '',
-        major: '',
-        year_level: '',
         user_type: '',
     });
 
-    // Courses and Majors Data mapping based on Welcome.jsx
-    const coursesData = [
-        { title: "Bachelor of Culture and Arts Education", majors: [] },
-        { title: "Bachelor of Early Childhood Education", majors: [] },
-        { title: "Bachelor of Elementary Education", majors: [] },
-        { title: "Bachelor of Physical Education", majors: [] },
-        { title: "Bachelor of Secondary Education", majors: ["English", "Filipino", "Mathematics", "Science", "Social Studies", "Values Education"] },
-        { title: "Bachelor of Technology and Livelihood Education", majors: ["Agri-Fisheries and Arts", "Home Economics", "Industrial Arts"] }
-    ];
-
-    // Find the currently selected course object to determine available majors
-    const selectedCourseObj = coursesData.find(c => c.title === data.course);
-    const availableMajors = selectedCourseObj ? selectedCourseObj.majors : [];
+    const selectedCourse = courses.find((c) => c.id === Number(data.course_id));
+    const availableMajors = selectedCourse?.majors ?? [];
 
     const selectUserType = (value) => {
         setData((prevData) => ({
             ...prevData,
             user_type: value,
-            student_id: '',
+            student_number: '',
+            course_id: '',
+            major_id: '',
             year_level: '',
+            batch_year: '',
         }));
         setStep(2);
     };
 
     const backToRoleSelect = () => {
         setStep(1);
+    };
+
+    const handleCourseChange = (e) => {
+        setData((prevData) => ({
+            ...prevData,
+            course_id: e.target.value,
+            major_id: '',
+        }));
     };
 
     const submit = (e) => {
@@ -59,7 +61,6 @@ export default function Register() {
         <div className="min-h-screen flex bg-slate-50 font-sans selection:bg-yellow-300 selection:text-slate-900">
             <Head title="Create Your Account" />
 
-            {/* Left Side - Image & Branding (Hidden on Mobile) */}
             <div className="hidden lg:flex lg:w-1/2 lg:h-screen lg:sticky lg:top-0 bg-slate-950 relative items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-tr from-yellow-500/20 to-slate-900/90 z-10"></div>
                 <img
@@ -91,7 +92,6 @@ export default function Register() {
                 </div>
             </div>
 
-            {/* Right Side - Register Form */}
             <div className="w-full lg:w-1/2 flex flex-col items-center justify-start lg:justify-center p-6 sm:p-12 z-20 bg-white overflow-y-auto">
                 <div className="w-full max-w-lg py-4">
 
@@ -174,7 +174,6 @@ export default function Register() {
 
                             <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                                {/* First Name & Last Name */}
                                 <div>
                                     <InputLabel htmlFor="first_name" value="First Name" className="text-slate-800 font-semibold mb-1.5" />
                                     <TextInput
@@ -215,114 +214,120 @@ export default function Register() {
                                         className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
                                         required
                                     />
-                                    <InputError message={errors.email} className="mt-1 text-red-600" />
+                                    <InputError message={data.user_type === 'student' ? "Please enter your clsu email address." : errors.email} className="mt-1 text-red-600" />
                                 </div>
 
-                                {/* Student-only: Student ID */}
+                                <div className="md:col-span-2">
+                                    <InputLabel htmlFor="contact_number" value="Contact Number" className="text-slate-800 font-semibold mb-1.5" />
+                                    <TextInput
+                                        id="contact_number"
+                                        type="text"
+                                        value={data.contact_number}
+                                        onChange={(e) => setData('contact_number', e.target.value)}
+                                        placeholder="e.g. 09171234567"
+                                        className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
+                                        required
+                                    />
+                                    <InputError message={errors.contact_number} className="mt-1 text-red-600" />
+                                </div>
+
                                 {data.user_type === 'student' && (
                                     <div className="md:col-span-2">
-                                        <InputLabel htmlFor="student_id" value="Student Number / ID" className="text-slate-800 font-semibold mb-1.5" />
+                                        <InputLabel htmlFor="student_number" value="Student Number" className="text-slate-800 font-semibold mb-1.5" />
                                         <TextInput
-                                            id="student_id"
+                                            id="student_number"
                                             type="text"
-                                            value={data.student_id}
-                                            onChange={(e) => setData('student_id', e.target.value)}
-                                            placeholder="Enter your student number / ID"
+                                            value={data.student_number}
+                                            onChange={(e) => setData('student_number', e.target.value)}
+                                            placeholder="e.g. 21-1234"
                                             className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
                                             required
                                         />
-                                        <InputError message={errors.student_id} className="mt-1 text-red-600" />
+                                        <InputError message={errors.student_number} className="mt-1 text-red-600" />
                                     </div>
                                 )}
 
-                                {/* Dynamic Course Selection */}
                                 <div>
-                                    <InputLabel htmlFor="course" value="Course" className="text-slate-800 font-semibold mb-1.5" />
+                                    <InputLabel htmlFor="course_id" value="Course" className="text-slate-800 font-semibold mb-1.5" />
                                     <select
-                                        id="course"
-                                        value={data.course}
-                                        onChange={(e) => {
-                                            // Reset major to empty string when course changes
-                                            setData(prevData => ({
-                                                ...prevData,
-                                                course: e.target.value,
-                                                major: ''
-                                            }));
-                                        }}
+                                        id="course_id"
+                                        value={data.course_id}
+                                        onChange={handleCourseChange}
                                         className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer"
                                         required
                                     >
                                         <option value="" disabled>Select course</option>
-                                        {coursesData.map((course, index) => (
-                                            <option key={index} value={course.title}>{course.title}</option>
+                                        {courses.map((course) => (
+                                            <option key={course.id} value={course.id}>{course.label}</option>
                                         ))}
                                     </select>
-                                    <InputError message={errors.course} className="mt-1 text-red-600" />
+                                    <InputError message={errors.course_id} className="mt-1 text-red-600" />
                                 </div>
 
-                                {/* Dynamic Major Selection */}
                                 <div>
-                                    <InputLabel htmlFor="major" value="Major" className="text-slate-800 font-semibold mb-1.5" />
+                                    <InputLabel htmlFor="major_id" value="Major" className="text-slate-800 font-semibold mb-1.5" />
                                     <select
-                                        id="major"
-                                        value={data.major}
-                                        onChange={(e) => setData('major', e.target.value)}
+                                        id="major_id"
+                                        value={data.major_id}
+                                        onChange={(e) => setData('major_id', e.target.value)}
                                         className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                                         required={availableMajors.length > 0}
                                         disabled={availableMajors.length === 0}
                                     >
                                         <option value="" disabled>
-                                            {data.course === '' 
-                                                ? "Select a course first" 
-                                                : availableMajors.length > 0 
-                                                    ? "Select major" 
-                                                    : "No major for this course"}
+                                            {data.course_id === ''
+                                                ? 'Select a course first'
+                                                : availableMajors.length > 0
+                                                    ? 'Select major'
+                                                    : 'No major for this course'}
                                         </option>
-                                        {availableMajors.map((majorOption, index) => (
-                                            <option key={index} value={majorOption}>{majorOption}</option>
+                                        {availableMajors.map((major) => (
+                                            <option key={major.id} value={major.id}>{major.label}</option>
                                         ))}
                                     </select>
-                                    <InputError message={errors.major} className="mt-1 text-red-600" />
+                                    <InputError message={errors.major_id} className="mt-1 text-red-600" />
                                 </div>
 
-                                {/* Year Level (student) / Batch Year (alumni) */}
                                 <div className="md:col-span-2">
-                                    <InputLabel
-                                        htmlFor="year_level"
-                                        value={data.user_type === 'alumni' ? 'Batch Year (Graduated)' : 'Year Level'}
-                                        className="text-slate-800 font-semibold mb-1.5"
-                                    />
                                     {data.user_type === 'alumni' ? (
-                                        <TextInput
-                                            id="year_level"
-                                            type="number"
-                                            min="1900"
-                                            max="2099"
-                                            value={data.year_level}
-                                            onChange={(e) => setData('year_level', e.target.value)}
-                                            placeholder="e.g. 2026"
-                                            className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
-                                            required
-                                        />
+                                        <>
+                                            <InputLabel htmlFor="batch_year" value="Batch Year (Graduated)" className="text-slate-800 font-semibold mb-1.5" />
+                                            <TextInput
+                                                id="batch_year"
+                                                type="number"
+                                                min="1900"
+                                                max={new Date().getFullYear()}
+                                                value={data.batch_year}
+                                                onChange={(e) => setData('batch_year', e.target.value)}
+                                                placeholder="e.g. 2020"
+                                                className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
+                                                required
+                                            />
+                                            <InputError message={errors.batch_year} className="mt-1 text-red-600" />
+                                        </>
                                     ) : (
-                                        <select
-                                            id="year_level"
-                                            value={data.year_level}
-                                            onChange={(e) => setData('year_level', e.target.value)}
-                                            className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer"
-                                            required
-                                        >
-                                            <option value="" disabled>Select year level</option>
-                                            <option value="1">1st Year</option>
-                                            <option value="2">2nd Year</option>
-                                            <option value="3">3rd Year</option>
-                                            <option value="4">4th Year</option>
-                                        </select>
+                                        <>
+                                            <InputLabel htmlFor="year_level" value="Year Level" className="text-slate-800 font-semibold mb-1.5" />
+                                            <select
+                                                id="year_level"
+                                                value={data.year_level}
+                                                onChange={(e) => setData('year_level', e.target.value)}
+                                                className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer"
+                                                required
+                                            >
+                                                <option value="" disabled>Select year level</option>
+                                                <option value="1">1st Year</option>
+                                                <option value="2">2nd Year</option>
+                                                <option value="3">3rd Year</option>
+                                                <option value="4">4th Year</option>
+                                                <option value="5">5th Year</option>
+                                                <option value="6">6th Year</option>
+                                            </select>
+                                            <InputError message={errors.year_level} className="mt-1 text-red-600" />
+                                        </>
                                     )}
-                                    <InputError message={errors.year_level} className="mt-1 text-red-600" />
                                 </div>
 
-                                {/* Password & Confirm Password */}
                                 <div>
                                     <InputLabel htmlFor="password" value="Password" className="text-slate-800 font-semibold mb-1.5" />
                                     <TextInput
@@ -351,7 +356,6 @@ export default function Register() {
                                     <InputError message={errors.password_confirmation} className="mt-1 text-red-600" />
                                 </div>
 
-                                {/* Terms & Conditions */}
                                 <div className="md:col-span-2 flex items-center text-sm mt-1">
                                     <input
                                         type="checkbox"
@@ -364,7 +368,6 @@ export default function Register() {
                                     </label>
                                 </div>
 
-                                {/* Submit Button */}
                                 <div className="md:col-span-2 mt-2">
                                     <button
                                         disabled={processing}

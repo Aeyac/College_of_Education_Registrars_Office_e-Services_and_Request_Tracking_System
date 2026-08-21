@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +24,19 @@ class RegisteredUserController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('Auth/Register');
+
+        return Inertia::render('Auth/Register', [
+            'courses' => Cache::remember(
+                'registration.courses',
+                app()->environment('local') ? now()->addSeconds(1) : now()->addHours(6),
+                function () {
+                    return Course::with(['majors' => fn($q) => $q->select('id', 'course_id', 'code', 'label')])
+                        ->where('is_active', true)
+                        ->orderBy('sort_order')
+                        ->get(['id', 'code', 'label']);
+                }
+            ),
+        ]);
     }
 
     /**
@@ -36,7 +49,19 @@ class RegisteredUserController extends Controller
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
+
+            'email' => [
+                Rule::requiredIf(fn() => $request->input('user_type') === 'student'),
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                // Apply the clsu2 regex only if the user is a student
+                $request->input('user_type') === 'student' ? 'regex:/@clsu2\.edu\.ph$/' : 'nullable',
+                'unique:' . User::class
+            ],
+
+
             'user_type' => ['required', Rule::in(['student', 'alumni'])], // wil put back admin if we decided that admin registration is created/added by another admin
             'student_number' => ['nullable', 'string', 'regex:/^\d{2}-\d{4}$/'],
             'course_id' => [
