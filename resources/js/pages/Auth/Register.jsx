@@ -210,11 +210,15 @@ export default function Register({ courses = [] }) {
                                         type="email"
                                         value={data.email}
                                         onChange={(e) => setData('email', e.target.value)}
-                                        placeholder="Enter your email address"
+                                        placeholder={data.user_type === 'student' ? "username@clsu.edu.ph" : "Enter your email address"}
                                         className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
                                         required
                                     />
-                                    <InputError message={data.user_type === 'student' ? "Please enter your clsu email address." : errors.email} className="mt-1 text-red-600" />
+
+                                    {data.user_type === 'student' && !errors.email && (
+                                        <p className="mt-1 text-xs text-slate-500">Please use your official CLSU email address.</p>
+                                    )}
+                                    <InputError message={errors.email} className="mt-1 text-red-600" />
                                 </div>
 
                                 <div className="md:col-span-2">
