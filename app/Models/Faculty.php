@@ -9,6 +9,9 @@ class Faculty extends Model
 {
     use HasFactory;
 
+    // FIX: Explicitly tell Laravel the table name is 'faculty', not 'faculties'
+    protected $table = 'faculty';
+
     protected $fillable = [
         'name',
         'department_or_program',
@@ -42,7 +45,7 @@ class Faculty extends Model
 
         return $query->where(function ($q) use ($term) {
             $q->where('name', 'like', "%{$term}%")
-                ->orWhere('department_or_program', 'like', "%{$term}%");
+              ->orWhere('department_or_program', 'like', "%{$term}%");
         });
     }
 }

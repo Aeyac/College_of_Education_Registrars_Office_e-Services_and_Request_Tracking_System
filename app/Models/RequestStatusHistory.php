@@ -9,6 +9,9 @@ class RequestStatusHistory extends Model
 {
     use HasFactory;
 
+    // FIX 1: Explicitly tell Laravel the correct table name
+    protected $table = 'request_status_history';
+    
     const UPDATED_AT = null; // history rows are never updated, only created
 
     protected $fillable = [
@@ -21,7 +24,8 @@ class RequestStatusHistory extends Model
 
     public function request()
     {
-        return $this->belongsTo(CertificateRequest::class);
+        // FIX 2: Explicitly define the foreign key
+        return $this->belongsTo(CertificateRequest::class, 'request_id');
     }
 
     public function fromStatus()

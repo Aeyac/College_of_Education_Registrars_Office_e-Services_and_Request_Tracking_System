@@ -8,12 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
-/**
- * Represents a certificate/document request submitted by a student or
- * alumni. Named `CertificateRequest` (rather than `Request`) specifically
- * to avoid colliding with Illuminate\Http\Request, so controllers can
- * type-hint both without any aliasing.
- */
 class CertificateRequest extends Model
 {
     use HasFactory, SoftDeletes, LogsActivity;
@@ -63,22 +57,26 @@ class CertificateRequest extends Model
     /** Full transition history, source of truth for the audit trail. */
     public function statusHistory()
     {
-        return $this->hasMany(RequestStatusHistory::class)->orderBy('created_at');
+        // FIX: Explicitly set foreign key to 'request_id'
+        return $this->hasMany(RequestStatusHistory::class, 'request_id')->orderBy('created_at');
     }
 
     public function internshipDetails()
     {
-        return $this->hasOne(InternshipRequestDetail::class);
+        // FIX: Explicitly set foreign key to 'request_id'
+        return $this->hasOne(InternshipRequestDetail::class, 'request_id');
     }
 
     public function documents()
     {
-        return $this->hasMany(RequestDocument::class);
+        // FIX: Explicitly set foreign key to 'request_id'
+        return $this->hasMany(RequestDocument::class, 'request_id');
     }
 
     public function feedback()
     {
-        return $this->hasMany(Feedback::class);
+        // FIX: Explicitly set foreign key to 'request_id'
+        return $this->hasMany(Feedback::class, 'request_id');
     }
 
     /**
