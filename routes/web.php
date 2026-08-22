@@ -44,6 +44,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/about', [UserDashboardController::class, 'about'])->name('about');
         Route::get('/privacy-policy', [UserDashboardController::class, 'privacy'])->name('privacy');
         Route::get('/terms-of-service', [UserDashboardController::class, 'terms'])->name('terms');
+
+        // Notifications (User)
+        Route::post('/notifications/mark-as-read', [UserDashboardController::class, 'markNotificationsAsRead'])->name('notifications.read');
     });
 
     // === ADMIN ROUTES ===
@@ -70,6 +73,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/users', [AdminDashboardController::class, 'storeUser'])->name('users.store');
         Route::put('/users/{id}', [AdminDashboardController::class, 'updateUser'])->name('users.update');
         Route::delete('/users/{id}', [AdminDashboardController::class, 'destroyUser'])->name('users.destroy');
+
+        // Notifications (Admin)
+        Route::post('/notifications/mark-as-read', [AdminDashboardController::class, 'markNotificationsAsRead'])->name('notifications.read');
+
+        // Export (PDF and Excel)
+        Route::get('/export/excel', [AdminDashboardController::class, 'exportExcel'])->name('export.excel');
+        Route::get('/export/pdf', [AdminDashboardController::class, 'exportPdf'])->name('export.pdf');
     });
 });
 

@@ -1,16 +1,83 @@
-import { Link, usePage } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+// resources/js/Layouts/AdminLayout.jsx
+import { Link, usePage, router } from '@inertiajs/react';
+import { useState, useEffect, useRef } from 'react';
+
+const timeAgo = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.round((now - date) / 1000);
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.round(hours / 24);
+    return `${days}d ago`;
+};
 
 export default function AdminLayout({ children }) {
     const { url, props } = usePage();
     const { auth } = props;
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isNotifOpen, setIsNotifOpen] = useState(false);
+    const notifRef = useRef(null);
+
+    const notifications = auth?.notifications || [];
+    const unreadCount = auth?.unreadNotificationsCount || 0;
 
     useEffect(() => {
         document.body.style.overflow = isSidebarOpen ? 'hidden' : 'unset';
         return () => { document.body.style.overflow = 'unset'; };
     }, [isSidebarOpen]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (notifRef.current && !notifRef.current.contains(event.target)) {
+                setIsNotifOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        let interval;
+        if (auth?.user && typeof window !== 'undefined' && window.Echo) {
+            window.Echo.private(`App.Models.User.${auth.user.id}`)
+                .notification((notification) => {
+                    router.reload({ only: ['auth'], preserveState: true, preserveScroll: true });
+                });
+        } else {
+            interval = setInterval(() => {
+                router.reload({ only: ['auth'], preserveState: true, preserveScroll: true });
+            }, 30000);
+        }
+        return () => {
+            if (auth?.user && typeof window !== 'undefined' && window.Echo) {
+                window.Echo.leave(`App.Models.User.${auth.user.id}`);
+            }
+            if (interval) clearInterval(interval);
+        };
+    }, [auth?.user]);
+
+    const markAsRead = () => {
+        router.post('/admin/notifications/mark-as-read', {}, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => setIsNotifOpen(false)
+        });
+    };
+
+    const getStatusColor = (code) => {
+        const c = code?.toLowerCase() || '';
+        if (c === 'submitted') return 'bg-slate-100 text-slate-600 border-slate-200';
+        if (c.includes('review')) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+        if (c === 'processing') return 'bg-blue-100 text-blue-700 border-blue-200';
+        if (c.includes('ready') || c === 'released') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+        if (c.includes('compliance') || c.includes('cancelled') || c.includes('returned')) return 'bg-red-100 text-red-700 border-red-200';
+        return 'bg-slate-100 text-slate-700 border-slate-200';
+    };
 
     const adminName = auth?.user?.first_name ? `${auth.user.first_name} ${auth.user.last_name}` : 'Registrar Admin';
     const adminInitials = auth?.user?.first_name ? auth.user.first_name.charAt(0) : 'A';
@@ -31,7 +98,6 @@ export default function AdminLayout({ children }) {
                 <div className="p-8 pb-4 flex flex-col items-center border-b border-slate-100">
                     <div className="relative mb-3">
                         <div className="w-20 h-20 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-2xl shadow-inner">{adminInitials}</div>
-                        {/* <span className="absolute bottom-0 right-1 w-6 h-6 bg-yellow-400 border-2 border-white rounded-full flex items-center justify-center text-xs">⚡</span> */}
                     </div>
                     <h3 className="font-bold text-slate-900 text-lg">{adminName}</h3>
                     <p className="text-[11px] text-slate-500 font-medium mb-3 text-center uppercase tracking-wide">Administrator</p>
@@ -109,23 +175,94 @@ export default function AdminLayout({ children }) {
             {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden"></div>}
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                <header className="py-4 px-6 lg:px-10 flex justify-between items-center shrink-0">
+            {/* REMOVED overflow-hidden here so header elements can overflow cleanly */}
+            <div className="flex-1 flex flex-col h-screen overflow-y-auto">
+                <header className="py-4 px-6 lg:px-10 flex justify-between items-center shrink-0 border-b-2 bg-white sticky top-0 z-30">
                     <div className="flex items-center gap-4 relative z-10 w-full justify-between lg:justify-end">
                         <div className="flex items-center gap-4 lg:hidden">
                             <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-slate-600 hover:text-slate-900">
                                 <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" /></svg>
                             </button>
                         </div>
-                        <button className="relative p-2 text-slate-500 hover:text-slate-800 transition-colors">
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-                        </button>
+                        
+                        {/* 🔥 FIXED NOTIFICATION BELL WITH PROPER ABSOLUTE POSITIONING */}
+                        <div className="relative z-[100]" ref={notifRef}>
+                            <button 
+                                onClick={() => setIsNotifOpen(!isNotifOpen)} 
+                                className={`relative p-2.5 transition-colors rounded-full ${isNotifOpen ? 'bg-slate-200 text-slate-900' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'}`}
+                            >
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                                {unreadCount > 0 && (
+                                    <span className="absolute top-2 right-2.5 flex h-3 w-3">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white"></span>
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* Dropdown Panel */}
+                            {isNotifOpen && (
+                                <div className="absolute right-0 sm:-right-2 top-full mt-3 w-[90vw] max-w-[360px] sm:w-[400px] sm:max-w-[400px] bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col z-[150] animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 shrink-0">
+                                        <h3 className="font-extrabold text-slate-900 text-sm tracking-tight">Notifications</h3>
+                                        {unreadCount > 0 && (
+                                            <button onClick={markAsRead} className="text-[10px] font-bold text-yellow-600 hover:text-yellow-700 uppercase tracking-wider transition-colors">
+                                                Mark all as read
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="max-h-[55vh] sm:max-h-[350px] overflow-y-auto overscroll-contain bg-white">
+                                        {notifications.length > 0 ? (
+                                            notifications.map((notif) => (
+                                                <div key={notif.id} className={`p-5 border-b border-slate-50 transition-colors flex gap-4 items-start ${notif.read_at === null ? 'bg-blue-50/40 hover:bg-blue-50/80' : 'bg-white hover:bg-slate-50'}`}>
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${notif.read_at === null ? 'bg-blue-100 border-blue-200 text-blue-600' : 'bg-slate-100 border-slate-200 text-slate-400'}`}>
+                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                    </div>
+                                                    <div className="flex-1 min-w-0"> 
+                                                        <div className="flex justify-between items-start mb-1 gap-2">
+                                                            <p className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                                                                {notif.data.service_label || 'Admin Notification'}
+                                                            </p>
+                                                            <span className="text-[10px] font-semibold text-slate-400 shrink-0 whitespace-nowrap">
+                                                                {timeAgo(notif.created_at)}
+                                                            </span>
+                                                        </div>
+                                                        <p className={`text-xs leading-relaxed mb-2.5 break-words whitespace-normal ${notif.read_at === null ? 'text-slate-900 font-bold' : 'text-slate-600 font-medium'}`}>
+                                                            {notif.data.message || 'New update available.'}
+                                                        </p>
+                                                        {notif.data.status_label && (
+                                                            <span className={`px-2 py-1 rounded border text-[9px] font-bold uppercase tracking-wider inline-block ${getStatusColor(notif.data.status_code)}`}>
+                                                                {notif.data.status_label}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="px-5 py-12 text-center flex flex-col items-center justify-center bg-white">
+                                                <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
+                                                    <svg className="w-7 h-7 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                </div>
+                                                <p className="text-sm font-bold text-slate-700">You're all caught up!</p>
+                                                <p className="text-xs text-slate-500 mt-1">No recent notifications right now.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {notifications.length > 0 && (
+                                        <div className="p-3 border-t border-slate-100 bg-slate-50 shrink-0">
+                                            <Link href="/admin/requests" onClick={() => setIsNotifOpen(false)} className="block w-full py-2.5 rounded-lg text-center text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+                                                View All Requests
+                                            </Link>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
                     </div>
                 </header>
 
-                {/* Main Scroll Area */}
-                <main className="flex-1 min-h-0 overflow-y-auto">
+                <main className="flex-1 min-h-0">
                     <div className="p-4 sm:p-6 lg:p-10">
                         <div className="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden">
                             {children}

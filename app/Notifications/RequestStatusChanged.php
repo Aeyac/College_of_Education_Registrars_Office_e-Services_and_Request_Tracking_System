@@ -6,6 +6,7 @@ use App\Models\CertificateRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
 class RequestStatusChanged extends Notification implements ShouldQueue
@@ -17,14 +18,10 @@ class RequestStatusChanged extends Notification implements ShouldQueue
     ) {
     }
 
-    /**
-     * Database channel powers the in-app notification bell/list; mail
-     * sends an actual email. Both read from the same toArray()/toMail()
-     * below, so the message content only has to be written once.
-     */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        // Added 'broadcast' to fire real-time Echo events
+        return ['database', 'mail', 'broadcast'];
     }
 
     public function toDatabase(object $notifiable): array
@@ -34,29 +31,43 @@ class RequestStatusChanged extends Notification implements ShouldQueue
             'service_label' => $this->certRequest->service->label,
             'status_code' => $this->certRequest->status->code,
             'status_label' => $this->certRequest->status->label,
-            'message' => $this->messageFor($this->certRequest->status->code),
+            'message' => $this->messageFor($this->certRequest->status->code, $notifiable),
         ];
+    }
+
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'request_id' => $this->certRequest->id,
+            'service_label' => $this->certRequest->service->label,
+            'status_code' => $this->certRequest->status->code,
+            'status_label' => $this->certRequest->status->label,
+            'message' => $this->messageFor($this->certRequest->status->code, $notifiable),
+        ]);
     }
 
     public function toMail(object $notifiable): MailMessage
     {
         $status = $this->certRequest->status;
-
         return (new MailMessage)
             ->subject('Update on your ' . $this->certRequest->service->label . ' request')
-            ->greeting('Hi ' . $notifiable->name . ',')
-            ->line($this->messageFor($status->code))
+            ->greeting('Hi ' . $notifiable->first_name . ',')
+            ->line($this->messageFor($status->code, $notifiable))
             ->action('View Request', route('requests.show', $this->certRequest))
-            ->line('CED Registrar\'s Office — WRCIMS');
+            ->line('CED Registrar\'s Office - WRCIMS');
     }
 
-    /**
-     * Maps each status code to the exact wording specified in the
-     * revision letter (item 17), so notification copy stays consistent
-     * with what the client explicitly asked for.
-     */
-    protected function messageFor(string $statusCode): string
+    protected function messageFor(string $statusCode, object $notifiable): string
     {
+        // Dynamic messaging: If the receiver is an Admin, they get an admin-focused alert.
+        if (method_exists($notifiable, 'isAdmin') && $notifiable->isAdmin()) {
+            return match ($statusCode) {
+                'submitted' => "New document request submitted by {$this->certRequest->user->first_name} {$this->certRequest->user->last_name}.",
+                default => "Request #{$this->certRequest->id} was updated to {$this->certRequest->status->label}."
+            };
+        }
+
+        // Student/Alumni messaging
         return match ($statusCode) {
             'submitted' => 'Your request has been received.',
             'for_review' => 'Your request is under review.',

@@ -1,3 +1,4 @@
+// resources/js/pages/User/StaticPage.jsx
 import { Head } from '@inertiajs/react';
 import UserLayout from '@/Layouts/UserLayout';
 
@@ -18,10 +19,10 @@ export default function StaticPage({ title, description, content, userRole }) {
                 </div>
             </div>
 
-            <div className="p-6 sm:p-8 max-w-4xl">
-                <div className="bg-white border border-slate-100 p-8 rounded-3xl shadow-sm prose prose-slate prose-sm sm:prose-base max-w-none">
-                    {/* Render raw HTML content passed from controller */}
-                    <div dangerouslySetContent={{ __html: content }} />
+            <div className="p-6 sm:p-8 max-w-4xl mx-auto w-full">
+                {/* REMOVED 'prose' classes here so our custom CSS grids work perfectly */}
+                <div className="bg-white border border-slate-100 p-6 sm:p-10 rounded-[2rem] shadow-sm w-full">
+                    <div dangerouslySetInnerHTML={{ __html: content }} />
                 </div>
             </div>
         </UserLayout>

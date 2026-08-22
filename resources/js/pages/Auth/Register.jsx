@@ -1,11 +1,18 @@
+// resources/js/pages/Auth/Register.jsx
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
+import LegalModal from '@/Components/LegalModal'; // Import the new modal
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function Register({ courses = [] }) {
     const [step, setStep] = useState(1);
+    
+    // Modal States
+    const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+    const [agreedTerms, setAgreedTerms] = useState(false);
+    const [agreedPrivacy, setAgreedPrivacy] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         first_name: '',
@@ -55,6 +62,13 @@ export default function Register({ courses = [] }) {
         post(route('register'), {
             onFinish: () => reset('password', 'password_confirmation'),
         });
+    };
+
+    // Keep the main checkbox in sync with the modal's state
+    const handleMainCheckboxChange = (e) => {
+        const isChecked = e.target.checked;
+        setAgreedTerms(isChecked);
+        setAgreedPrivacy(isChecked);
     };
 
     return (
@@ -173,7 +187,6 @@ export default function Register({ courses = [] }) {
                             </div>
 
                             <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
                                 <div>
                                     <InputLabel htmlFor="first_name" value="First Name" className="text-slate-800 font-semibold mb-1.5" />
                                     <TextInput
@@ -202,7 +215,6 @@ export default function Register({ courses = [] }) {
                                     <InputError message={errors.last_name} className="mt-1 text-red-600" />
                                 </div>
 
-                                {/* Email Address */}
                                 <div className="md:col-span-2">
                                     <InputLabel htmlFor="email" value="Email Address" className="text-slate-800 font-semibold mb-1.5" />
                                     <TextInput
@@ -360,15 +372,18 @@ export default function Register({ courses = [] }) {
                                     <InputError message={errors.password_confirmation} className="mt-1 text-red-600" />
                                 </div>
 
+                                {/* Terms Checkbox Syncs with Modal! */}
                                 <div className="md:col-span-2 flex items-center text-sm mt-1">
                                     <input
                                         type="checkbox"
                                         id="terms"
-                                        className="rounded border-slate-300 text-yellow-500 focus:ring-yellow-400 mr-2"
+                                        className="rounded border-slate-300 text-yellow-500 focus:ring-yellow-400 mr-2 cursor-pointer"
                                         required
+                                        checked={agreedTerms && agreedPrivacy}
+                                        onChange={handleMainCheckboxChange}
                                     />
                                     <label htmlFor="terms" className="text-slate-600 text-xs sm:text-sm">
-                                        I agree to the <a href="#" className="font-bold text-yellow-700 hover:text-yellow-600">Terms of Service</a> and <a href="#" className="font-bold text-yellow-700 hover:text-yellow-600">Privacy Policy</a>.
+                                        I agree to the <button type="button" onClick={(e) => { e.preventDefault(); setIsLegalModalOpen(true); }} className="font-bold text-yellow-700 hover:text-yellow-600 transition-colors">Terms of Service</button> and <button type="button" onClick={(e) => { e.preventDefault(); setIsLegalModalOpen(true); }} className="font-bold text-yellow-700 hover:text-yellow-600 transition-colors">Privacy Policy</button>.
                                     </label>
                                 </div>
 
@@ -388,6 +403,16 @@ export default function Register({ courses = [] }) {
                     )}
                 </div>
             </div>
+
+            {/* Mount the Modal Component */}
+            <LegalModal 
+                isOpen={isLegalModalOpen} 
+                onClose={() => setIsLegalModalOpen(false)} 
+                agreedTerms={agreedTerms}
+                setAgreedTerms={setAgreedTerms}
+                agreedPrivacy={agreedPrivacy}
+                setAgreedPrivacy={setAgreedPrivacy}
+            />
         </div>
     );
 }
