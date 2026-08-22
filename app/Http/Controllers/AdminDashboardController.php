@@ -49,7 +49,7 @@ class AdminDashboardController extends Controller
             ['code' => $statusCode],
             ['label' => ucwords(str_replace('_', ' ', $statusCode))]
         );
-        
+         
         $certRequest->transitionTo($newStatus, auth()->user(), $request->input('note'));
         return back()->with('success', 'Status updated.');
     }

@@ -17,8 +17,9 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
+
     // === USER / STUDENT ROUTES ===
-    Route::prefix('user')->name('user.')->group(function () {
+    Route::prefix('user')->name('user.')->middleware('role:student|alumni')->group(function () {
         Route::get('/dashboard', [UserDashboardController::class, 'dashboard'])->name('dashboard');
 
         // Document Requests
@@ -43,7 +44,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // === ADMIN ROUTES ===
-    Route::prefix('admin')->name('admin.')->group(function () {
+    Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'dashboard'])->name('dashboard');
 
         Route::get('/requests', [AdminDashboardController::class, 'requests'])->name('requests');
@@ -62,7 +63,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/announcements/{id}', [AdminDashboardController::class, 'updateAnnouncement'])->name('announcements.update');
         Route::delete('/announcements/{id}', [AdminDashboardController::class, 'destroyAnnouncement'])->name('announcements.destroy');
 
-        // --- UPDATED USER MANAGEMENT ROUTES ---
         Route::get('/users', [AdminDashboardController::class, 'users'])->name('users');
         Route::post('/users', [AdminDashboardController::class, 'storeUser'])->name('users.store');
         Route::put('/users/{id}', [AdminDashboardController::class, 'updateUser'])->name('users.update');

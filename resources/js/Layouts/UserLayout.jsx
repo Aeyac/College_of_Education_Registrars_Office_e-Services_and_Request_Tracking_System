@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 export default function UserLayout({ children, userRole }) {
     const { url, props } = usePage();
     const { auth } = props;
-    
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
@@ -22,11 +22,10 @@ export default function UserLayout({ children, userRole }) {
         { name: 'My Requests', link: '/user/requests', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /> },
         { name: 'Faculty Schedules', link: '/user/faculty', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /> },
         { name: 'Announcements', link: '/user/announcements', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /> },
-        { name: 'Documents', link: '/user/documents', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /> },
         { divider: true },
         { name: 'FAQ / Help Center', link: '/user/faq', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /> },
         { name: 'Profile Settings', link: '/profile', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /> },
-        { name: 'Change Password', link: '/profile', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /> },
+        // { name: 'Change Password', link: '/profile', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /> },
         { divider: true },
         { name: 'About CED Registrar', link: '/user/about', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /> },
         { name: 'Privacy Policy', link: '/user/privacy-policy', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /> },
@@ -40,11 +39,11 @@ export default function UserLayout({ children, userRole }) {
                 <div className="p-8 pb-4 flex flex-col items-center border-b border-slate-100">
                     <div className="relative mb-3">
                         <div className="w-20 h-20 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-2xl shadow-inner">{userInitials}</div>
-                        <span className="absolute bottom-0 right-1 w-6 h-6 bg-yellow-400 border-2 border-white rounded-full flex items-center justify-center text-xs">👋</span>
+                        {/* <span className="absolute bottom-0 right-1 w-6 h-6 bg-yellow-400 border-2 border-white rounded-full flex items-center justify-center text-xs">👋</span> */}
                     </div>
                     <h3 className="font-bold text-slate-900 text-lg">{userName}</h3>
                     <p className="text-[11px] text-slate-500 font-medium mb-3 text-center uppercase tracking-wide">{displayRole}</p>
-                    <p className="text-[9px] text-slate-400 uppercase tracking-widest text-center mt-1 font-bold">Welcome to CED Registrar <br/> e-Services Portal</p>
+                    <p className="text-[9px] text-slate-400 uppercase tracking-widest text-center mt-1 font-bold">Welcome to CED Registrar <br /> e-Services Portal</p>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-1.5 custom-scrollbar">
@@ -76,7 +75,7 @@ export default function UserLayout({ children, userRole }) {
                     </div>
                     <h3 className="font-bold text-slate-900 text-lg">{userName}</h3>
                     <p className="text-[11px] text-slate-500 font-medium mb-3 text-center uppercase tracking-wide">{displayRole}</p>
-                    <p className="text-[9px] text-slate-400 uppercase tracking-widest text-center mt-1 font-bold">Welcome to CED Registrar <br/> e-Services Portal</p>
+                    <p className="text-[9px] text-slate-400 uppercase tracking-widest text-center mt-1 font-bold">Welcome to CED Registrar <br /> e-Services Portal</p>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-1.5 custom-scrollbar">
                     {menuItems.map((item, idx) => {
@@ -100,23 +99,26 @@ export default function UserLayout({ children, userRole }) {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                <header className="bg-slate-950 text-white pt-5 pb-24 px-6 lg:px-10 flex justify-between items-start relative z-0 shrink-0">
+                <header className="py-4 px-6 lg:px-10 flex justify-between items-center shrink-0 border-b-2">
                     <div className="flex items-center gap-4 relative z-10 w-full justify-between lg:justify-end">
                         <div className="flex items-center gap-4 lg:hidden">
-                            <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-white/80 hover:text-yellow-400">
+                            <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-slate-600 hover:text-slate-900">
                                 <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" /></svg>
                             </button>
                         </div>
-                        <button className="relative p-2 text-slate-300 hover:text-white transition-colors">
+                        <button className="relative p-2 text-slate-500 hover:text-slate-800 transition-colors">
                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-slate-950"></span>
+                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
                         </button>
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto relative z-10 -mt-16 px-4 sm:px-6 lg:px-10 pb-10">
-                    <div className="bg-white rounded-3xl shadow-sm border border-slate-200/60 min-h-full">
-                        {children}
+                {/* Main Scroll Area */}
+                <main className="flex-1 min-h-0 overflow-y-auto">
+                    <div className="p-4 sm:p-6 ">
+                        <div className="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden">
+                            {children}
+                        </div>
                     </div>
                 </main>
             </div>

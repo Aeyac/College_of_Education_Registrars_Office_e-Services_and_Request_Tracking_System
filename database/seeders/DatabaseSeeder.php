@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\RequestService;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,12 +16,29 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'student']);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'alumni']);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
 
-        // User::factory()->create([
-        //     'first_name' => 'John',
-        //     'last_name' => 'Doe',
-        //     'email' => 'test@example.com',
-        // ]);
+        User::where('user_type', 'student')
+            ->get()
+            ->each(fn(User $user) => $user->assignRole('student'));
+
+        User::where('user_type', 'alumni')
+            ->get()
+            ->each(fn(User $user) => $user->assignRole('alumni'));
+
+        User::where('user_type', 'admin')
+            ->get()
+            ->each(fn(User $user) => $user->assignRole('admin'));
+
+        RequestService::firstOrCreate(
+            ['code' => 'internship_certificate'],
+            ['label' => 'Internship Certificate', 'is_active' => true, 'sort_order' => 1]
+        );
+        RequestService::firstOrCreate(
+            ['code' => 'copy_of_cobc'],
+            ['label' => 'Copy of COBC', 'is_active' => true, 'sort_order' => 0]
+        );
     }
 }

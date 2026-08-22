@@ -264,8 +264,8 @@ export default function Welcome({ auth }) {
                                 </div>
                                 <h3 className="font-bold text-slate-900 text-lg mb-2 leading-snug">{service.title}</h3>
                                 <p className="text-sm text-slate-600 mb-6 leading-relaxed flex-grow">{service.desc}</p>
-                                <Link 
-                                    href={route('login')} 
+                                <Link
+                                    href={route('login')}
                                     className="px-5 py-2.5 bg-slate-100 text-slate-800 text-sm font-semibold rounded-lg text-center hover:bg-yellow-400 hover:text-slate-950 transition-colors w-full mt-auto"
                                 >
                                     Access Service
@@ -290,15 +290,15 @@ export default function Welcome({ auth }) {
                             return (
                                 <div key={index} className="border border-slate-200 rounded-xl overflow-hidden">
                                     {hasMajors ? (
-                                        <button 
+                                        <button
                                             className="w-full px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors focus:outline-none"
                                             onClick={() => setOpenCourse(isOpen ? null : index)}
                                         >
                                             <span className="font-semibold text-slate-800 text-left">{course.title}</span>
-                                            <svg 
-                                                className={`w-5 h-5 text-slate-500 transform transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
-                                                fill="none" 
-                                                viewBox="0 0 24 24" 
+                                            <svg
+                                                className={`w-5 h-5 text-slate-500 transform transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                                                fill="none"
+                                                viewBox="0 0 24 24"
                                                 stroke="currentColor"
                                             >
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -309,7 +309,7 @@ export default function Welcome({ auth }) {
                                             <span className="font-semibold text-slate-800 text-left">{course.title}</span>
                                         </div>
                                     )}
-                                    
+
                                     {hasMajors && (
                                         <div className={`px-6 overflow-hidden transition-all duration-300 ease-in-out bg-white ${isOpen ? 'max-h-96 py-5 opacity-100' : 'max-h-0 py-0 opacity-0'}`}>
                                             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Majors</span>
@@ -338,7 +338,7 @@ export default function Welcome({ auth }) {
                             <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
                             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Registrar Announcements</h2>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {announcements.map((announcement, index) => (
                                 <div key={index} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow relative overflow-hidden group">
@@ -353,7 +353,7 @@ export default function Welcome({ auth }) {
                 </section>
 
                 {/* FAQ Section */}
-                <section id="faq" className="py-20 px-6 md:px-12 bg-white max-w-4xl mx-auto scroll-mt-20">
+                <section id="faq" className="py-20 px-6 md:px-12 bg-white max-w-4xl mx-auto scroll-mt-20 mb-14">
                     <div className="flex flex-col items-center mb-10">
                         <div className="flex items-center gap-3 mb-3">
                             <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
@@ -365,21 +365,21 @@ export default function Welcome({ auth }) {
                     <div className="space-y-4">
                         {faqs.map((faq, index) => (
                             <div key={index} className="border border-slate-200 rounded-xl overflow-hidden">
-                                <button 
+                                <button
                                     className="w-full px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors focus:outline-none"
                                     onClick={() => setOpenFaq(openFaq === index ? null : index)}
                                 >
                                     <span className="font-semibold text-slate-800 text-left">{faq.q}</span>
-                                    <svg 
-                                        className={`w-5 h-5 text-slate-500 transform transition-transform duration-200 ${openFaq === index ? 'rotate-180' : ''}`} 
-                                        fill="none" 
-                                        viewBox="0 0 24 24" 
+                                    <svg
+                                        className={`w-5 h-5 text-slate-500 transform transition-transform duration-200 ${openFaq === index ? 'rotate-180' : ''}`}
+                                        fill="none"
+                                        viewBox="0 0 24 24"
                                         stroke="currentColor"
                                     >
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </button>
-                                
+
                                 <div className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${openFaq === index ? 'max-h-40 py-4 opacity-100' : 'max-h-0 py-0 opacity-0'}`}>
                                     <p className="text-slate-600 text-sm leading-relaxed">{faq.a}</p>
                                 </div>

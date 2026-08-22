@@ -6,7 +6,7 @@ import Swal from 'sweetalert2';
 export default function FacultySchedules({ faculty = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    
+    console.log(faculty)
     // Form state matching database columns exactly
     const { data, setData, post, put, processing, reset } = useForm({ 
         id: null, 
