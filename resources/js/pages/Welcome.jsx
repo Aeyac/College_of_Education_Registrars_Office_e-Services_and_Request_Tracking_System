@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Header from '@/Components/Header';
 import Footer from '@/Components/Footer';
 
-export default function Welcome({ auth }) {
+export default function Welcome({ auth, announcements = [] }) {
     // State for accordions
     const [openFaq, setOpenFaq] = useState(null);
     const [openCourse, setOpenCourse] = useState(null);
@@ -55,24 +55,6 @@ export default function Welcome({ auth }) {
                 </svg>
             )
         },
-    ];
-
-    const announcements = [
-        {
-            date: "October 15, 2026",
-            title: "Internship Certificate Processing Schedule",
-            excerpt: "The CED Registrar's Office will be processing internship certificates for the current batch starting next week. Please ensure all requirements are submitted via the portal."
-        },
-        {
-            date: "October 10, 2026",
-            title: "Temporary Office Unavailability",
-            excerpt: "Please be advised that the CED Registrar's Office will be closed on Friday for a university-wide seminar. All pending requests will resume processing on Monday."
-        },
-        {
-            date: "September 28, 2026",
-            title: "Deadline Reminders for Requirements",
-            excerpt: "A gentle reminder to all requesting students to comply with missing details and required documents within 5 working days to avoid cancellation of your request."
-        }
     ];
 
     const courses = [
@@ -136,9 +118,7 @@ export default function Welcome({ auth }) {
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-yellow-300 selection:text-slate-900 scroll-smooth">
             <Head title="Welcome - CED E-Services" />
-
             <Header />
-
             <main className="flex-grow pt-20">
                 {/* Hero Section */}
                 <section id="home" className="relative pt-12 md:pt-16 pb-20 px-6 md:px-12 w-full overflow-hidden bg-gradient-to-br from-amber-50/60 via-white to-yellow-50/40 border-b border-slate-100 scroll-mt-24">
@@ -150,7 +130,6 @@ export default function Welcome({ auth }) {
                                     CED E-SERVICES
                                 </span>
                             </h1>
-
                             <p className="text-slate-600 text-lg md:text-xl max-w-md font-normal leading-relaxed">
                                 Your digital hub for online appointments, official document requests, and college academic resources.
                             </p>
@@ -161,7 +140,6 @@ export default function Welcome({ auth }) {
                                 GET STARTED
                             </Link>
                         </div>
-
                         <div className="w-full md:w-1/2 relative flex justify-center mt-6 md:mt-0">
                             <div className="absolute -inset-1 bg-gradient-to-tr from-yellow-300 to-amber-200 rounded-2xl blur-xl opacity-30"></div>
                             <div className="relative w-full max-w-lg aspect-video bg-white p-2 rounded-2xl border border-slate-200/80 shadow-xl">
@@ -188,7 +166,6 @@ export default function Welcome({ auth }) {
                             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight text-center">About College of Education</h2>
                             <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
                         </div>
-
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200/80 shadow-sm">
                                 <h3 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
@@ -225,7 +202,6 @@ export default function Welcome({ auth }) {
                                 </p>
                             </div>
                         </div>
-
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
                             <div className="bg-green-50/50 p-8 rounded-2xl border border-green-100 shadow-sm">
                                 <h3 className="text-lg font-bold text-slate-900 mb-2">Mission of Elementary Education</h3>
@@ -255,7 +231,6 @@ export default function Welcome({ auth }) {
                             The CED Registrar's Office provides an automated request and tracking system strictly dedicated to internship certificates and related requirements.
                         </p>
                     </div>
-
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-center">
                         {services.map((service, index) => (
                             <div key={index} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col items-start transition-shadow hover:shadow-md hover:border-yellow-300">
@@ -275,18 +250,16 @@ export default function Welcome({ auth }) {
                     </div>
                 </section>
 
-                {/* Courses Offered Section - Fully Clean Design */}
+                {/* Courses Offered Section */}
                 <section id="courses" className="py-20 px-6 md:px-12 bg-white max-w-4xl mx-auto scroll-mt-20">
                     <div className="flex flex-col items-center mb-10">
                         <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-3">Courses Offered</h2>
                         <p className="text-slate-500 text-center text-sm">Explore the undergraduate degree programs available at the College of Education.</p>
                     </div>
-
                     <div className="space-y-4">
                         {courses.map((course, index) => {
                             const hasMajors = course.majors.length > 0;
                             const isOpen = openCourse === index;
-
                             return (
                                 <div key={index} className="border border-slate-200 rounded-xl overflow-hidden">
                                     {hasMajors ? (
@@ -309,7 +282,6 @@ export default function Welcome({ auth }) {
                                             <span className="font-semibold text-slate-800 text-left">{course.title}</span>
                                         </div>
                                     )}
-
                                     {hasMajors && (
                                         <div className={`px-6 overflow-hidden transition-all duration-300 ease-in-out bg-white ${isOpen ? 'max-h-96 py-5 opacity-100' : 'max-h-0 py-0 opacity-0'}`}>
                                             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Majors</span>
@@ -338,16 +310,24 @@ export default function Welcome({ auth }) {
                             <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
                             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Registrar Announcements</h2>
                         </div>
-
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {announcements.map((announcement, index) => (
-                                <div key={index} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow relative overflow-hidden group">
-                                    <div className="absolute top-0 left-0 w-1 h-full bg-green-600 group-hover:bg-yellow-400 transition-colors"></div>
-                                    <span className="text-xs font-bold text-slate-400 tracking-wider uppercase block mb-2">{announcement.date}</span>
-                                    <h3 className="font-bold text-slate-900 text-lg mb-3 leading-snug">{announcement.title}</h3>
-                                    <p className="text-sm text-slate-600 leading-relaxed">{announcement.excerpt}</p>
+                            {announcements.length > 0 ? (
+                                announcements.map((announcement) => (
+                                    <div key={announcement.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow relative overflow-hidden group">
+                                        <div className="absolute top-0 left-0 w-1 h-full bg-green-600 group-hover:bg-yellow-400 transition-colors"></div>
+                                        <span className="text-xs font-bold text-slate-400 tracking-wider uppercase block mb-2">{announcement.date}</span>
+                                        <h3 className="font-bold text-slate-900 text-lg mb-3 leading-snug">{announcement.title}</h3>
+                                        <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap line-clamp-3">{announcement.content}</p>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="col-span-full text-center py-16 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <svg className="w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
+                                    </div>
+                                    <p className="text-sm text-slate-500 font-medium">No active announcements at the moment.</p>
                                 </div>
-                            ))}
+                            )}
                         </div>
                     </div>
                 </section>
@@ -361,7 +341,6 @@ export default function Welcome({ auth }) {
                         </div>
                         <p className="text-slate-500 text-center text-sm">Everything you need to know about internship certificate processing.</p>
                     </div>
-
                     <div className="space-y-4">
                         {faqs.map((faq, index) => (
                             <div key={index} className="border border-slate-200 rounded-xl overflow-hidden">
@@ -379,7 +358,6 @@ export default function Welcome({ auth }) {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </button>
-
                                 <div className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${openFaq === index ? 'max-h-40 py-4 opacity-100' : 'max-h-0 py-0 opacity-0'}`}>
                                     <p className="text-slate-600 text-sm leading-relaxed">{faq.a}</p>
                                 </div>
@@ -388,7 +366,6 @@ export default function Welcome({ auth }) {
                     </div>
                 </section>
             </main>
-
             <Footer />
         </div>
     );
