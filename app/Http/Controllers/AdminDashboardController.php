@@ -6,8 +6,8 @@ use Inertia\Inertia;
 use App\Models\User;
 use App\Models\CertificateRequest;
 use App\Models\AlumniVerification;
-use App\Models\Faculty;
-use App\Models\Announcement;
+use App\Models\Faculty; 
+use App\Models\Announcement; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -39,18 +39,17 @@ class AdminDashboardController extends Controller
         return Inertia::render('Admin/Requests', ['requests' => $requests]);
     }
 
-    // --- PROTECTED UPDATE METHOD ---
     public function updateRequest(Request $request, $id)
     {
         $certRequest = CertificateRequest::findOrFail($id);
-
+        
         // Auto-create the new status if the database table is empty to prevent FK crash
         $statusCode = $request->input('status_code');
         $newStatus = \App\Models\RequestStatus::firstOrCreate(
             ['code' => $statusCode],
             ['label' => ucwords(str_replace('_', ' ', $statusCode))]
         );
-
+        
         $certRequest->transitionTo($newStatus, auth()->user(), $request->input('note'));
         return back()->with('success', 'Status updated.');
     }
@@ -79,21 +78,21 @@ class AdminDashboardController extends Controller
         return back()->with('success', 'Alumni verification updated.');
     }
 
-    // --- 4. FACULTY SCHEDULES (FIXED CRASH) ---
+    // --- 4. FACULTY SCHEDULES ---
     public function faculty()
     {
         $faculty = Faculty::orderBy('name', 'asc')->get()->map(function ($prof) {
-
+            
             // Failsafe time parsing to prevent Carbon crashes
             $startStr = $prof->consultation_time_start;
             $endStr = $prof->consultation_time_end;
-
+            
             $startObj = $startStr instanceof \Carbon\Carbon ? $startStr : ($startStr ? \Carbon\Carbon::parse($startStr) : null);
             $endObj = $endStr instanceof \Carbon\Carbon ? $endStr : ($endStr ? \Carbon\Carbon::parse($endStr) : null);
 
             $formattedStart = $startObj ? $startObj->format('g:i A') : '';
             $formattedEnd = $endObj ? $endObj->format('g:i A') : '';
-
+            
             $inputStart = $startObj ? $startObj->format('H:i') : '';
             $inputEnd = $endObj ? $endObj->format('H:i') : '';
 
@@ -112,7 +111,7 @@ class AdminDashboardController extends Controller
                 'hours' => $hours ?: 'No schedule set',
             ];
         });
-
+        
         return Inertia::render('Admin/Faculty', ['faculty' => $faculty]);
     }
 
@@ -166,7 +165,7 @@ class AdminDashboardController extends Controller
             'title' => $request->input('title'),
             'body' => $request->input('content'),
             'posted_by' => auth()->id(),
-            'published_at' => now(),
+            'published_at' => now(), 
         ]);
         return back()->with('success', 'Announcement posted.');
     }
@@ -189,15 +188,79 @@ class AdminDashboardController extends Controller
     // --- 6. USER MANAGEMENT ---
     public function users()
     {
-        $users = User::with('course')->whereIn('user_type', ['student', 'alumni'])->latest()->get()->map(fn($u) => [
-            'id' => $u->id,
-            'student_id' => $u->student_number,
-            'first_name' => $u->first_name,
-            'last_name' => $u->last_name,
-            'user_type' => $u->user_type,
-            'course' => $u->course ? $u->course->code : null,
+        $users = User::with(['course', 'major'])
+            ->whereIn('user_type', ['student', 'alumni'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn($u) => [
+                'id' => $u->id,
+                'student_id' => $u->student_number,
+                'first_name' => $u->first_name,
+                'last_name' => $u->last_name,
+                'email' => $u->email,
+                'contact_number' => $u->contact_number,
+                'user_type' => $u->user_type,
+                'course' => $u->course ? $u->course->label : null,
+                'course_id' => $u->course_id,
+                'major' => $u->major ? $u->major->label : null,
+                'major_id' => $u->major_id,
+                'year_level' => $u->year_level,
+                'batch_year' => $u->batch_year,
+            ]);
+            
+        $courses = \App\Models\Course::with('majors')->where('is_active', true)->orderBy('sort_order')->get();
+
+        return Inertia::render('Admin/UserManagement', [
+            'users' => $users,
+            'courses' => $courses
         ]);
-        return Inertia::render('Admin/UserManagement', ['users' => $users]);
+    }
+
+    public function storeUser(Request $request)
+    {
+        $data = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'user_type' => 'required|in:student,alumni',
+            'student_number' => 'nullable|string',
+            'course_id' => 'nullable|exists:courses,id',
+            'major_id' => 'nullable|exists:majors,id',
+            'year_level' => 'nullable|integer',
+            'batch_year' => 'nullable|integer',
+            'contact_number' => 'required|string',
+            'password' => 'required|string|min:8',
+        ]);
+
+        $data['password'] = \Illuminate\Support\Facades\Hash::make($data['password']);
+
+        User::create($data);
+        return back()->with('success', 'User added successfully.');
+    }
+
+    public function updateUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        
+        $data = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,'.$id,
+            'user_type' => 'required|in:student,alumni',
+            'student_number' => 'nullable|string',
+            'course_id' => 'nullable|exists:courses,id',
+            'major_id' => 'nullable|exists:majors,id',
+            'year_level' => 'nullable|integer',
+            'batch_year' => 'nullable|integer',
+            'contact_number' => 'required|string',
+        ]);
+
+        if ($request->filled('password')) {
+            $data['password'] = \Illuminate\Support\Facades\Hash::make($request->password);
+        }
+
+        $user->update($data);
+        return back()->with('success', 'User updated successfully.');
     }
 
     public function destroyUser($id)
