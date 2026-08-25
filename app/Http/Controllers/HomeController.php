@@ -1,19 +1,22 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\RedirectResponse;
 
 class HomeController extends Controller
 {
-    /**
-     * Display the landing page with dynamic data.
-     */
-    public function index(): Response
+    public function index(): Response|RedirectResponse
     {
-        // Fetch up to 3 of the latest active announcements
+        // Session Control: Redirect if already logged in
+        if (auth()->check()) {
+            return auth()->user()->isAdmin() 
+                ? redirect()->route('admin.dashboard') 
+                : redirect()->route('user.dashboard');
+        }
+
         $announcements = Announcement::current()
             ->latest()
             ->take(3)

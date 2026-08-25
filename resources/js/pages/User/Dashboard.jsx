@@ -3,7 +3,6 @@ import { useState } from 'react';
 import UserLayout from '@/Layouts/UserLayout';
 import Swal from 'sweetalert2';
 
-// Module-level: doesn't depend on props/state, so it shouldn't be rebuilt on every render.
 const MySwal = Swal.mixin({
     customClass: {
         popup: 'rounded-[2rem] shadow-2xl border border-slate-100 bg-white pb-4',
@@ -16,7 +15,6 @@ const MySwal = Swal.mixin({
 });
 
 const INTERNSHIP_SERVICE_CODE = 'internship_certificate';
-
 const DELIVERY_MODES = [
     { value: 'hard_copy', label: 'Hard Copy' },
     { value: 'soft_copy', label: 'Soft Copy' },
@@ -116,53 +114,25 @@ function RequestRow({ request }) {
     );
 }
 
-const REQUEST_FORM_DEFAULTS = {
-    service_id: '',
-    delivery_mode: 'hard_copy',
-    purpose: '',
-    preferred_claiming_date: '',
-    internship_school_or_agency: '',
-    grade_level_handled: '',
-    semester: '',
-    school_year: '',
-};
-
-const PROOF_FORM_DEFAULTS = {
-    document_type: 'diploma',
-    file: null,
-};
-
 export default function UserDashboard({ auth, requests = [], stats, userRole, isAlumniVerified, services = [] }) {
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
     const [isProofModalOpen, setIsProofModalOpen] = useState(false);
 
-    const requestForm = useForm(REQUEST_FORM_DEFAULTS);
-    const proofForm = useForm(PROOF_FORM_DEFAULTS);
+    const requestForm = useForm({
+        service_id: '', delivery_mode: 'hard_copy', purpose: '', preferred_claiming_date: '',
+        internship_school_or_agency: '', grade_level_handled: '', semester: '', school_year: ''
+    });
+
+    const proofForm = useForm({ document_type: 'diploma', file: null });
 
     const selectedService = services.find((s) => s.id === Number(requestForm.data.service_id));
     const isInternshipService = selectedService?.code === INTERNSHIP_SERVICE_CODE;
 
-    const closeRequestModal = () => {
-        setIsRequestModalOpen(false);
-        requestForm.reset();
-        requestForm.clearErrors();
-    };
-
-    const closeProofModal = () => {
-        setIsProofModalOpen(false);
-        proofForm.reset();
-        proofForm.clearErrors();
-    };
+    const closeRequestModal = () => { setIsRequestModalOpen(false); requestForm.reset(); requestForm.clearErrors(); };
+    const closeProofModal = () => { setIsProofModalOpen(false); proofForm.reset(); proofForm.clearErrors(); };
 
     const handleServiceChange = (e) => {
-        requestForm.setData({
-            ...requestForm.data,
-            service_id: e.target.value,
-            internship_school_or_agency: '',
-            grade_level_handled: '',
-            semester: '',
-            school_year: '',
-        });
+        requestForm.setData({ ...requestForm.data, service_id: e.target.value, internship_school_or_agency: '', grade_level_handled: '', semester: '', school_year: '' });
     };
 
     const submitRequest = (e) => {
@@ -171,13 +141,7 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
             preserveScroll: true,
             onSuccess: () => {
                 closeRequestModal();
-                MySwal.fire({
-                    title: 'Request Sent!',
-                    text: 'Your document request was submitted successfully.',
-                    iconHtml: '✅',
-                    timer: 2500,
-                    showConfirmButton: false,
-                });
+                MySwal.fire({ title: 'Request Sent!', text: 'Your document request was submitted successfully.', iconHtml: '<svg class="w-12 h-12 text-emerald-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>', timer: 2500, showConfirmButton: false });
             },
         });
     };
@@ -185,17 +149,10 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
     const submitProof = (e) => {
         e.preventDefault();
         proofForm.post('/user/verify-alumni', {
-            preserveScroll: true,
-            forceFormData: true,
+            preserveScroll: true, forceFormData: true,
             onSuccess: () => {
                 closeProofModal();
-                MySwal.fire({
-                    title: 'Uploaded!',
-                    text: 'Your proof of identity is pending review.',
-                    iconHtml: '📄',
-                    timer: 2500,
-                    showConfirmButton: false,
-                });
+                MySwal.fire({ title: 'Uploaded!', text: 'Your proof of identity is pending review.', iconHtml: '<svg class="w-12 h-12 text-emerald-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>', timer: 2500, showConfirmButton: false });
             },
         });
     };
@@ -204,11 +161,7 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
 
     const quickActions = [
         { name: 'New Request', iconPath: ICON_PATHS.newRequest, action: () => setIsRequestModalOpen(true) },
-        {
-            name: 'Submit Inquiry',
-            iconPath: ICON_PATHS.inquiry,
-            action: () => MySwal.fire({ title: 'Coming Soon', text: 'Inquiries module is under development.', iconHtml: '🚧', confirmButtonText: 'Got it' }),
-        },
+        { name: 'Submit Inquiry', iconPath: ICON_PATHS.inquiry, action: () => router.visit('/user/inquiries') },
         ...(isAlumni ? [{ name: 'Upload Docs', iconPath: ICON_PATHS.uploadDocs, action: () => setIsProofModalOpen(true) }] : []),
         { name: 'FAQ / Help', iconPath: ICON_PATHS.faq, action: () => router.visit('/user/faq') },
     ];
@@ -219,15 +172,13 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
             <div className="p-8 pb-4 border-b border-slate-100">
                 <h2 className="text-xl font-bold text-slate-900 tracking-tight">Dashboard</h2>
             </div>
-
             <div className="p-8">
                 <div className="grid grid-cols-2 gap-6 mb-10">
                     <StatCard iconPath={ICON_PATHS.clock} iconBg="bg-yellow-50" iconColor="text-yellow-600" value={stats?.pending} label="Pending" />
                     <StatCard iconPath={ICON_PATHS.check} iconBg="bg-emerald-50" iconColor="text-emerald-600" value={stats?.completed} label="Completed" />
                 </div>
-
+                
                 <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Quick Actions</h2>
-                {/* Changed justify-between to justify-start and added gap-6 */}
                 <div className="flex justify-start items-center gap-6 overflow-x-auto mb-10 pb-2">
                     {quickActions.map((action) => (
                         <QuickActionButton key={action.name} iconPath={action.iconPath} name={action.name} onClick={action.action} />
@@ -238,18 +189,14 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
                     <div className="mb-8 bg-white border border-yellow-300 shadow-sm rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div className="flex gap-4">
                             <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                                <svg className="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={ICON_PATHS.warning} />
-                                </svg>
+                                <svg className="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={ICON_PATHS.warning} /></svg>
                             </div>
                             <div>
                                 <h3 className="font-bold text-slate-900 text-sm">Alumni Verification</h3>
                                 <p className="text-slate-500 text-xs mt-1">Upload Diploma/TOR to unlock requests.</p>
                             </div>
                         </div>
-                        <button onClick={() => setIsProofModalOpen(true)} className="px-5 py-2 bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold rounded-xl text-xs shadow-sm w-full sm:w-auto">
-                            Upload
-                        </button>
+                        <button onClick={() => setIsProofModalOpen(true)} className="px-5 py-2 bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold rounded-xl text-xs shadow-sm w-full sm:w-auto">Upload</button>
                     </div>
                 )}
 
@@ -258,11 +205,7 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
                     <Link href="/user/requests" className="text-[11px] font-bold text-yellow-600 hover:text-yellow-700">View All</Link>
                 </div>
                 <div className="space-y-3">
-                    {requests.length > 0 ? (
-                        requests.map((req) => <RequestRow key={req.id} request={req} />)
-                    ) : (
-                        <p className="text-sm text-slate-500 text-center py-4 border border-slate-100 rounded-2xl">No recent requests found.</p>
-                    )}
+                    {requests.length > 0 ? requests.map((req) => <RequestRow key={req.id} request={req} />) : <p className="text-sm text-slate-500 text-center py-4 border border-slate-100 rounded-2xl">No recent requests found.</p>}
                 </div>
             </div>
 
@@ -270,33 +213,16 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
                 <Modal title="Request Document" onClose={closeRequestModal}>
                     <form onSubmit={submitRequest} className="p-6 space-y-4">
                         <div>
-                            <select
-                                value={requestForm.data.service_id}
-                                onChange={handleServiceChange}
-                                className="w-full border border-slate-300 text-slate-900 rounded-xl px-4 py-3 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none"
-                                required
-                            >
+                            <select value={requestForm.data.service_id} onChange={handleServiceChange} className="w-full border border-slate-300 text-slate-900 rounded-xl px-4 py-3 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" required>
                                 <option value="" disabled>Select Document...</option>
-                                {services.map((service) => (
-                                    <option key={service.id} value={service.id}>{service.label}</option>
-                                ))}
+                                {services.map((service) => <option key={service.id} value={service.id}>{service.label}</option>)}
                             </select>
                             <FieldError message={requestForm.errors.service_id} />
                         </div>
-
                         <div className="grid grid-cols-2 gap-3">
                             {DELIVERY_MODES.map((mode) => (
-                                <label
-                                    key={mode.value}
-                                    className={`border rounded-xl p-3 flex items-center cursor-pointer transition-all ${requestForm.data.delivery_mode === mode.value ? 'border-yellow-400 bg-yellow-50 ring-1 ring-yellow-400' : 'border-slate-200'}`}
-                                >
-                                    <input
-                                        type="radio"
-                                        value={mode.value}
-                                        checked={requestForm.data.delivery_mode === mode.value}
-                                        onChange={(e) => requestForm.setData('delivery_mode', e.target.value)}
-                                        className="text-yellow-500 focus:ring-yellow-500 border-slate-300"
-                                    />
+                                <label key={mode.value} className={`border rounded-xl p-3 flex items-center cursor-pointer transition-all ${requestForm.data.delivery_mode === mode.value ? 'border-yellow-400 bg-yellow-50 ring-1 ring-yellow-400' : 'border-slate-200'}`}>
+                                    <input type="radio" value={mode.value} checked={requestForm.data.delivery_mode === mode.value} onChange={(e) => requestForm.setData('delivery_mode', e.target.value)} className="text-yellow-500 focus:ring-yellow-500 border-slate-300" />
                                     <span className="ml-2 text-sm font-bold text-slate-700">{mode.label}</span>
                                 </label>
                             ))}
@@ -305,82 +231,23 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
 
                         {isInternshipService && (
                             <div className="space-y-4 border border-slate-100 bg-slate-50/70 rounded-xl p-4">
-                                <div>
-                                    <input
-                                        type="text"
-                                        value={requestForm.data.internship_school_or_agency}
-                                        onChange={(e) => requestForm.setData('internship_school_or_agency', e.target.value)}
-                                        placeholder="Internship school / agency"
-                                        className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none"
-                                        required
-                                    />
-                                    <FieldError message={requestForm.errors.internship_school_or_agency} />
-                                </div>
-                                <div>
-                                    <input
-                                        type="text"
-                                        value={requestForm.data.grade_level_handled}
-                                        onChange={(e) => requestForm.setData('grade_level_handled', e.target.value)}
-                                        placeholder="Grade level handled (optional)"
-                                        className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none"
-                                    />
-                                    <FieldError message={requestForm.errors.grade_level_handled} />
-                                </div>
+                                <div><input type="text" value={requestForm.data.internship_school_or_agency} onChange={(e) => requestForm.setData('internship_school_or_agency', e.target.value)} placeholder="Internship school / agency" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" required/><FieldError message={requestForm.errors.internship_school_or_agency} /></div>
+                                <div><input type="text" value={requestForm.data.grade_level_handled} onChange={(e) => requestForm.setData('grade_level_handled', e.target.value)} placeholder="Grade level handled (optional)" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" /><FieldError message={requestForm.errors.grade_level_handled} /></div>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <input
-                                            type="text"
-                                            value={requestForm.data.semester}
-                                            onChange={(e) => requestForm.setData('semester', e.target.value)}
-                                            placeholder="Semester"
-                                            className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none"
-                                            required
-                                        />
-                                        <FieldError message={requestForm.errors.semester} />
-                                    </div>
-                                    <div>
-                                        <input
-                                            type="text"
-                                            value={requestForm.data.school_year}
-                                            onChange={(e) => requestForm.setData('school_year', e.target.value)}
-                                            placeholder="School year"
-                                            className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none"
-                                            required
-                                        />
-                                        <FieldError message={requestForm.errors.school_year} />
-                                    </div>
+                                    <div><input type="text" value={requestForm.data.semester} onChange={(e) => requestForm.setData('semester', e.target.value)} placeholder="Semester" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" required/><FieldError message={requestForm.errors.semester} /></div>
+                                    <div><input type="text" value={requestForm.data.school_year} onChange={(e) => requestForm.setData('school_year', e.target.value)} placeholder="School year" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" required/><FieldError message={requestForm.errors.school_year} /></div>
                                 </div>
                             </div>
                         )}
-
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-                                Preferred Claiming Date
-                            </label>
-                            <input
-                                type="date"
-                                value={requestForm.data.preferred_claiming_date}
-                                onChange={(e) => requestForm.setData('preferred_claiming_date', e.target.value)}
-                                min={new Date().toISOString().split('T')[0]}
-                                className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:ring-yellow-500 focus:border-yellow-500 outline-none"
-                            />
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Preferred Claiming Date</label>
+                            <input type="date" value={requestForm.data.preferred_claiming_date} onChange={(e) => requestForm.setData('preferred_claiming_date', e.target.value)} min={new Date().toISOString().split('T')[0]} className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:ring-yellow-500 focus:border-yellow-500 outline-none" />
                             <FieldError message={requestForm.errors.preferred_claiming_date} />
                         </div>
-
                         <div>
-                            <textarea
-                                rows="3"
-                                value={requestForm.data.purpose}
-                                onChange={(e) => requestForm.setData('purpose', e.target.value)}
-                                placeholder="Reason for request..."
-                                className="w-full border border-slate-300 rounded-xl shadow-sm text-sm focus:ring-yellow-500 p-3 resize-none outline-none"
-                            />
-                            <FieldError message={requestForm.errors.purpose} />
+                            <textarea rows="3" value={requestForm.data.purpose} onChange={(e) => requestForm.setData('purpose', e.target.value)} placeholder="Reason for request..." className="w-full border border-slate-300 rounded-xl shadow-sm text-sm focus:ring-yellow-500 p-3 resize-none outline-none" /><FieldError message={requestForm.errors.purpose} />
                         </div>
-
-                        <button type="submit" disabled={requestForm.processing} className="w-full py-3.5 bg-yellow-400 text-slate-900 font-bold rounded-xl shadow-md transition-colors text-sm disabled:opacity-60">
-                            {requestForm.processing ? 'Submitting...' : 'Submit Request'}
-                        </button>
+                        <button type="submit" disabled={requestForm.processing} className="w-full py-3.5 bg-yellow-400 text-slate-900 font-bold rounded-xl shadow-md transition-colors text-sm disabled:opacity-60">{requestForm.processing ? 'Submitting...' : 'Submit Request'}</button>
                     </form>
                 </Modal>
             )}
@@ -389,43 +256,20 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
                 <Modal title="Upload Verification" onClose={closeProofModal} maxWidth="max-w-sm">
                     <form onSubmit={submitProof} className="p-6 text-center">
                         <p className="text-sm text-slate-500 mb-6">Upload your Diploma or TOR to verify your alumni status.</p>
-
                         <div className="grid grid-cols-2 gap-3 mb-4">
                             {PROOF_DOCUMENT_TYPES.map((type) => (
-                                <label
-                                    key={type.value}
-                                    className={`border rounded-xl p-3 flex items-center justify-center cursor-pointer transition-all ${proofForm.data.document_type === type.value ? 'border-yellow-400 bg-yellow-50 ring-1 ring-yellow-400' : 'border-slate-200'}`}
-                                >
-                                    <input
-                                        type="radio"
-                                        value={type.value}
-                                        checked={proofForm.data.document_type === type.value}
-                                        onChange={(e) => proofForm.setData('document_type', e.target.value)}
-                                        className="text-yellow-500 focus:ring-yellow-500 border-slate-300"
-                                    />
+                                <label key={type.value} className={`border rounded-xl p-3 flex items-center justify-center cursor-pointer transition-all ${proofForm.data.document_type === type.value ? 'border-yellow-400 bg-yellow-50 ring-1 ring-yellow-400' : 'border-slate-200'}`}>
+                                    <input type="radio" value={type.value} checked={proofForm.data.document_type === type.value} onChange={(e) => proofForm.setData('document_type', e.target.value)} className="text-yellow-500 focus:ring-yellow-500 border-slate-300" />
                                     <span className="ml-2 text-sm font-bold text-slate-700">{type.label}</span>
                                 </label>
                             ))}
                         </div>
                         <FieldError message={proofForm.errors.document_type} />
-
-                        <input
-                            key={isProofModalOpen ? 'open' : 'closed'}
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            onChange={(e) => proofForm.setData('file', e.target.files[0])}
-                            className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-slate-50 border border-slate-200 cursor-pointer mb-2 mt-4"
-                            required
-                        />
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => proofForm.setData('file', e.target.files[0])} className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-slate-50 border border-slate-200 cursor-pointer mb-2 mt-4" required />
                         <FieldError message={proofForm.errors.file} />
-
                         <div className="flex gap-3 mt-6">
-                            <button type="button" onClick={closeProofModal} className="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm transition-colors hover:bg-slate-200">
-                                Cancel
-                            </button>
-                            <button type="submit" disabled={proofForm.processing} className="flex-1 py-3 bg-slate-900 text-white font-bold rounded-xl text-sm shadow-md hover:bg-slate-800 transition-colors disabled:opacity-60">
-                                {proofForm.processing ? 'Uploading...' : 'Upload'}
-                            </button>
+                            <button type="button" onClick={closeProofModal} className="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm transition-colors hover:bg-slate-200">Cancel</button>
+                            <button type="submit" disabled={proofForm.processing} className="flex-1 py-3 bg-slate-900 text-white font-bold rounded-xl text-sm shadow-md hover:bg-slate-800 transition-colors disabled:opacity-60">{proofForm.processing ? 'Uploading...' : 'Upload'}</button>
                         </div>
                     </form>
                 </Modal>

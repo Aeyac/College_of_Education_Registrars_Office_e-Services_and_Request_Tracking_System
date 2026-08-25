@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import Header from '@/Components/Header';
 import Footer from '@/Components/Footer';
+import Chatbox from '@/Components/Chatbox'; // INIMPORT ANG CHATBOX
 
 export default function Welcome({ auth, announcements = [] }) {
     // State for accordions
@@ -119,6 +120,7 @@ export default function Welcome({ auth, announcements = [] }) {
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-yellow-300 selection:text-slate-900 scroll-smooth">
             <Head title="Welcome - CED E-Services" />
             <Header />
+
             <main className="flex-grow pt-20">
                 {/* Hero Section */}
                 <section id="home" className="relative pt-12 md:pt-16 pb-20 px-6 md:px-12 w-full overflow-hidden bg-gradient-to-br from-amber-50/60 via-white to-yellow-50/40 border-b border-slate-100 scroll-mt-24">
@@ -140,6 +142,7 @@ export default function Welcome({ auth, announcements = [] }) {
                                 GET STARTED
                             </Link>
                         </div>
+
                         <div className="w-full md:w-1/2 relative flex justify-center mt-6 md:mt-0">
                             <div className="absolute -inset-1 bg-gradient-to-tr from-yellow-300 to-amber-200 rounded-2xl blur-xl opacity-30"></div>
                             <div className="relative w-full max-w-lg aspect-video bg-white p-2 rounded-2xl border border-slate-200/80 shadow-xl">
@@ -166,6 +169,7 @@ export default function Welcome({ auth, announcements = [] }) {
                             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight text-center">About College of Education</h2>
                             <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
                         </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200/80 shadow-sm">
                                 <h3 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
@@ -202,6 +206,7 @@ export default function Welcome({ auth, announcements = [] }) {
                                 </p>
                             </div>
                         </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
                             <div className="bg-green-50/50 p-8 rounded-2xl border border-green-100 shadow-sm">
                                 <h3 className="text-lg font-bold text-slate-900 mb-2">Mission of Elementary Education</h3>
@@ -231,6 +236,7 @@ export default function Welcome({ auth, announcements = [] }) {
                             The CED Registrar's Office provides an automated request and tracking system strictly dedicated to internship certificates and related requirements.
                         </p>
                     </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-center">
                         {services.map((service, index) => (
                             <div key={index} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col items-start transition-shadow hover:shadow-md hover:border-yellow-300">
@@ -256,10 +262,12 @@ export default function Welcome({ auth, announcements = [] }) {
                         <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-3">Courses Offered</h2>
                         <p className="text-slate-500 text-center text-sm">Explore the undergraduate degree programs available at the College of Education.</p>
                     </div>
+
                     <div className="space-y-4">
                         {courses.map((course, index) => {
                             const hasMajors = course.majors.length > 0;
                             const isOpen = openCourse === index;
+
                             return (
                                 <div key={index} className="border border-slate-200 rounded-xl overflow-hidden">
                                     {hasMajors ? (
@@ -282,6 +290,7 @@ export default function Welcome({ auth, announcements = [] }) {
                                             <span className="font-semibold text-slate-800 text-left">{course.title}</span>
                                         </div>
                                     )}
+
                                     {hasMajors && (
                                         <div className={`px-6 overflow-hidden transition-all duration-300 ease-in-out bg-white ${isOpen ? 'max-h-96 py-5 opacity-100' : 'max-h-0 py-0 opacity-0'}`}>
                                             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Majors</span>
@@ -310,6 +319,7 @@ export default function Welcome({ auth, announcements = [] }) {
                             <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
                             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Registrar Announcements</h2>
                         </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {announcements.length > 0 ? (
                                 announcements.map((announcement) => (
@@ -341,6 +351,7 @@ export default function Welcome({ auth, announcements = [] }) {
                         </div>
                         <p className="text-slate-500 text-center text-sm">Everything you need to know about internship certificate processing.</p>
                     </div>
+
                     <div className="space-y-4">
                         {faqs.map((faq, index) => (
                             <div key={index} className="border border-slate-200 rounded-xl overflow-hidden">
@@ -366,7 +377,12 @@ export default function Welcome({ auth, announcements = [] }) {
                     </div>
                 </section>
             </main>
+
             <Footer />
+
+            {/* AI CHATBOT NA GAGAMITIN SA LANDING PAGE */}
+            <Chatbox />
+
         </div>
     );
 }

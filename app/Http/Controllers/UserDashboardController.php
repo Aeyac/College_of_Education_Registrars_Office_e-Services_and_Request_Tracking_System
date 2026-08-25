@@ -8,7 +8,6 @@ use App\Models\Announcement;
 use App\Models\AlumniVerification;
 use App\Models\CertificateRequest;
 use App\Models\Faculty;
-use App\Models\InternshipRequestDetail;
 use App\Models\RequestService;
 use App\Models\RequestStatus;
 use Illuminate\Http\RedirectResponse;
@@ -109,11 +108,8 @@ class UserDashboardController extends Controller
             }
 
             $certificateRequest->load(['service', 'status', 'user']);
-
-            // 1. Notify the Student
             $request->user()->notify(new \App\Notifications\RequestStatusChanged($certificateRequest));
 
-            // 2. 🔥 Notify ALL Admins in real-time
             $admins = \App\Models\User::where('user_type', 'admin')->get();
             \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\RequestStatusChanged($certificateRequest));
         });
@@ -137,20 +133,176 @@ class UserDashboardController extends Controller
         return back()->with('success', 'Verification proof uploaded successfully.');
     }
 
-    public function faq(): Response
-    {
-        return Inertia::render('User/Faq', ['userRole' => $this->userDisplaySubtitle()]);
+    // === INQUIRIES & THREADS ===
+    private function containsSpam(string $text): bool {
+        $spamWords = ['fuck', 'shit', 'bitch', 'asshole', 'dick', 'pussy', 'putangina', 'tangina', 'gago', 'bobo', 'tanga', 'inutil', 'ulol', 'punyeta', 'hayop', 'gaga', 'kupal', 'tarantado'];
+        foreach ($spamWords as $word) {
+            if (stripos($text, $word) !== false) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    public function markNotificationsAsRead(): \Illuminate\Http\RedirectResponse
+    public function inquiries(): Response
     {
-        auth()->user()->unreadNotifications->markAsRead();
+        $inquiries = \App\Models\Inquiry::with(['messages.user', 'messages.parent.user'])
+            ->where('user_id', auth()->id())
+            ->latest('updated_at')
+            ->get()
+            ->map(fn($inq) => [
+                'id' => $inq->id,
+                'subject' => $inq->subject,
+                'status' => $inq->status,
+                'is_read' => $inq->is_read_by_user,
+                'date' => $inq->created_at->format('M d, Y h:i A'),
+                'messages' => $inq->messages->map(fn($msg) => [
+                    'id' => $msg->id,
+                    'message' => $msg->message,
+                    'attachment_url' => $msg->attachment_path ? asset('storage/' . $msg->attachment_path) : null,
+                    'attachment_name' => $msg->attachment_path ? basename($msg->attachment_path) : null,
+                    'is_edited' => $msg->is_edited,
+                    'sender_name' => $msg->user ? $msg->user->first_name : 'User',
+                    'sender_avatar' => $msg->user && $msg->user->profile_picture ? asset('storage/' . $msg->user->profile_picture) : null,
+                    'is_admin' => $msg->user && $msg->user->user_type === 'admin',
+                    'is_own' => $msg->user_id === auth()->id(),
+                    'created_at' => $msg->created_at->format('M d, Y h:i A'),
+                    'parent' => $msg->parent ? [
+                        'id' => $msg->parent->id,
+                        'message' => $msg->parent->message,
+                        'sender_name' => $msg->parent->user ? $msg->parent->user->first_name : 'User',
+                    ] : null,
+                ])
+            ]);
+
+        return Inertia::render('User/Inquiries', [
+            'userRole' => $this->userDisplaySubtitle(),
+            'inquiries' => $inquiries
+        ]);
+    }
+
+    public function storeInquiry(\Illuminate\Http\Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string|max:2000',
+            'attachment' => 'nullable|file|mimes:jpeg,png,jpg,pdf,docx|max:10240',
+        ]);
+
+        if ($this->containsSpam($data['message']) || $this->containsSpam($data['subject'])) {
+            return back()->withErrors(['message' => 'Your message contains inappropriate words.']);
+        }
+
+        $path = null;
+        if ($request->hasFile('attachment')) {
+            $path = $request->file('attachment')->store('inquiries', 'public');
+        }
+
+        DB::transaction(function () use ($data, $path) {
+            $inquiry = \App\Models\Inquiry::create([
+                'user_id' => auth()->id(),
+                'subject' => $data['subject'],
+                'status'  => 'open',
+                'is_read_by_user' => true,
+                'is_read_by_admin' => false,
+            ]);
+
+            $inquiry->messages()->create([
+                'user_id' => auth()->id(),
+                'message' => $data['message'],
+                'attachment_path' => $path,
+            ]);
+        });
+
+        return redirect()->route('user.inquiries')->with('success', 'Inquiry thread started successfully.');
+    }
+
+    public function replyInquiry(\Illuminate\Http\Request $request, $id): RedirectResponse
+    {
+        $data = $request->validate([
+            'message' => 'required|string|max:2000',
+            'parent_id' => 'nullable|exists:inquiry_messages,id',
+            'attachment' => 'nullable|file|mimes:jpeg,png,jpg,pdf,docx|max:10240',
+        ]);
+
+        if ($this->containsSpam($data['message'])) {
+            return back()->withErrors(['message' => 'Your message contains inappropriate words.']);
+        }
+
+        $inquiry = \App\Models\Inquiry::where('user_id', auth()->id())->findOrFail($id);
+
+        $path = null;
+        if ($request->hasFile('attachment')) {
+            $path = $request->file('attachment')->store('inquiries', 'public');
+        }
+
+        $inquiry->messages()->create([
+            'user_id' => auth()->id(),
+            'message' => $data['message'],
+            'parent_id' => $data['parent_id'] ?? null,
+            'attachment_path' => $path,
+        ]);
+
+        $inquiry->update([
+            'is_read_by_user' => true,
+            'is_read_by_admin' => false,
+        ]);
+
+        return back()->with('success', 'Reply sent.');
+    }
+
+    public function editMessage(\Illuminate\Http\Request $request, $id): RedirectResponse
+    {
+        $data = $request->validate(['message' => 'required|string|max:2000']);
+        if ($this->containsSpam($data['message'])) {
+            return back()->withErrors(['message' => 'Your message contains inappropriate words.']);
+        }
+
+        $message = \App\Models\InquiryMessage::where('user_id', auth()->id())->findOrFail($id);
+        $message->update([
+            'message' => $data['message'],
+            'is_edited' => true,
+        ]);
+
         return back();
     }
 
+    public function deleteMessage($id): RedirectResponse
+    {
+        $message = \App\Models\InquiryMessage::where('user_id', auth()->id())->findOrFail($id);
+        if ($message->inquiry->messages()->count() <= 1) {
+            $message->inquiry->delete();
+        } else {
+            $message->delete();
+        }
+        return back();
+    }
+
+    public function markInquiryRead($id): RedirectResponse
+    {
+        $inquiry = \App\Models\Inquiry::where('user_id', auth()->id())->findOrFail($id);
+        $inquiry->update(['is_read_by_user' => true]);
+        return back();
+    }
+
+    public function markInquiryUnread($id): RedirectResponse
+    {
+        $inquiry = \App\Models\Inquiry::where('user_id', auth()->id())->findOrFail($id);
+        $inquiry->update(['is_read_by_user' => false]);
+        return back();
+    }
+
+    public function deleteInquiry($id): RedirectResponse
+    {
+        $inquiry = \App\Models\Inquiry::where('user_id', auth()->id())->findOrFail($id);
+        $inquiry->delete();
+        return back()->with('success', 'Inquiry deleted successfully.');
+    }
+
     // =========================================================================
-    // STATIC PAGES (About, Privacy, Terms)
-    // =========================================================================
+
+    public function faq(): Response { return Inertia::render('User/Faq', ['userRole' => $this->userDisplaySubtitle()]); }
+    public function markNotificationsAsRead(): \Illuminate\Http\RedirectResponse { auth()->user()->unreadNotifications->markAsRead(); return back(); }
 
     public function about(): Response
     {
@@ -162,10 +314,7 @@ class UserDashboardController extends Controller
             <p style="color: #475569; margin-bottom: 3rem; line-height: 1.7;">We aim to streamline the process of requesting vital academic documents, scheduling faculty consultations, and tracking the progress of your submissions. By digitizing these core processes, we eliminate long queues, reduce paperwork, and empower you to manage your academic journey from anywhere, at any time.</p>
 
             <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 1.5rem;">What We Offer</h3>
-            
-            <!-- Highly Responsive Auto-Grid -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
-                
                 <div style="background-color: #f8fafc; padding: 1.5rem; border-radius: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
                     <div style="width: 3rem; height: 3rem; background-color: #fef9c3; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; color: #ca8a04; margin-bottom: 1.25rem;">
                         <svg style="width: 1.5rem; height: 1.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -173,7 +322,6 @@ class UserDashboardController extends Controller
                     <strong style="display: block; color: #0f172a; font-size: 1rem; margin-bottom: 0.5rem; font-weight: 700;">Document Requests</strong>
                     <span style="font-size: 0.875rem; color: #64748b; line-height: 1.6; display: block;">Request Internship Certificates, Copy of COBC, and other academic records effortlessly.</span>
                 </div>
-
                 <div style="background-color: #f8fafc; padding: 1.5rem; border-radius: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
                     <div style="width: 3rem; height: 3rem; background-color: #fef9c3; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; color: #ca8a04; margin-bottom: 1.25rem;">
                         <svg style="width: 1.5rem; height: 1.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
@@ -181,7 +329,6 @@ class UserDashboardController extends Controller
                     <strong style="display: block; color: #0f172a; font-size: 1rem; margin-bottom: 0.5rem; font-weight: 700;">Real-Time Tracking</strong>
                     <span style="font-size: 0.875rem; color: #64748b; line-height: 1.6; display: block;">Monitor the status of your requests from the moment of submission to its release.</span>
                 </div>
-
                 <div style="background-color: #f8fafc; padding: 1.5rem; border-radius: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
                     <div style="width: 3rem; height: 3rem; background-color: #fef9c3; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; color: #ca8a04; margin-bottom: 1.25rem;">
                         <svg style="width: 1.5rem; height: 1.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -189,13 +336,46 @@ class UserDashboardController extends Controller
                     <strong style="display: block; color: #0f172a; font-size: 1rem; margin-bottom: 0.5rem; font-weight: 700;">Faculty Schedules</strong>
                     <span style="font-size: 0.875rem; color: #64748b; line-height: 1.6; display: block;">View up-to-date consultation hours to properly coordinate with your professors.</span>
                 </div>
-
                 <div style="background-color: #f8fafc; padding: 1.5rem; border-radius: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
                     <div style="width: 3rem; height: 3rem; background-color: #fef9c3; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; color: #ca8a04; margin-bottom: 1.25rem;">
                         <svg style="width: 1.5rem; height: 1.5rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     </div>
                     <strong style="display: block; color: #0f172a; font-size: 1rem; margin-bottom: 0.5rem; font-weight: 700;">Alumni Verification</strong>
                     <span style="font-size: 0.875rem; color: #64748b; line-height: 1.6; display: block;">A dedicated portal for graduates to secure necessary documents for employment.</span>
+                </div>
+            </div>
+
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-top: 3rem; margin-bottom: 1.5rem;">Meet the Development Team</h3>
+            <p style="color: #475569; margin-bottom: 2rem; line-height: 1.7;">The CED E-Services Portal was conceptualized, designed, and brought to life by a dedicated team of aspiring IT professionals. Driven by the goal to modernize academic transactions, this system stands as a testament to their collaboration and technical expertise.</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+                <div style="background-color: #f8fafc; padding: 1.5rem; border-radius: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                    <strong style="display: block; color: #0f172a; font-size: 1.125rem;">Jay-ar S. De Guzman</strong>
+                    <span style="font-size: 0.875rem; color: #ca8a04; font-weight: 700; margin-top: 0.25rem; display: block;">Scrum Master | Frontend & Backend Programmer</span>
+                </div>
+                <div style="background-color: #f8fafc; padding: 1.5rem; border-radius: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                    <strong style="display: block; color: #0f172a; font-size: 1.125rem;">Mel Joseph T. Velasco</strong>
+                    <span style="font-size: 0.875rem; color: #64748b; font-weight: 600; margin-top: 0.25rem; display: block;">Frontend & Backend Programmer</span>
+                </div>
+                <div style="background-color: #f8fafc; padding: 1.5rem; border-radius: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                    <strong style="display: block; color: #0f172a; font-size: 1.125rem;">Aaron A. Castro</strong>
+                    <span style="font-size: 0.875rem; color: #64748b; font-weight: 600; margin-top: 0.25rem; display: block;">Frontend & Backend Programmer</span>
+                </div>
+                <div style="background-color: #f8fafc; padding: 1.5rem; border-radius: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                    <strong style="display: block; color: #0f172a; font-size: 1.125rem;">Reazel Keith D. Herbas</strong>
+                    <span style="font-size: 0.875rem; color: #64748b; font-weight: 600; margin-top: 0.25rem; display: block;">Frontend Programmer</span>
+                </div>
+                <div style="background-color: #f8fafc; padding: 1.5rem; border-radius: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                    <strong style="display: block; color: #0f172a; font-size: 1.125rem;">Dan Loyd S. Francia</strong>
+                    <span style="font-size: 0.875rem; color: #64748b; font-weight: 600; margin-top: 0.25rem; display: block;">Frontend Programmer</span>
+                </div>
+                <div style="background-color: #f8fafc; padding: 1.5rem; border-radius: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                    <strong style="display: block; color: #0f172a; font-size: 1.125rem;">Sheryn Mae P. De Vera</strong>
+                    <span style="font-size: 0.875rem; color: #64748b; font-weight: 600; margin-top: 0.25rem; display: block;">Documentator & Frontend Programmer</span>
+                </div>
+                <div style="background-color: #f8fafc; padding: 1.5rem; border-radius: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                    <strong style="display: block; color: #0f172a; font-size: 1.125rem;">Jayveelyn C. Vicente</strong>
+                    <span style="font-size: 0.875rem; color: #64748b; font-weight: 600; margin-top: 0.25rem; display: block;">Quality Assurance (QA)</span>
                 </div>
             </div>
 
@@ -214,7 +394,7 @@ class UserDashboardController extends Controller
         $content = <<<'HTML'
         <div style="font-family: inherit; color: #475569; line-height: 1.7;">
             <p style="font-size: 1.125rem; margin-bottom: 2.5rem; color: #334155;">CED E-Services ("we," "our," or "us") operates the website and online services for processing document requests and scheduling meetings. This Privacy Policy outlines how we collect, use, and protect your information when you access or use our platform.</p>
-
+            
             <h3 style="color: #0f172a; font-size: 1.25rem; font-weight: 800; margin-top: 2.5rem; margin-bottom: 1rem;">1. Information We Collect</h3>
             <p style="margin-bottom: 1rem;">We collect personal information that you directly provide when submitting requests or scheduling appointments:</p>
             <ul style="padding-left: 1.5rem; list-style-type: disc; margin-bottom: 2rem;">
@@ -256,7 +436,7 @@ class UserDashboardController extends Controller
         $content = <<<'HTML'
         <div style="font-family: inherit; color: #475569; line-height: 1.7;">
             <p style="font-size: 1.125rem; margin-bottom: 2.5rem; color: #334155;">By accessing or using the CED E-Services platform, you agree to comply with and be bound by the following Terms and Conditions.</p>
-
+            
             <h3 style="color: #0f172a; font-size: 1.25rem; font-weight: 800; margin-top: 2.5rem; margin-bottom: 1rem;">1. Services Provided</h3>
             <p style="margin-bottom: 1rem;">CED E-Services provides an online system allowing users to:</p>
             <ul style="padding-left: 1.5rem; list-style-type: disc; margin-bottom: 2rem;">
@@ -314,10 +494,6 @@ class UserDashboardController extends Controller
         ]);
     }
 
-    // =========================================================================
-    // PRIVATE HELPERS
-    // =========================================================================
-
     private function userRequests()
     {
         return CertificateRequest::with(['service', 'status'])
@@ -349,10 +525,9 @@ class UserDashboardController extends Controller
     {
         $start = $prof->consultation_time_start ? \Carbon\Carbon::parse($prof->consultation_time_start) : null;
         $end = $prof->consultation_time_end ? \Carbon\Carbon::parse($prof->consultation_time_end) : null;
-
         $range = trim(($start?->format('g:i A') ?? '') . ($start && $end ? ' - ' : '') . ($end?->format('g:i A') ?? ''));
-        $hours = trim(($prof->consultation_days ?? '') . ' ' . $range);
 
+        $hours = trim(($prof->consultation_days ?? '') . ' ' . $range);
         return $hours ?: 'No schedule set';
     }
 
@@ -378,7 +553,7 @@ class UserDashboardController extends Controller
         $user = auth()->user()->load('course');
 
         if ($user->user_type === 'alumni') {
-            return 'Alumni • Batch ' . ($user->batch_year ?? 'N/A');
+            return 'Alumni   Batch ' . ($user->batch_year ?? 'N/A');
         }
 
         $courseName = $user->course?->label ?? 'College of Education';
@@ -391,13 +566,12 @@ class UserDashboardController extends Controller
             default => 'th',
         };
 
-        return $courseName . ' • ' . ($yearLevel ? $yearLevel . $suffix . ' Year' : 'N/A');
+        return $courseName . '   ' . ($yearLevel ? $yearLevel . $suffix . ' Year' : 'N/A');
     }
 
     private function isAlumniVerified(): bool
     {
         $user = auth()->user();
-
         if ($user->user_type !== 'alumni') {
             return false;
         }

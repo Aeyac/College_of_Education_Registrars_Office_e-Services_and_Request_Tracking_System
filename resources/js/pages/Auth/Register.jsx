@@ -1,8 +1,8 @@
-// resources/js/pages/Auth/Register.jsx
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
-import LegalModal from '@/Components/LegalModal'; // Import the new modal
+import LegalModal from '@/Components/LegalModal';
+
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -27,9 +27,12 @@ export default function Register({ courses = [] }) {
         password: '',
         password_confirmation: '',
         user_type: '',
+        profile_picture: null,
     });
 
-    const selectedCourse = courses.find((c) => c.id === Number(data.course_id));
+    // BULLETPROOF CHECK: Ensures courses is always an array to prevent White Screen (crash)
+    const safeCourses = Array.isArray(courses) ? courses : [];
+    const selectedCourse = safeCourses.find((c) => String(c.id) === String(data.course_id));
     const availableMajors = selectedCourse?.majors ?? [];
 
     const selectUserType = (value) => {
@@ -60,6 +63,7 @@ export default function Register({ courses = [] }) {
     const submit = (e) => {
         e.preventDefault();
         post(route('register'), {
+            forceFormData: true,
             onFinish: () => reset('password', 'password_confirmation'),
         });
     };
@@ -82,7 +86,6 @@ export default function Register({ courses = [] }) {
                     alt="CED Building"
                     className="absolute inset-0 w-full h-full object-cover opacity-40 pointer-events-none"
                 />
-
                 <Link
                     href="/"
                     className="absolute top-8 left-8 z-20 flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-yellow-400 transition-colors"
@@ -92,7 +95,6 @@ export default function Register({ courses = [] }) {
                     </svg>
                     Back to Home
                 </Link>
-
                 <div className="relative z-20 flex flex-col items-center text-center px-12 max-w-lg">
                     <img
                         src="/images/cedlogo.png"
@@ -108,7 +110,6 @@ export default function Register({ courses = [] }) {
 
             <div className="w-full lg:w-1/2 flex flex-col items-center justify-start lg:justify-center p-6 sm:p-12 z-20 bg-white overflow-y-auto">
                 <div className="w-full max-w-lg py-4">
-
                     {/* Header bar on Mobile */}
                     <div className="flex items-center justify-between mb-8 lg:hidden pb-4 border-b border-slate-100">
                         <div className="flex items-center gap-3.5">
@@ -142,7 +143,7 @@ export default function Register({ courses = [] }) {
                                     <h3 className="font-bold text-slate-900 text-lg mb-1">Student</h3>
                                     <p className="text-slate-500 text-sm">Currently enrolled and requesting CED registrar services.</p>
                                 </button>
-
+                                
                                 <button
                                     type="button"
                                     onClick={() => selectUserType('alumni')}
@@ -187,46 +188,27 @@ export default function Register({ courses = [] }) {
                             </div>
 
                             <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Profile Picture Field */}
+                                <div className="md:col-span-2">
+                                    <InputLabel value="Profile Picture (Optional)" className="text-slate-800 font-semibold mb-1.5" />
+                                    <input type="file" accept="image/*" onChange={(e) => setData('profile_picture', e.target.files[0])} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100 border border-slate-300 rounded-xl" />
+                                </div>
+                                
                                 <div>
                                     <InputLabel htmlFor="first_name" value="First Name" className="text-slate-800 font-semibold mb-1.5" />
-                                    <TextInput
-                                        id="first_name"
-                                        type="text"
-                                        value={data.first_name}
-                                        onChange={(e) => setData('first_name', e.target.value)}
-                                        placeholder="First Name"
-                                        className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
-                                        required
-                                    />
+                                    <TextInput id="first_name" type="text" value={data.first_name} onChange={(e) => setData('first_name', e.target.value)} placeholder="First Name" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
                                     <InputError message={errors.first_name} className="mt-1 text-red-600" />
                                 </div>
-
+                                
                                 <div>
                                     <InputLabel htmlFor="last_name" value="Last Name" className="text-slate-800 font-semibold mb-1.5" />
-                                    <TextInput
-                                        id="last_name"
-                                        type="text"
-                                        value={data.last_name}
-                                        onChange={(e) => setData('last_name', e.target.value)}
-                                        placeholder="Last Name"
-                                        className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
-                                        required
-                                    />
+                                    <TextInput id="last_name" type="text" value={data.last_name} onChange={(e) => setData('last_name', e.target.value)} placeholder="Last Name" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
                                     <InputError message={errors.last_name} className="mt-1 text-red-600" />
                                 </div>
 
                                 <div className="md:col-span-2">
                                     <InputLabel htmlFor="email" value="Email Address" className="text-slate-800 font-semibold mb-1.5" />
-                                    <TextInput
-                                        id="email"
-                                        type="email"
-                                        value={data.email}
-                                        onChange={(e) => setData('email', e.target.value)}
-                                        placeholder={data.user_type === 'student' ? "username@clsu.edu.ph" : "Enter your email address"}
-                                        className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
-                                        required
-                                    />
-
+                                    <TextInput id="email" type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} placeholder={data.user_type === 'student' ? "username@clsu.edu.ph" : "Enter your email address"} className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
                                     {data.user_type === 'student' && !errors.email && (
                                         <p className="mt-1 text-xs text-slate-500">Please use your official CLSU email address.</p>
                                     )}
@@ -235,45 +217,23 @@ export default function Register({ courses = [] }) {
 
                                 <div className="md:col-span-2">
                                     <InputLabel htmlFor="contact_number" value="Contact Number" className="text-slate-800 font-semibold mb-1.5" />
-                                    <TextInput
-                                        id="contact_number"
-                                        type="text"
-                                        value={data.contact_number}
-                                        onChange={(e) => setData('contact_number', e.target.value)}
-                                        placeholder="e.g. 09171234567"
-                                        className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
-                                        required
-                                    />
+                                    <TextInput id="contact_number" type="text" value={data.contact_number} onChange={(e) => setData('contact_number', e.target.value)} placeholder="e.g. 09171234567" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
                                     <InputError message={errors.contact_number} className="mt-1 text-red-600" />
                                 </div>
 
                                 {data.user_type === 'student' && (
                                     <div className="md:col-span-2">
                                         <InputLabel htmlFor="student_number" value="Student Number" className="text-slate-800 font-semibold mb-1.5" />
-                                        <TextInput
-                                            id="student_number"
-                                            type="text"
-                                            value={data.student_number}
-                                            onChange={(e) => setData('student_number', e.target.value)}
-                                            placeholder="e.g. 21-1234"
-                                            className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
-                                            required
-                                        />
+                                        <TextInput id="student_number" type="text" value={data.student_number} onChange={(e) => setData('student_number', e.target.value)} placeholder="e.g. 21-1234" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
                                         <InputError message={errors.student_number} className="mt-1 text-red-600" />
                                     </div>
                                 )}
 
                                 <div>
                                     <InputLabel htmlFor="course_id" value="Course" className="text-slate-800 font-semibold mb-1.5" />
-                                    <select
-                                        id="course_id"
-                                        value={data.course_id}
-                                        onChange={handleCourseChange}
-                                        className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer"
-                                        required
-                                    >
+                                    <select id="course_id" value={data.course_id} onChange={handleCourseChange} className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer" required>
                                         <option value="" disabled>Select course</option>
-                                        {courses.map((course) => (
+                                        {safeCourses.map((course) => (
                                             <option key={course.id} value={course.id}>{course.label}</option>
                                         ))}
                                     </select>
@@ -282,21 +242,8 @@ export default function Register({ courses = [] }) {
 
                                 <div>
                                     <InputLabel htmlFor="major_id" value="Major" className="text-slate-800 font-semibold mb-1.5" />
-                                    <select
-                                        id="major_id"
-                                        value={data.major_id}
-                                        onChange={(e) => setData('major_id', e.target.value)}
-                                        className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
-                                        required={availableMajors.length > 0}
-                                        disabled={availableMajors.length === 0}
-                                    >
-                                        <option value="" disabled>
-                                            {data.course_id === ''
-                                                ? 'Select a course first'
-                                                : availableMajors.length > 0
-                                                    ? 'Select major'
-                                                    : 'No major for this course'}
-                                        </option>
+                                    <select id="major_id" value={data.major_id} onChange={(e) => setData('major_id', e.target.value)} className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed" required={availableMajors.length > 0} disabled={availableMajors.length === 0}>
+                                        <option value="" disabled>{data.course_id === '' ? 'Select a course first' : availableMajors.length > 0 ? 'Select major' : 'No major for this course'}</option>
                                         {availableMajors.map((major) => (
                                             <option key={major.id} value={major.id}>{major.label}</option>
                                         ))}
@@ -308,29 +255,13 @@ export default function Register({ courses = [] }) {
                                     {data.user_type === 'alumni' ? (
                                         <>
                                             <InputLabel htmlFor="batch_year" value="Batch Year (Graduated)" className="text-slate-800 font-semibold mb-1.5" />
-                                            <TextInput
-                                                id="batch_year"
-                                                type="number"
-                                                min="1900"
-                                                max={new Date().getFullYear()}
-                                                value={data.batch_year}
-                                                onChange={(e) => setData('batch_year', e.target.value)}
-                                                placeholder="e.g. 2020"
-                                                className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
-                                                required
-                                            />
+                                            <TextInput id="batch_year" type="number" min="1900" max={new Date().getFullYear()} value={data.batch_year} onChange={(e) => setData('batch_year', e.target.value)} placeholder="e.g. 2020" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
                                             <InputError message={errors.batch_year} className="mt-1 text-red-600" />
                                         </>
                                     ) : (
                                         <>
                                             <InputLabel htmlFor="year_level" value="Year Level" className="text-slate-800 font-semibold mb-1.5" />
-                                            <select
-                                                id="year_level"
-                                                value={data.year_level}
-                                                onChange={(e) => setData('year_level', e.target.value)}
-                                                className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer"
-                                                required
-                                            >
+                                            <select id="year_level" value={data.year_level} onChange={(e) => setData('year_level', e.target.value)} className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer" required>
                                                 <option value="" disabled>Select year level</option>
                                                 <option value="1">1st Year</option>
                                                 <option value="2">2nd Year</option>
@@ -346,33 +277,17 @@ export default function Register({ courses = [] }) {
 
                                 <div>
                                     <InputLabel htmlFor="password" value="Password" className="text-slate-800 font-semibold mb-1.5" />
-                                    <TextInput
-                                        id="password"
-                                        type="password"
-                                        value={data.password}
-                                        onChange={(e) => setData('password', e.target.value)}
-                                        placeholder="Create password"
-                                        className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
-                                        required
-                                    />
+                                    <TextInput id="password" type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} placeholder="Create password" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
                                     <InputError message={errors.password} className="mt-1 text-red-600" />
                                 </div>
-
+                                
                                 <div>
                                     <InputLabel htmlFor="password_confirmation" value="Confirm Password" className="text-slate-800 font-semibold mb-1.5" />
-                                    <TextInput
-                                        id="password_confirmation"
-                                        type="password"
-                                        value={data.password_confirmation}
-                                        onChange={(e) => setData('password_confirmation', e.target.value)}
-                                        placeholder="Confirm password"
-                                        className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900"
-                                        required
-                                    />
+                                    <TextInput id="password_confirmation" type="password" value={data.password_confirmation} onChange={(e) => setData('password_confirmation', e.target.value)} placeholder="Confirm password" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
                                     <InputError message={errors.password_confirmation} className="mt-1 text-red-600" />
                                 </div>
 
-                                {/* Terms Checkbox Syncs with Modal! */}
+                                {/* Terms Checkbox Syncs with Modal */}
                                 <div className="md:col-span-2 flex items-center text-sm mt-1">
                                     <input
                                         type="checkbox"
@@ -404,7 +319,6 @@ export default function Register({ courses = [] }) {
                 </div>
             </div>
 
-            {/* Mount the Modal Component */}
             <LegalModal 
                 isOpen={isLegalModalOpen} 
                 onClose={() => setIsLegalModalOpen(false)} 

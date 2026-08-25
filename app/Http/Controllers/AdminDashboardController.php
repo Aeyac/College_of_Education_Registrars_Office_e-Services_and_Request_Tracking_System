@@ -9,7 +9,8 @@ use App\Models\AlumniVerification;
 use App\Models\Faculty;
 use App\Models\Announcement;
 use Illuminate\Http\Request;
-use Illuminate\Http\RedirectResponse; // Added for the return type
+use Illuminate\Http\RedirectResponse;
+use Spatie\Permission\Models\Role;
 
 class AdminDashboardController extends Controller
 {
@@ -19,12 +20,11 @@ class AdminDashboardController extends Controller
             'stats' => [
                 'pending' => CertificateRequest::whereHas('status', fn($q) => $q->whereIn('code', ['submitted', 'for_review', 'processing', 'for_compliance']))->count(),
                 'alumni' => AlumniVerification::where('status', 'pending')->count(),
-                'users' => User::whereIn('user_type', ['student', 'alumni'])->count(),
+                'users' => User::whereIn('user_type', ['student', 'alumni', 'admin'])->count(),
             ]
         ]);
     }
 
-    // 🔥 ADDED: Mark admin notifications as read
     public function markNotificationsAsRead(): RedirectResponse
     {
         auth()->user()->unreadNotifications->markAsRead();
@@ -48,16 +48,15 @@ class AdminDashboardController extends Controller
     public function updateRequest(Request $request, $id)
     {
         $certRequest = CertificateRequest::findOrFail($id);
-        
         $statusCode = $request->input('status_code');
+
         $newStatus = \App\Models\RequestStatus::firstOrCreate(
             ['code' => $statusCode],
             ['label' => ucwords(str_replace('_', ' ', $statusCode))]
         );
-        
+
         $certRequest->transitionTo($newStatus, auth()->user(), $request->input('note'));
 
-        // TRIGGER NOTIFICATION TO USER
         $certRequest->load(['service', 'status']);
         if ($certRequest->user) {
             $certRequest->user->notify(new \App\Notifications\RequestStatusChanged($certRequest));
@@ -68,45 +67,40 @@ class AdminDashboardController extends Controller
 
     public function alumni()
     {
-        $alumni = AlumniVerification::with('user')->latest()->get()->map(fn($a) => [
+        $alumni = \App\Models\AlumniVerification::with(['user.course', 'user.major'])->latest()->get()->map(fn($a) => [
             'id' => $a->id,
             'name' => $a->user ? $a->user->first_name . ' ' . $a->user->last_name : 'Unknown',
+            'student_id' => $a->user ? $a->user->student_number : 'N/A',
+            'course' => $a->user && $a->user->course ? $a->user->course->label : 'N/A',
+            'major' => $a->user && $a->user->major ? $a->user->major->label : 'N/A',
             'batch' => $a->user ? $a->user->batch_year : 'N/A',
             'proof' => basename($a->path),
+            'proof_url' => asset('storage/' . $a->path), 
             'status' => ucfirst($a->status),
         ]);
+        
+        $courses = \App\Models\Course::where('is_active', true)->get();
 
-        return Inertia::render('Admin/Alumni', ['alumni' => $alumni]);
+        return \Inertia\Inertia::render('Admin/Alumni', ['alumni' => $alumni, 'courses' => $courses]);
     }
 
     public function updateAlumni(Request $request, $id)
     {
-        $verification = AlumniVerification::findOrFail($id);
-        $verification->update([
-            'status' => $request->input('status'),
-            'verified_by' => auth()->id(),
-            'verified_at' => now(),
-        ]);
-
-        return back()->with('success', 'Alumni verification updated.');
+        $alumni = AlumniVerification::findOrFail($id);
+        $alumni->update(['status' => $request->input('status')]);
+        return back()->with('success', 'Alumni verification status updated.');
     }
 
     public function faculty()
     {
-        $faculty = Faculty::orderBy('name', 'asc')->get()->map(function ($prof) {
+        $faculty = \App\Models\Faculty::orderBy('name', 'asc')->get()->map(function ($prof) {
             $startStr = $prof->consultation_time_start;
             $endStr = $prof->consultation_time_end;
-            
+
             $startObj = $startStr instanceof \Carbon\Carbon ? $startStr : ($startStr ? \Carbon\Carbon::parse($startStr) : null);
             $endObj = $endStr instanceof \Carbon\Carbon ? $endStr : ($endStr ? \Carbon\Carbon::parse($endStr) : null);
 
-            $formattedStart = $startObj ? $startObj->format('g:i A') : '';
-            $formattedEnd = $endObj ? $endObj->format('g:i A') : '';
-            
-            $inputStart = $startObj ? $startObj->format('H:i') : '';
-            $inputEnd = $endObj ? $endObj->format('H:i') : '';
-
-            $hours = trim($prof->consultation_days . ' ' . $formattedStart . ($formattedStart && $formattedEnd ? ' - ' : '') . $formattedEnd);
+            $hours = trim($prof->consultation_days . ' ' . ($startObj ? $startObj->format('g:i A') : '') . ($startObj && $endObj ? ' - ' : '') . ($endObj ? $endObj->format('g:i A') : ''));
 
             return [
                 'id' => $prof->id,
@@ -114,15 +108,15 @@ class AdminDashboardController extends Controller
                 'department_or_program' => $prof->department_or_program,
                 'room_or_location' => $prof->room_or_location,
                 'consultation_days' => $prof->consultation_days,
-                'consultation_time_start' => $inputStart, 
-                'consultation_time_end' => $inputEnd,
+                'consultation_time_start' => $startObj ? $startObj->format('H:i') : '',
+                'consultation_time_end' => $endObj ? $endObj->format('H:i') : '',
                 'role' => $prof->department_or_program,
                 'room' => $prof->room_or_location,
                 'hours' => $hours ?: 'No schedule set',
             ];
         });
-        
-        return Inertia::render('Admin/Faculty', ['faculty' => $faculty]);
+
+        return \Inertia\Inertia::render('Admin/Faculty', ['faculty' => $faculty]);
     }
 
     public function storeFaculty(Request $request)
@@ -175,7 +169,7 @@ class AdminDashboardController extends Controller
             'title' => $request->input('title'),
             'body' => $request->input('content'),
             'posted_by' => auth()->id(),
-            'published_at' => now(), 
+            'published_at' => now(),
         ]);
         return back()->with('success', 'Announcement posted.');
     }
@@ -198,7 +192,7 @@ class AdminDashboardController extends Controller
     public function users()
     {
         $users = User::with(['course', 'major'])
-            ->whereIn('user_type', ['student', 'alumni'])
+            ->whereIn('user_type', ['student', 'alumni', 'admin'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn($u) => [
@@ -216,7 +210,7 @@ class AdminDashboardController extends Controller
                 'year_level' => $u->year_level,
                 'batch_year' => $u->batch_year,
             ]);
-            
+
         $courses = \App\Models\Course::with('majors')->where('is_active', true)->orderBy('sort_order')->get();
 
         return Inertia::render('Admin/UserManagement', [
@@ -231,18 +225,22 @@ class AdminDashboardController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'user_type' => 'required|in:student,alumni',
+            'user_type' => 'required|in:student,alumni,admin',
             'student_number' => 'nullable|string',
             'course_id' => 'nullable|exists:courses,id',
             'major_id' => 'nullable|exists:majors,id',
             'year_level' => 'nullable|integer',
             'batch_year' => 'nullable|integer',
-            'contact_number' => 'required|string',
+            'contact_number' => 'nullable|string',
             'password' => 'required|string|min:8',
         ]);
 
         $data['password'] = \Illuminate\Support\Facades\Hash::make($data['password']);
-        User::create($data);
+
+        $user = User::create($data);
+
+        $role = Role::firstOrCreate(['name' => $data['user_type']]);
+        $user->assignRole($role);
 
         return back()->with('success', 'User added successfully.');
     }
@@ -250,18 +248,18 @@ class AdminDashboardController extends Controller
     public function updateUser(Request $request, $id)
     {
         $user = User::findOrFail($id);
-        
+
         $data = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,'.$id,
-            'user_type' => 'required|in:student,alumni',
+            'email' => 'required|email|unique:users,email,' . $id,
+            'user_type' => 'required|in:student,alumni,admin',
             'student_number' => 'nullable|string',
             'course_id' => 'nullable|exists:courses,id',
             'major_id' => 'nullable|exists:majors,id',
             'year_level' => 'nullable|integer',
             'batch_year' => 'nullable|integer',
-            'contact_number' => 'required|string',
+            'contact_number' => 'nullable|string',
         ]);
 
         if ($request->filled('password')) {
@@ -270,19 +268,184 @@ class AdminDashboardController extends Controller
 
         $user->update($data);
 
-        return back()->with('success', 'User updated successfully.');
+        $role = Role::firstOrCreate(['name' => $data['user_type']]);
+        $user->syncRoles([$role]);
+
+        return back()->with('success', 'User updated successfully in the database.');
     }
 
     public function destroyUser($id)
     {
-        User::findOrFail($id)->delete();
-        return back()->with('success', 'User suspended.');
+        $user = User::withTrashed()->findOrFail($id);
+        
+        \App\Models\Feedback::where('user_id', $user->id)->delete();
+        \App\Models\AlumniVerification::where('user_id', $user->id)->delete();
+        
+        $inquiries = \App\Models\Inquiry::where('user_id', $user->id)->get();
+        foreach($inquiries as $inq) {
+            \App\Models\InquiryMessage::where('inquiry_id', $inq->id)->delete();
+            $inq->delete();
+        }
+        
+        $requests = \App\Models\CertificateRequest::withTrashed()->where('user_id', $user->id)->get();
+        foreach($requests as $req) {
+            \App\Models\RequestDocument::where('request_id', $req->id)->delete();
+            \App\Models\RequestStatusHistory::where('request_id', $req->id)->delete();
+            \App\Models\InternshipRequestDetail::where('request_id', $req->id)->delete();
+            $req->forceDelete();
+        }
+
+        $user->forceDelete();
+
+        return back()->with('success', 'User completely deleted from the database.');
     }
+
+    // === INQUIRIES & THREADS ===
+    private function containsSpam(string $text): bool {
+        $spamWords = ['fuck', 'shit', 'bitch', 'asshole', 'dick', 'pussy', 'putangina', 'tangina', 'gago', 'bobo', 'tanga', 'inutil', 'ulol', 'punyeta', 'hayop', 'gaga', 'kupal', 'tarantado'];
+        foreach ($spamWords as $word) {
+            if (stripos($text, $word) !== false) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function inquiries()
+    {
+        $inquiries = \App\Models\Inquiry::with(['user', 'messages.user', 'messages.parent.user'])
+            ->latest('updated_at')
+            ->get()
+            ->map(fn($inq) => [
+            'id' => $inq->id,
+            'student_name' => $inq->user ? $inq->user->first_name . ' ' . $inq->user->last_name : 'Unknown',
+            'email' => $inq->user ? $inq->user->email : 'N/A',
+            'subject' => $inq->subject,
+            'status' => $inq->status,
+            'is_read' => $inq->is_read_by_admin,
+            'date' => $inq->created_at->format('M d, Y h:i A'),
+            'messages' => $inq->messages->map(fn($msg) => [
+                'id' => $msg->id,
+                'message' => $msg->message,
+                'attachment_url' => $msg->attachment_path ? asset('storage/' . $msg->attachment_path) : null,
+                'attachment_name' => $msg->attachment_path ? basename($msg->attachment_path) : null,
+                'is_edited' => $msg->is_edited,
+                'sender_name' => $msg->user ? $msg->user->first_name : 'System',
+                'sender_avatar' => $msg->user && $msg->user->profile_picture ? asset('storage/' . $msg->user->profile_picture) : null,
+                'is_admin' => $msg->user && $msg->user->user_type === 'admin',
+                'is_own' => $msg->user_id === auth()->id(),
+                'created_at' => $msg->created_at->format('M d, Y h:i A'),
+                'parent' => $msg->parent ? [
+                    'id' => $msg->parent->id,
+                    'message' => $msg->parent->message,
+                    'sender_name' => $msg->parent->user ? $msg->parent->user->first_name : 'User',
+                ] : null,
+            ])
+        ]);
+
+        return Inertia::render('Admin/Inquiries', ['inquiries' => $inquiries]);
+    }
+
+    public function replyInquiry(Request $request, $id)
+    {
+        $data = $request->validate([
+            'message' => 'required|string|max:3000',
+            'parent_id' => 'nullable|exists:inquiry_messages,id',
+            'attachment' => 'nullable|file|mimes:jpeg,png,jpg,pdf,docx|max:10240',
+        ]);
+
+        if ($this->containsSpam($data['message'])) {
+            return back()->withErrors(['message' => 'Your message contains inappropriate words.']);
+        }
+        
+        $inquiry = \App\Models\Inquiry::with('user')->findOrFail($id);
+        
+        $path = null;
+        if ($request->hasFile('attachment')) {
+            $path = $request->file('attachment')->store('inquiries', 'public');
+        }
+
+        $inquiry->messages()->create([
+            'user_id' => auth()->id(),
+            'message' => $data['message'],
+            'parent_id' => $data['parent_id'] ?? null,
+            'attachment_path' => $path,
+        ]);
+
+        $inquiry->update([
+            'is_read_by_user' => false,
+            'is_read_by_admin' => true,
+        ]);
+
+        if ($inquiry->user) {
+            $inquiry->user->notify(new \App\Notifications\InquiryReplied($inquiry));
+        }
+
+        return back()->with('success', 'Reply sent successfully.');
+    }
+
+    public function editMessage(\Illuminate\Http\Request $request, $id): RedirectResponse
+    {
+        $data = $request->validate(['message' => 'required|string|max:2000']);
+        if ($this->containsSpam($data['message'])) {
+            return back()->withErrors(['message' => 'Your message contains inappropriate words.']);
+        }
+
+        $message = \App\Models\InquiryMessage::where('user_id', auth()->id())->findOrFail($id);
+        $message->update([
+            'message' => $data['message'],
+            'is_edited' => true,
+        ]);
+
+        return back();
+    }
+
+    public function deleteMessage($id): RedirectResponse
+    {
+        $message = \App\Models\InquiryMessage::where('user_id', auth()->id())->findOrFail($id);
+        
+        if ($message->inquiry->messages()->count() <= 1) {
+            $message->inquiry->delete();
+        } else {
+            $message->delete();
+        }
+
+        return back();
+    }
+
+    public function updateInquiryStatus(Request $request, $id)
+    {
+        $inquiry = \App\Models\Inquiry::findOrFail($id);
+        $inquiry->update(['status' => $request->input('status')]);
+        return back()->with('success', 'Inquiry status updated.');
+    }
+
+    public function markInquiryRead($id): RedirectResponse
+    {
+        $inquiry = \App\Models\Inquiry::findOrFail($id);
+        $inquiry->update(['is_read_by_admin' => true]);
+        return back();
+    }
+
+    public function markInquiryUnread($id): RedirectResponse
+    {
+        $inquiry = \App\Models\Inquiry::findOrFail($id);
+        $inquiry->update(['is_read_by_admin' => false]);
+        return back();
+    }
+
+    public function deleteInquiry($id): RedirectResponse
+    {
+        $inquiry = \App\Models\Inquiry::findOrFail($id);
+        $inquiry->delete();
+        return back()->with('success', 'Inquiry deleted successfully.');
+    }
+
+    // =========================================================================
 
     public function exportExcel()
     {
         $filename = 'CED_Requests_Report_' . date('Y-m-d') . '.csv';
-        
         $requests = CertificateRequest::with(['user', 'status', 'service'])->latest()->get();
 
         $headers = [
@@ -293,9 +456,8 @@ class AdminDashboardController extends Controller
             "Expires"             => "0"
         ];
 
-        $callback = function() use ($requests) {
+        $callback = function () use ($requests) {
             $file = fopen('php://output', 'w');
-            // CSV Header
             fputcsv($file, ['Tracking ID', 'Student Name', 'Document Type', 'Format', 'Status', 'Date Submitted']);
 
             foreach ($requests as $r) {
@@ -317,7 +479,7 @@ class AdminDashboardController extends Controller
     public function exportPdf()
     {
         $requests = CertificateRequest::with(['user', 'status', 'service'])->latest()->get();
-
+        
         $html = '
         <!DOCTYPE html>
         <html lang="en">
@@ -381,11 +543,8 @@ class AdminDashboardController extends Controller
                 <p>CED E-Services System &copy; ' . date('Y') . ' Central Luzon State University</p>
             </div>
             <script>
-                // Dynamically sets the export date to today\'s exact local date
                 document.getElementById("export-date").innerText = new Date().toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric"
+                    year: "numeric", month: "long", day: "numeric"
                 });
             </script>
         </body>

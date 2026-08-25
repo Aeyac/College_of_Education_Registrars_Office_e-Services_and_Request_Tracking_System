@@ -13,95 +13,48 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Display the registration view.
-     */
     public function create(): Response
     {
-
         return Inertia::render('Auth/Register', [
-            'courses' => Cache::remember(
-                'registration.courses',
-                app()->environment('local') ? now()->addSeconds(1) : now()->addHours(6),
-                function () {
-                    return Course::with(['majors' => fn($q) => $q->select('id', 'course_id', 'code', 'label')])
-                        ->where('is_active', true)
-                        ->orderBy('sort_order')
-                        ->get(['id', 'code', 'label']);
-                }
-            ),
+            'courses' => Cache::remember('registration.courses', now()->addHours(6), function () {
+                return Course::with(['majors' => fn($q) => $q->select('id', 'course_id', 'code', 'label')])
+                    ->where('is_active', true)->orderBy('sort_order')->get(['id', 'code', 'label']);
+            }),
         ]);
     }
 
-    /**
-     * Handle an incoming registration request.
-     *
-     * @throws ValidationException
-     */
     public function store(Request $request): RedirectResponse
     {
+        // Build the email rules dynamically to avoid nullable conflicts
+        $emailRules = ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class];
+        if ($request->input('user_type') === 'student') {
+            $emailRules[] = 'regex:/@clsu2?\.edu\.ph$/';
+        }
+
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-
-            'email' => [
-                Rule::requiredIf(fn() => $request->input('user_type') === 'student'),
-                'string',
-                'lowercase',
-                'email',
-                'max:255',
-                // Apply the clsu2 regex only if the user is a student
-                $request->input('user_type') === 'student' ? 'regex:/@clsu2\.edu\.ph$/' : 'nullable',
-                'unique:' . User::class
-            ],
-
-
-            'user_type' => ['required', Rule::in(['student', 'alumni'])], // wil put back admin if we decided that admin registration is created/added by another admin
-            'student_number' => ['nullable', 'string', 'regex:/^\d{2}-\d{4}$/'],
-            'course_id' => [
-                Rule::requiredIf(fn() => in_array($request->input('user_type'), ['student', 'alumni'])),
-                'nullable',
-                'exists:courses,id',
-            ],
-            'major_id' => [
-                'nullable',
-                'exists:majors,id',
-                Rule::requiredIf(function () use ($request) {
-                    $course = Course::find($request->input('course_id'));
-                    return $course && $course->majors()->exists();
-                }),
-                function ($attribute, $value, $fail) use ($request) {
-                    if ($value && !Course::find($request->input('course_id'))?->majors()->where('id', $value)->exists()) {
-                        $fail('The selected major does not belong to the selected course.');
-                    }
-                },
-            ],
-            'year_level' => [
-                Rule::requiredIf(fn() => $request->input('user_type') === 'student'),
-                'nullable',
-                'integer',
-                'between:1,6',
-            ],
-            'batch_year' => [
-                Rule::requiredIf(fn() => $request->input('user_type') === 'alumni'),
-                'nullable',
-                'integer',
-                'digits:4',
-                'min:1900',
-            ],
-            'contact_number' => [
-                'required',
-                'string',
-                'regex:/^(09|\+639)\d{9}$|^(02|\+632)?\d{8}$/'
-            ],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'email' => $emailRules,
+            'user_type' => ['required', Rule::in(['student', 'alumni'])],
+            'student_number' => ['nullable', 'string', 'max:50'],
+            'course_id' => ['required', 'exists:courses,id'],
+            'major_id' => ['nullable', 'exists:majors,id'],
+            'year_level' => [Rule::requiredIf(fn() => $request->input('user_type') === 'student'), 'nullable', 'integer', 'between:1,6'],
+            'batch_year' => [Rule::requiredIf(fn() => $request->input('user_type') === 'alumni'), 'nullable', 'integer', 'min:1900'],
+            'contact_number' => ['required', 'string', 'max:50'],
+            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
+            'profile_picture' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ]);
+
+        $profilePath = null;
+        if ($request->hasFile('profile_picture')) {
+            $profilePath = $request->file('profile_picture')->store('profiles', 'public');
+        }
 
         $user = User::create([
             'first_name' => $validated['first_name'],
@@ -114,14 +67,15 @@ class RegisteredUserController extends Controller
             'year_level' => $validated['year_level'] ?? null,
             'batch_year' => $validated['batch_year'] ?? null,
             'contact_number' => $validated['contact_number'],
-            'password' => Hash::make($validated['password']),
+            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+            'profile_picture' => $profilePath,
         ]);
 
         $user->assignRole($validated['user_type']);
 
-        event(new Registered($user));
+        event(new \Illuminate\Auth\Events\Registered($user));
 
-        Auth::login($user);
+        \Illuminate\Support\Facades\Auth::login($user);
 
         return redirect(route('user.dashboard', absolute: false));
     }

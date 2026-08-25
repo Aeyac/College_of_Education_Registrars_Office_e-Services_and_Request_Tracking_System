@@ -9,11 +9,10 @@ export default function UserManagement({ users = [], courses = [] }) {
     const [typeFilter, setTypeFilter] = useState('all');
     const [courseFilter, setCourseFilter] = useState('all');
     const [sortField, setSortField] = useState('name');
-    const [sortDirection, setSortDirection] = useState('asc'); // 'asc' | 'desc'
+    const [sortDirection, setSortDirection] = useState('asc');
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     
-    // Form state matching database columns[cite: 1]
     const { data, setData, post, put, processing, reset } = useForm({ 
         id: null, 
         first_name: '', 
@@ -29,15 +28,13 @@ export default function UserManagement({ users = [], courses = [] }) {
         password: ''
     });
 
-    // Handle dependent dropdown for Majors[cite: 1]
     const selectedCourse = courses.find((c) => c.id === Number(data.course_id));
     const availableMajors = selectedCourse?.majors ?? [];
 
     const handleCourseChange = (e) => {
-        setData(prev => ({ ...prev, course_id: e.target.value, major_id: '' }));
+        setData(prev => ({ ...prev, course_id: e.target.value, major_id: null }));
     };
 
-    // Sort Handler
     const handleSort = (field) => {
         if (sortField === field) {
             setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
@@ -47,7 +44,6 @@ export default function UserManagement({ users = [], courses = [] }) {
         }
     };
 
-    // Combined Filter & Sort Engine
     const processedUsers = useMemo(() => {
         return users
             .filter((u) => {
@@ -114,7 +110,6 @@ export default function UserManagement({ users = [], courses = [] }) {
 
     const hasActiveFilters = searchTerm !== '' || typeFilter !== 'all' || courseFilter !== 'all';
 
-    // SweetAlert Theme[cite: 1]
     const MySwal = Swal.mixin({
         customClass: {
             popup: 'rounded-[2rem] shadow-2xl border border-slate-100 bg-white pb-4',
@@ -130,13 +125,14 @@ export default function UserManagement({ users = [], courses = [] }) {
     const handleSave = (e) => {
         e.preventDefault();
         const isEditing = !!data.id;
+
         const onSuccessCallback = () => {
             setIsModalOpen(false); 
             reset();
             MySwal.fire({
                 title: isEditing ? 'Updated!' : 'Added!',
-                text: isEditing ? 'User profile updated successfully.' : 'New user registered successfully.',
-                iconHtml: '✅',
+                text: isEditing ? 'User profile updated directly in the database.' : 'New user registered successfully.',
+                iconHtml: '<svg class="w-12 h-12 text-yellow-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
                 timer: 2000,
                 showConfirmButton: false
             });
@@ -149,13 +145,13 @@ export default function UserManagement({ users = [], courses = [] }) {
         }
     };
 
-    const confirmSuspend = (id) => {
+    const confirmDelete = (id) => {
         MySwal.fire({
-            title: 'Suspend User?',
-            text: "They will lose access to the portal immediately.",
-            iconHtml: '🚫',
+            title: 'Delete User?',
+            text: "This action cannot be undone. The user will be permanently removed from the database.",
+            iconHtml: '<svg class="w-12 h-12 text-red-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>',
             showCancelButton: true,
-            confirmButtonText: 'Yes, Suspend',
+            confirmButtonText: 'Yes, Delete',
             cancelButtonText: 'Cancel',
             reverseButtons: true
         }).then((result) => {
@@ -163,7 +159,7 @@ export default function UserManagement({ users = [], courses = [] }) {
                 router.delete(`/admin/users/${id}`, { 
                     preserveScroll: true,
                     onSuccess: () => {
-                        MySwal.fire({ title: 'Suspended!', text: 'User access has been revoked.', iconHtml: '✅', timer: 2000, showConfirmButton: false });
+                        MySwal.fire({ title: 'Deleted!', text: 'User has been permanently removed from the database.', iconHtml: '<svg class="w-12 h-12 text-emerald-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>', timer: 2500, showConfirmButton: false });
                     }
                 });
             }
@@ -192,7 +188,7 @@ export default function UserManagement({ users = [], courses = [] }) {
         const isActive = sortField === field;
         return (
             <span className={`inline-flex ml-1.5 transition-transform duration-200 ${isActive ? 'text-slate-900 font-black' : 'text-slate-300 group-hover:text-slate-400'}`}>
-                {isActive && sortDirection === 'desc' ? '↓' : '↑'}
+                {isActive && sortDirection === 'desc' ? '↑' : '↓'}
             </span>
         );
     };
@@ -203,7 +199,7 @@ export default function UserManagement({ users = [], courses = [] }) {
             <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div>
                     <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">User Management</h2>
-                    <p className="text-xs text-slate-500 mt-1">Manage all registered students and alumni.</p>
+                    <p className="text-xs text-slate-500 mt-1">Manage all registered students, alumni, and admins.</p>
                 </div>
                 <button onClick={() => { reset(); setIsModalOpen(true); }} className="w-full sm:w-auto px-6 py-2.5 bg-yellow-400 text-slate-900 font-bold rounded-xl shadow-md hover:bg-yellow-500 transition-colors">
                     + Add User
@@ -211,9 +207,7 @@ export default function UserManagement({ users = [], courses = [] }) {
             </div>
             
             <div className="p-6 sm:p-8 space-y-4">
-                {/* --- Filter & Search Controls --- */}
                 <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
-                    {/* Search Input */}
                     <div className="relative flex-1">
                         <input 
                             type="text" 
@@ -227,9 +221,7 @@ export default function UserManagement({ users = [], courses = [] }) {
                         </svg>
                     </div>
 
-                    {/* Filter Dropdowns */}
                     <div className="flex flex-wrap sm:flex-nowrap gap-2.5">
-                        {/* Course Filter */}
                         <select 
                             value={courseFilter} 
                             onChange={(e) => setCourseFilter(e.target.value)}
@@ -241,7 +233,6 @@ export default function UserManagement({ users = [], courses = [] }) {
                             ))}
                         </select>
 
-                        {/* User Type Filter */}
                         <select 
                             value={typeFilter} 
                             onChange={(e) => setTypeFilter(e.target.value)}
@@ -250,9 +241,9 @@ export default function UserManagement({ users = [], courses = [] }) {
                             <option value="all">All Roles</option>
                             <option value="student">Student</option>
                             <option value="alumni">Alumni</option>
+                            <option value="admin">Admin</option>
                         </select>
 
-                        {/* Reset Filter Button */}
                         {hasActiveFilters && (
                             <button 
                                 onClick={resetFilters}
@@ -265,13 +256,11 @@ export default function UserManagement({ users = [], courses = [] }) {
                     </div>
                 </div>
 
-                {/* --- Results Count Banner --- */}
                 <div className="flex justify-between items-center text-xs font-semibold text-slate-400 px-1">
                     <span>Showing {processedUsers.length} of {users.length} users</span>
                     <span>Sorted by <strong className="text-slate-700 capitalize">{sortField.replace('_', ' ')}</strong> ({sortDirection.toUpperCase()})</span>
                 </div>
 
-                {/* --- Table --- */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto pb-2">
                         <table className="w-full text-left min-w-[900px]">
@@ -322,9 +311,11 @@ export default function UserManagement({ users = [], courses = [] }) {
                                         </td>
                                         <td className="py-4 px-6 whitespace-nowrap">
                                             <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
-                                                u.user_type === 'alumni' 
-                                                    ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                                                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                                                u.user_type === 'admin' 
+                                                    ? 'bg-slate-800 text-white border-slate-700' 
+                                                    : u.user_type === 'alumni' 
+                                                        ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                                        : 'bg-amber-50 text-amber-700 border-amber-200'
                                             }`}>
                                                 {u.user_type}
                                             </span>
@@ -335,7 +326,7 @@ export default function UserManagement({ users = [], courses = [] }) {
                                         </td>
                                         <td className="py-4 px-6 text-right whitespace-nowrap">
                                             <button onClick={() => openEditModal(u)} className="text-slate-700 font-bold px-3.5 py-1.5 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 mr-2 text-xs transition-colors">Edit</button>
-                                            <button onClick={() => confirmSuspend(u.id)} className="text-red-600 font-bold px-3.5 py-1.5 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 text-xs transition-colors">Suspend</button>
+                                            <button onClick={() => confirmDelete(u.id)} className="text-red-600 font-bold px-3.5 py-1.5 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 text-xs transition-colors">Delete</button>
                                         </td>
                                     </tr>
                                 )) : (
@@ -352,7 +343,6 @@ export default function UserManagement({ users = [], courses = [] }) {
                 </div>
             </div>
 
-            {/* --- Add/Edit User Modal --- */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
@@ -368,59 +358,64 @@ export default function UserManagement({ users = [], courses = [] }) {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Email Address</label><input type="email" value={data.email} onChange={e => setData('email', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required/></div>
-                                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Contact Number</label><input type="text" value={data.contact_number} onChange={e => setData('contact_number', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required/></div>
+                                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Contact Number</label><input type="text" value={data.contact_number} onChange={e => setData('contact_number', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" /></div>
                                 </div>
                                 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Account Type</label>
-                                        <select value={data.user_type} onChange={e => setData(prev => ({...prev, user_type: e.target.value, student_number: '', year_level: '', batch_year: ''}))} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500">
+                                        <select value={data.user_type} onChange={e => setData(prev => ({...prev, user_type: e.target.value, student_number: '', year_level: '', batch_year: '', course_id: '', major_id: ''}))} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500">
                                             <option value="student">Student</option>
                                             <option value="alumni">Alumni</option>
+                                            <option value="admin">Administrator</option>
                                         </select>
                                     </div>
                                     {data.user_type === 'student' ? (
                                         <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Student Number</label><input type="text" value={data.student_number} onChange={e => setData('student_number', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required/></div>
-                                    ) : (
+                                    ) : data.user_type === 'alumni' ? (
                                         <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Batch Year</label><input type="number" value={data.batch_year} onChange={e => setData('batch_year', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required/></div>
+                                    ) : (
+                                        <div></div>
                                     )}
                                 </div>
 
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Course</label>
-                                    <select value={data.course_id} onChange={handleCourseChange} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required>
-                                        <option value="" disabled>Select course</option>
-                                        {courses.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-                                    </select>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Major</label>
-                                        <select value={data.major_id} onChange={e => setData('major_id', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500 disabled:bg-slate-100" disabled={availableMajors.length === 0} required={availableMajors.length > 0}>
-                                            <option value="" disabled>{availableMajors.length > 0 ? 'Select major' : 'No major for this course'}</option>
-                                            {availableMajors.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
-                                        </select>
-                                    </div>
-                                    {data.user_type === 'student' && (
+                                {data.user_type !== 'admin' && (
+                                    <>
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Year Level</label>
-                                            <select value={data.year_level} onChange={e => setData('year_level', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required>
-                                                <option value="" disabled>Select year</option>
-                                                {[1,2,3,4,5].map(y => <option key={y} value={y}>{y}</option>)}
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Course</label>
+                                            <select value={data.course_id} onChange={handleCourseChange} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required>
+                                                <option value="" disabled>Select course</option>
+                                                {courses.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                                             </select>
                                         </div>
-                                    )}
-                                </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Major</label>
+                                                <select value={data.major_id || ''} onChange={e => setData('major_id', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500 disabled:bg-slate-100" disabled={availableMajors.length === 0} required={availableMajors.length > 0}>
+                                                    <option value="" disabled>{availableMajors.length > 0 ? 'Select major' : 'No major for this course'}</option>
+                                                    {availableMajors.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+                                                </select>
+                                            </div>
+                                            {data.user_type === 'student' && (
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Year Level</label>
+                                                    <select value={data.year_level} onChange={e => setData('year_level', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required>
+                                                        <option value="" disabled>Select year</option>
+                                                        {[1,2,3,4,5].map(y => <option key={y} value={y}>{y}</option>)}
+                                                    </select>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
 
                                 <div className="border-t border-slate-100 pt-4 mt-2">
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-2">{data.id ? 'Change Password (Optional)' : 'Password'}</label>
                                     <input type="password" value={data.password} onChange={e => setData('password', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" placeholder={data.id ? 'Leave blank to keep current' : 'Create password'} required={!data.id} />
                                 </div>
-
                                 <div className="pt-2 flex gap-3">
-                                    <button type="button" onClick={() => { setIsModalOpen(false); reset(); }} className="flex-1 py-3.5 bg-slate-100 font-bold rounded-xl text-sm hover:bg-slate-200">Cancel</button>
-                                    <button type="submit" disabled={processing} className="flex-1 py-3.5 bg-yellow-400 font-bold rounded-xl text-sm hover:bg-yellow-500 shadow-md">
+                                    <button type="button" onClick={() => { setIsModalOpen(false); reset(); }} className="flex-1 py-3.5 bg-slate-100 font-bold rounded-xl text-sm hover:bg-slate-200 transition-colors">Cancel</button>
+                                    <button type="submit" disabled={processing} className="flex-1 py-3.5 bg-yellow-400 font-bold rounded-xl text-sm hover:bg-yellow-500 shadow-md transition-colors">
                                         {processing ? 'Saving...' : 'Save User'}
                                     </button>
                                 </div>

@@ -9,7 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable //implements MustVerifyEmail // will enable this once I setup mailtrap for local dev email testing
+class User extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes, HasRoles;
 
@@ -17,8 +17,9 @@ class User extends Authenticatable //implements MustVerifyEmail // will enable t
         'first_name',
         'last_name',
         'email',
+        'profile_picture', // Added Field
         'password',
-        'user_type', // student | alumni | admin
+        'user_type',
         'student_number',
         'course_id',
         'major_id',
@@ -26,8 +27,7 @@ class User extends Authenticatable //implements MustVerifyEmail // will enable t
         'batch_year',
         'contact_number',
     ];
- 
-    
+
     protected $hidden = [
         'password',
         'remember_token',
@@ -45,27 +45,22 @@ class User extends Authenticatable //implements MustVerifyEmail // will enable t
     {
         return $this->hasMany(CertificateRequest::class);
     }
-
     public function alumniVerification()
     {
         return $this->hasOne(AlumniVerification::class);
     }
-
     public function feedback()
     {
         return $this->hasMany(Feedback::class);
     }
-
     public function major()
     {
         return $this->belongsTo(Major::class);
     }
-
     public function course()
     {
         return $this->belongsTo(Course::class);
     }
-
     public function isAdmin(): bool
     {
         return $this->user_type === 'admin';
