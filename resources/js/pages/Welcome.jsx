@@ -2,12 +2,15 @@ import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import Header from '@/Components/Header';
 import Footer from '@/Components/Footer';
-import Chatbox from '@/Components/Chatbox'; // INIMPORT ANG CHATBOX
+import Chatbox from '@/Components/Chatbox';
 
 export default function Welcome({ auth, announcements = [] }) {
     // State for accordions
     const [openFaq, setOpenFaq] = useState(null);
     const [openCourse, setOpenCourse] = useState(null);
+    
+    // State for Announcement Modal
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
 
     // Services based strictly on the CED Registrar's Office functions
     const services = [
@@ -179,7 +182,7 @@ export default function Welcome({ auth, announcements = [] }) {
                                     Mission
                                 </h3>
                                 <p className="text-slate-600 text-sm leading-relaxed">
-                                    To develop highly competent, morally upright, and globally competitive educators who are committed to the pursuit of excellence in teaching, research, and community service.
+                                    CLSU shall develop globally competitive, work-ready, socially-responsible and empowered human resources who value life-long learning; and to generate, disseminate, and apply knowledge and technologies for poverty alleviation, environmental protection, and sustainable development.
                                 </p>
                             </div>
                             <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200/80 shadow-sm">
@@ -191,7 +194,7 @@ export default function Welcome({ auth, announcements = [] }) {
                                     Vision
                                 </h3>
                                 <p className="text-slate-600 text-sm leading-relaxed">
-                                    A premier center of excellence in teacher education, producing innovative and transformative educational leaders for sustainable development.
+                                    CLSU as a world-class National Research University for science and technology in agriculture and allied fields.
                                 </p>
                             </div>
                             <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200/80 shadow-sm">
@@ -202,7 +205,7 @@ export default function Welcome({ auth, announcements = [] }) {
                                     Philosophy
                                 </h3>
                                 <p className="text-slate-600 text-sm leading-relaxed">
-                                    Education is a lifelong process of holistic development. We believe in nurturing minds that are critically aware, socially responsible, and culturally rooted.
+                                    The ultimate measure of the effectiveness of Central Luzon State University as an institution of higher learning is its contribution to and impact on the educational, economic, social, cultural, political and moral well-being and environmental consciousness of the peoples it serves.
                                 </p>
                             </div>
                         </div>
@@ -323,11 +326,21 @@ export default function Welcome({ auth, announcements = [] }) {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {announcements.length > 0 ? (
                                 announcements.map((announcement) => (
-                                    <div key={announcement.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow relative overflow-hidden group">
+                                    <div key={announcement.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 hover:shadow-md transition-all duration-300 relative overflow-hidden group flex flex-col h-full">
                                         <div className="absolute top-0 left-0 w-1 h-full bg-green-600 group-hover:bg-yellow-400 transition-colors"></div>
                                         <span className="text-xs font-bold text-slate-400 tracking-wider uppercase block mb-2">{announcement.date}</span>
                                         <h3 className="font-bold text-slate-900 text-lg mb-3 leading-snug">{announcement.title}</h3>
-                                        <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap line-clamp-3">{announcement.content}</p>
+                                        <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap line-clamp-3 mb-4">{announcement.content}</p>
+                                        
+                                        <div className="mt-auto pt-2 border-t border-slate-50">
+                                            <button 
+                                                onClick={() => setSelectedAnnouncement(announcement)}
+                                                className="text-sm font-bold text-yellow-600 hover:text-yellow-700 transition-colors flex items-center gap-1"
+                                            >
+                                                Read Full Announcement
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                                            </button>
+                                        </div>
                                     </div>
                                 ))
                             ) : (
@@ -380,9 +393,48 @@ export default function Welcome({ auth, announcements = [] }) {
 
             <Footer />
 
-            {/* AI CHATBOT NA GAGAMITIN SA LANDING PAGE */}
+            {/* AI CHATBOT */}
             <Chatbox />
 
+            {/* ANNOUNCEMENT MODAL */}
+            {selectedAnnouncement && (
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 sm:p-6">
+                    <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 bg-slate-50 shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-xl flex items-center justify-center shrink-0">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="font-extrabold text-slate-900 text-lg tracking-tight">Announcement</h3>
+                                    <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-0.5">{selectedAnnouncement.date}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setSelectedAnnouncement(null)} className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-800 shadow-sm border border-slate-100 transition-colors">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        
+                        <div className="overflow-y-auto p-6 sm:p-8 space-y-4 text-sm text-slate-600 custom-scrollbar flex-1 bg-white">
+                            <h4 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug">{selectedAnnouncement.title}</h4>
+                            <div className="leading-relaxed whitespace-pre-wrap text-slate-700 text-base">
+                                {selectedAnnouncement.content}
+                            </div>
+                        </div>
+
+                        <div className="p-6 border-t border-slate-100 bg-slate-50 shrink-0">
+                            <button 
+                                onClick={() => setSelectedAnnouncement(null)} 
+                                className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-colors shadow-md text-sm"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
