@@ -121,7 +121,7 @@ export default function Welcome({ auth, announcements = [] }) {
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-yellow-300 selection:text-slate-900 scroll-smooth">
-            <Head title="Welcome - CED E-Services" />
+            <Head title="Welcome | CED E-Services" />
             <Header />
 
             <main className="flex-grow pt-20">
