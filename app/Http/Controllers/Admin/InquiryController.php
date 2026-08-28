@@ -28,21 +28,14 @@ class InquiryController extends Controller
             ->get()
             ->map(fn ($inquiry) => [
                 'id' => $inquiry->id,
-
                 'student_name' => $inquiry->user
                     ? $inquiry->user->first_name . ' ' . $inquiry->user->last_name
                     : 'Unknown',
-
                 'email' => $inquiry->user->email ?? 'N/A',
-
                 'subject' => $inquiry->subject,
-
                 'status' => $inquiry->status,
-
                 'is_read' => $inquiry->is_read_by_admin,
-
-                'date' => $inquiry->created_at->format('M d, Y h:i A'),
-
+                'date' => $inquiry->created_at->timezone('Asia/Manila')->format('M d, Y h:i A'),
                 'messages' => InquiryMessageResource::collection(
                     $inquiry->messages
                 )->resolve(),
@@ -65,12 +58,10 @@ class InquiryController extends Controller
                 'max:3000',
                 new NotProfane,
             ],
-
             'parent_id' => [
                 'nullable',
                 'exists:inquiry_messages,id',
             ],
-
             'attachment' => [
                 'nullable',
                 'file',
@@ -80,9 +71,7 @@ class InquiryController extends Controller
         ]);
 
         $inquiry = Inquiry::with('user')->findOrFail($id);
-
         $path = null;
-
         if ($request->hasFile('attachment')) {
             $path = $request
                 ->file('attachment')
@@ -130,8 +119,6 @@ class InquiryController extends Controller
         ]);
 
         $message = InquiryMessage::findOrFail($id);
-
-        // Admins may edit any message for moderation purposes.
         $message->update([
             'message' => $data['message'],
             'is_edited' => true,
@@ -142,20 +129,15 @@ class InquiryController extends Controller
 
     /**
      * Delete an inquiry message.
-     *
-     * If it is the only message in the inquiry,
-     * delete the entire inquiry instead.
      */
     public function deleteMessage($id): RedirectResponse
     {
         $message = InquiryMessage::findOrFail($id);
-
         if ($message->inquiry->messages()->count() <= 1) {
             $message->inquiry->delete();
         } else {
             $message->delete();
         }
-
         return back();
     }
 
@@ -213,7 +195,6 @@ class InquiryController extends Controller
     public function deleteInquiry($id): RedirectResponse
     {
         Inquiry::findOrFail($id)->delete();
-
         return back()->with(
             'success',
             'Inquiry deleted successfully.'

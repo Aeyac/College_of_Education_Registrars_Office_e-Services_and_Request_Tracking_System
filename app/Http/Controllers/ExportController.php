@@ -22,16 +22,16 @@ class ExportController extends Controller
 
         $callback = function () use ($requests) {
             $file = fopen('php://output', 'w');
-            fputcsv($file, ['Tracking ID', 'Student Name', 'Document Type', 'Format', 'Status', 'Date Submitted']);
+            fputcsv($file, ['Date Submitted', 'Tracking ID', 'Student Name', 'Document Type', 'Format', 'Status']);
 
             foreach ($requests as $r) {
                 fputcsv($file, [
+                    '="' . $r->created_at->timezone('Asia/Manila')->format('M d, Y h:i A') . '"',
                     $r->id,
                     $r->user ? $r->user->first_name . ' ' . $r->user->last_name : 'Unknown',
                     $r->service ? $r->service->label : 'Document',
                     $r->delivery_mode === 'hard_copy' ? 'Hard Copy' : 'Soft Copy',
                     $r->status ? $r->status->label : 'Pending',
-                    '="' . $r->created_at->format('Y-m-d H:i') . '"',
                 ]);
             }
             fclose($file);
@@ -65,17 +65,17 @@ class ExportController extends Controller
         <body onload="window.print()">
             <div class="header">
                 <h2>College of Education Registrar\'s Office</h2>
-                <p>Official Document Requests Report — Generated on <span id="export-date"></span></p>
+                <p>Official Document Requests Report | Generated on <span id="export-date"></span></p>
             </div>
             <table>
                 <thead>
                     <tr>
+                        <th>Date Submitted</th>
                         <th>Tracking ID</th>
                         <th>Student Name</th>
                         <th>Document Type</th>
                         <th>Format</th>
                         <th>Status</th>
-                        <th>Date Submitted</th>
                     </tr>
                 </thead>
                 <tbody>';
@@ -86,15 +86,15 @@ class ExportController extends Controller
                 $serviceLabel = $r->service ? $r->service->label : 'Document';
                 $format = $r->delivery_mode === 'hard_copy' ? 'Hard Copy' : 'Soft Copy';
                 $statusLabel = $r->status ? $r->status->label : 'Pending';
-                $date = $r->created_at->format('M d, Y');
+                $date = $r->created_at->timezone('Asia/Manila')->format('M d, Y h:i A');
 
                 $html .= "<tr>
+                    <td>{$date}</td>
                     <td><strong>#{$r->id}</strong></td>
                     <td>{$studentName}</td>
                     <td>{$serviceLabel}</td>
                     <td>{$format}</td>
                     <td>{$statusLabel}</td>
-                    <td>{$date}</td>
                 </tr>";
             }
         } else {

@@ -40,13 +40,13 @@ export default function About({ userRole }) {
             description="Learn more about our mission and digital platform."
             userRole={userRole}
         >
-            <p className="text-lg text-slate-700 mb-10 leading-relaxed">
-                Welcome to the <strong className="text-slate-900">College of Education (CED) E-Services Portal</strong>.
+            <p className="text-lg text-slate-700 mb-10 leading-relaxed font-medium">
+                Welcome to the <strong className="text-slate-900 font-black">College of Education (CED) E-Services Portal</strong>.
                 Our platform is designed to provide students and alumni with a seamless, efficient, and digital-first
                 approach to academic and registrar services.
             </p>
 
-            <h3 className="text-xl font-extrabold text-slate-900 mb-4">Our Mission</h3>
+            <h3 className="text-xl font-extrabold text-slate-900 mb-4 tracking-tight">Our Mission</h3>
             <p className="text-slate-600 mb-12 leading-relaxed">
                 We aim to streamline the process of requesting vital academic documents, scheduling faculty
                 consultations, and tracking the progress of your submissions. By digitizing these core processes,
@@ -54,42 +54,49 @@ export default function About({ userRole }) {
                 anywhere, at any time.
             </p>
 
-            <h3 className="text-xl font-extrabold text-slate-900 mb-6">What We Offer</h3>
+            <h3 className="text-xl font-extrabold text-slate-900 mb-6 tracking-tight">What We Offer</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
                 {FEATURES.map((feature) => (
-                    <div key={feature.title} className="bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
-                        <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center text-yellow-600 mb-5">
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <div key={feature.title} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
+                        <div className="w-14 h-14 bg-yellow-50 border border-yellow-100 rounded-2xl flex items-center justify-center text-yellow-600 mb-5 group-hover:scale-110 group-hover:bg-yellow-400 group-hover:text-slate-900 transition-all duration-300">
+                            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d={feature.path} />
                             </svg>
                         </div>
-                        <strong className="block text-slate-900 text-base mb-2 font-bold">{feature.title}</strong>
-                        <span className="text-sm text-slate-500 leading-relaxed block">{feature.description}</span>
+                        <strong className="block text-slate-900 text-lg mb-2 font-extrabold tracking-tight">{feature.title}</strong>
+                        <span className="text-sm text-slate-500 leading-relaxed block font-medium">{feature.description}</span>
                     </div>
                 ))}
             </div>
 
-            <h3 className="text-xl font-extrabold text-slate-900 mt-12 mb-6">Meet the Development Team</h3>
+            <h3 className="text-xl font-extrabold text-slate-900 mt-12 mb-6 tracking-tight">Meet the Development Team</h3>
             <p className="text-slate-600 mb-8 leading-relaxed">
                 The CED E-Services Portal was conceptualized, designed, and brought to life by a dedicated team of
                 aspiring IT professionals. Driven by the goal to modernize academic transactions, this system stands
                 as a testament to their collaboration and technical expertise.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
                 {TEAM.map((member) => (
-                    <div key={member.name} className="bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
-                        <strong className="block text-slate-900 text-lg">{member.name}</strong>
-                        <span className={`text-sm font-semibold mt-1 block ${member.lead ? 'text-yellow-600' : 'text-slate-500'}`}>
+                    <div key={member.name} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-yellow-400 transition-all duration-300 group cursor-default">
+                        <strong className="block text-slate-900 text-base block uppercase font-bold group-hover:text-yellow-600 transition-colors">{member.name}</strong>
+                        <span className={`text-[10px] font-black mt-1.4 block uppercase tracking-widest transition-colors ${member.lead ? 'text-slate-600' : 'text-slate-600 group-hover:text-slate-600'}`}>
                             {member.role}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-bold mt-2 block uppercase tracking-widest">
+                            BS Information Technology
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-bold mt-1.2 block tracking-widest">
+                                Major in Software Systems and Web Applications Engineering
                         </span>
                     </div>
                 ))}
             </div>
 
-            <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-2xl">
-                <h4 className="font-extrabold text-yellow-800 text-lg mb-2 mt-0">Commitment to Excellence</h4>
-                <p className="text-yellow-700 text-sm leading-relaxed m-0">
+            <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200 p-8 rounded-3xl shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-2 h-full bg-yellow-400"></div>
+                <h4 className="font-extrabold text-yellow-900 text-xl mb-3 mt-0 tracking-tight">Commitment to Excellence</h4>
+                <p className="text-yellow-800 text-sm leading-relaxed m-0 font-medium">
                     The CED Registrar's Office remains committed to providing transparent, prompt, and secure services
                     tailored to the needs of our future educators and esteemed alumni.
                 </p>

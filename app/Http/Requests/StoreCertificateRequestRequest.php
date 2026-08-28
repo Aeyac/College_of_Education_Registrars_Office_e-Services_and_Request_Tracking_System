@@ -11,7 +11,6 @@ class StoreCertificateRequestRequest extends FormRequest
     public function authorize(): bool
     {
         // Any authenticated student/alumni can submit a request for themselves.
-        // Admins aren't expected to submit requests on a student's behalf here.
         return $this->user() && !$this->user()->isAdmin();
     }
 
@@ -19,13 +18,11 @@ class StoreCertificateRequestRequest extends FormRequest
     {
         return [
             'service_id' => ['required', 'exists:request_services,id'],
-            'delivery_mode' => ['required', Rule::in(['soft_copy', 'hard_copy'])],
-            'purpose' => ['nullable', 'string', 'max:2000'],
+            'purpose' => ['required', 'string', 'max:2000'],
             'preferred_claiming_date' => ['nullable', 'date', 'after_or_equal:today'],
+            'requirement_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
 
-            // Internship-specific fields — only required when the chosen
-            // service is Internship / PT Certificate. Resolved by code,
-            // not by a hardcoded ID, so lookup data can be reseeded safely.
+            // Internship-specific fields (Conditionally Required)
             'internship_school_or_agency' => [
                 Rule::requiredIf(fn() => $this->isInternshipCertificate()),
                 'nullable',
@@ -48,15 +45,9 @@ class StoreCertificateRequestRequest extends FormRequest
         ];
     }
 
-    /**
-     * Whether the submitted service_id resolves to the Internship
-     * Certificate service. Used to conditionally require the
-     * internship-only fields above.
-     */
     protected function isInternshipCertificate(): bool
     {
         $service = RequestService::find($this->input('service_id'));
-
         return $service?->code === 'internship_certificate';
     }
 

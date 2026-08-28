@@ -20,7 +20,6 @@ class RequestStatusChanged extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        // Added 'broadcast' to fire real-time Echo events
         return ['database', 'mail', 'broadcast'];
     }
 
@@ -49,6 +48,7 @@ class RequestStatusChanged extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $status = $this->certRequest->status;
+
         return (new MailMessage)
             ->subject('Update on your ' . $this->certRequest->service->label . ' request')
             ->greeting('Hi ' . $notifiable->first_name . ',')
@@ -59,7 +59,6 @@ class RequestStatusChanged extends Notification implements ShouldQueue
 
     protected function messageFor(string $statusCode, object $notifiable): string
     {
-        // Dynamic messaging: If the receiver is an Admin, they get an admin-focused alert.
         if (method_exists($notifiable, 'isAdmin') && $notifiable->isAdmin()) {
             return match ($statusCode) {
                 'submitted' => "New document request submitted by {$this->certRequest->user->first_name} {$this->certRequest->user->last_name}.",
@@ -67,15 +66,14 @@ class RequestStatusChanged extends Notification implements ShouldQueue
             };
         }
 
-        // Student/Alumni messaging
         return match ($statusCode) {
             'submitted' => 'Your request has been received.',
             'for_review' => 'Your request is under review.',
-            'for_compliance' => 'Please comply with missing details: ' . ($this->certRequest->statusHistory()->latest()->first()?->note ?? 'see your request for details.'),
+            'for_compliance' => 'Please comply with missing details.',
             'processing' => 'Your certificate is being processed.',
             'ready_for_release' => 'Your certificate is ready for release.',
             'released' => 'Your request has been released/resolved.',
-            'cancelled_returned' => 'Your request has been cancelled/returned. ' . ($this->certRequest->statusHistory()->latest()->first()?->note ?? ''),
+            'cancelled_returned' => 'Your request has been cancelled/returned.',
             default => 'Your request status has been updated to ' . $this->certRequest->status->label . '.',
         };
     }

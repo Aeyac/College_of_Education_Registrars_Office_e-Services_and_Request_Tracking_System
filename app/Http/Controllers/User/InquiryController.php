@@ -25,7 +25,7 @@ class InquiryController extends Controller
                 'subject' => $inq->subject,
                 'status' => $inq->status,
                 'is_read' => $inq->is_read_by_user,
-                'date' => $inq->created_at->format('M d, Y h:i A'),
+                'date' => $inq->created_at->timezone('Asia/Manila')->format('M d, Y h:i A'),
                 'messages' => InquiryMessageResource::collection($inq->messages)->resolve(),
             ]);
 
@@ -76,7 +76,6 @@ class InquiryController extends Controller
         ]);
 
         $inquiry = Inquiry::where('user_id', auth()->id())->findOrFail($id);
-
         $path = null;
         if ($request->hasFile('attachment')) {
             $path = $request->file('attachment')->store('inquiries', 'public');
@@ -103,7 +102,6 @@ class InquiryController extends Controller
             'message' => ['required', 'string', 'max:2000', new NotProfane],
         ]);
 
-        // Scoped to the owner — a student may only edit their own messages.
         $message = InquiryMessage::where('user_id', auth()->id())->findOrFail($id);
         $message->update([
             'message' => $data['message'],
@@ -116,13 +114,11 @@ class InquiryController extends Controller
     public function destroyMessage($id): RedirectResponse
     {
         $message = InquiryMessage::where('user_id', auth()->id())->findOrFail($id);
-
         if ($message->inquiry->messages()->count() <= 1) {
             $message->inquiry->delete();
         } else {
             $message->delete();
         }
-
         return back();
     }
 

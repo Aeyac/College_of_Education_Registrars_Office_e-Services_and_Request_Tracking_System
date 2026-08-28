@@ -5,26 +5,34 @@ export default function ChatModal({ inquiry, onClose, basePath, onResolve }) {
     const [hoveredMsg, setHoveredMsg] = useState(null);
     const [replyingTo, setReplyingTo] = useState(null);
     const [editingMsg, setEditingMsg] = useState(null);
-
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
-
     const replyForm = useForm({ message: '', parent_id: null, attachment: null });
 
-    // Background polling while a thread is open
+    // Real-time fast polling (Every 1 second) para walang delay sa chat
     useEffect(() => {
         if (!inquiry) return;
+        
         const interval = setInterval(() => {
             router.reload({ only: ['inquiries'], preserveScroll: true, preserveState: true });
-        }, 5000);
-        return () => clearInterval(interval);
+        }, 1000);
+
+        // Instant sync kapag binalikan ang tab o window
+        const handleFocus = () => {
+            router.reload({ only: ['inquiries'], preserveScroll: true, preserveState: true });
+        };
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', handleFocus);
+        };
     }, [inquiry?.id]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [inquiry?.messages?.length]);
 
-    // Reset composer state whenever the open thread changes (or closes)
     useEffect(() => {
         setReplyingTo(null);
         setEditingMsg(null);
@@ -43,6 +51,7 @@ export default function ChatModal({ inquiry, onClose, basePath, onResolve }) {
                 onSuccess: () => {
                     replyForm.reset();
                     setEditingMsg(null);
+                    router.reload({ only: ['inquiries'], preserveScroll: true, preserveState: true });
                 },
             });
         } else {
@@ -52,13 +61,18 @@ export default function ChatModal({ inquiry, onClose, basePath, onResolve }) {
                 onSuccess: () => {
                     replyForm.reset();
                     setReplyingTo(null);
+                    router.reload({ only: ['inquiries'], preserveScroll: true, preserveState: true });
                 },
             });
         }
     };
 
     const handleDeleteMsg = (msgId) => {
-        router.delete(`${basePath}/messages/${msgId}`, { preserveScroll: true, preserveState: true });
+        router.delete(`${basePath}/messages/${msgId}`, { 
+            preserveScroll: true, 
+            preserveState: true,
+            onSuccess: () => router.reload({ only: ['inquiries'], preserveScroll: true, preserveState: true })
+        });
     };
 
     const startReply = (msg) => {
@@ -84,7 +98,6 @@ export default function ChatModal({ inquiry, onClose, basePath, onResolve }) {
     return (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl flex flex-col h-[85vh] overflow-hidden animate-in zoom-in-95 duration-200">
-
                 {/* Header */}
                 <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 bg-slate-50 shrink-0">
                     <div>
@@ -115,38 +128,44 @@ export default function ChatModal({ inquiry, onClose, basePath, onResolve }) {
                             onMouseLeave={() => setHoveredMsg(null)}
                             className={`flex items-end gap-3 ${msg.is_own ? 'flex-row-reverse self-end ml-auto' : 'flex-row self-start mr-auto'}`}
                         >
-                            <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0 flex items-center justify-center font-bold text-xs text-slate-600 shadow-sm overflow-hidden">
+                            <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0 flex items-center justify-center font-bold text-xs text-slate-600 shadow-sm overflow-hidden mb-1">
                                 {msg.sender_avatar ? <img src={msg.sender_avatar} className="w-full h-full object-cover" /> : msg.sender_name.charAt(0)}
                             </div>
+                            
+                            <div className={`flex flex-col max-w-[75%] ${msg.is_own ? 'items-end' : 'items-start'}`}>
+                                {/* Sender Name Label */}
+                                <span className="text-[11px] font-bold text-slate-500 mb-1 px-1">
+                                    {msg.sender_name} {msg.is_admin && <span className="text-[9px] bg-slate-200 text-slate-700 px-1.5 py-0.2 rounded font-black ml-1">ADMIN</span>}
+                                </span>
 
-                            <div className={`max-w-[75%] p-3.5 rounded-2xl text-sm leading-relaxed shadow-sm flex flex-col relative ${msg.is_own ? 'bg-yellow-400 text-slate-900 rounded-br-sm' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm'}`}>
-                                {msg.parent && (
-                                    <div className="bg-black/10 p-2 rounded-lg text-xs mb-2 border-l-2 border-black/20">
-                                        <span className="font-bold block mb-0.5">{msg.parent.sender_name}</span>
-                                        <span className="opacity-80 line-clamp-2">{msg.parent.message}</span>
+                                <div className={`p-3.5 rounded-2xl text-sm leading-relaxed shadow-sm flex flex-col relative ${msg.is_own ? 'bg-yellow-400 text-slate-900 rounded-br-sm' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm'}`}>
+                                    {msg.parent && (
+                                        <div className="bg-black/10 p-2 rounded-lg text-xs mb-2 border-l-2 border-black/20">
+                                            <span className="font-bold block mb-0.5">{msg.parent.sender_name}</span>
+                                            <span className="opacity-80 line-clamp-2">{msg.parent.message}</span>
+                                        </div>
+                                    )}
+                                    {msg.attachment_url && (
+                                        <div className="mb-2">
+                                            {isImage(msg.attachment_name) ? (
+                                                <a href={msg.attachment_url} target="_blank" rel="noreferrer">
+                                                    <img src={msg.attachment_url} alt="Attachment" className="rounded-xl max-h-48 object-cover border border-black/10" />
+                                                </a>
+                                            ) : (
+                                                <a href={msg.attachment_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-black/5 p-2 rounded-lg text-xs font-bold hover:bg-black/10 transition-colors">
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                                    {msg.attachment_name}
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
+                                    <p className="whitespace-pre-wrap">{msg.message}</p>
+                                    
+                                    {/* Timestamp & Conditional Edited Label */}
+                                    <div className="flex justify-end gap-2 items-center mt-1.5 opacity-50">
+                                        {Boolean(msg.is_edited) && <span className="text-[9px] font-bold italic">(Edited)</span>}
+                                        <span className="text-[9px] font-bold">{msg.created_at}</span>
                                     </div>
-                                )}
-
-                                {msg.attachment_url && (
-                                    <div className="mb-2">
-                                        {isImage(msg.attachment_name) ? (
-                                            <a href={msg.attachment_url} target="_blank" rel="noreferrer">
-                                                <img src={msg.attachment_url} alt="Attachment" className="rounded-xl max-h-48 object-cover border border-black/10" />
-                                            </a>
-                                        ) : (
-                                            <a href={msg.attachment_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-black/5 p-2 rounded-lg text-xs font-bold hover:bg-black/10 transition-colors">
-                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                                                {msg.attachment_name}
-                                            </a>
-                                        )}
-                                    </div>
-                                )}
-
-                                <p className="whitespace-pre-wrap">{msg.message}</p>
-
-                                <div className="flex justify-end gap-2 items-center mt-1.5 opacity-50">
-                                    {msg.is_edited && <span className="text-[9px] font-bold italic">(Edited)</span>}
-                                    <span className="text-[9px] font-bold">{msg.created_at}</span>
                                 </div>
                             </div>
 

@@ -1,3 +1,78 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* =============
+    SCROLLBAR
+   ============= */
+
+/* Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+    width: 1px; 
+    height: 1px;
+}
+
+::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+/* Completely transparent track */
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-track-piece {
+    background: transparent;
+}
+
+/* Sharp, flat yellow thumb */
+::-webkit-scrollbar-thumb {
+    background: #eab308; /* Tailwind yellow-500 */
+    border-radius: 0px;  /* Sharp edges */
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #ca8a04; 
+}
+
+/* Hide the corner where vertical and horizontal scrollbars meet */
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* Firefox Support */
+html, body, div, main, aside {
+    scrollbar-width: thin;
+    scrollbar-color: #eab308 transparent;
+}
+
+/* ==========================================================================
+   HELPER CLASSES
+   ========================================================================== */
+
+/* Inner containers (modals, sidebars, tables) */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #eab308;
+    border-radius: 0px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #ca8a04;
+}
+.custom-scrollbar::-webkit-scrollbar-button {
+    display: none; /* Ensure no arrows in inner containers too */
+}
+
+/* Hide scrollbar completely */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

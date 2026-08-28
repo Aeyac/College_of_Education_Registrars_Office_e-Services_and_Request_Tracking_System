@@ -24,7 +24,7 @@ class InquiryMessageResource extends JsonResource
             'sender_avatar' => $this->user?->profile_picture ? asset('storage/' . $this->user->profile_picture) : null,
             'is_admin' => $this->user?->user_type === 'admin',
             'is_own' => $this->user_id === auth()->id(),
-            'created_at' => $this->created_at->format('M d, Y h:i A'),
+            'created_at' => $this->created_at->timezone('Asia/Manila')->format('M d, Y h:i A'),
             'parent' => $this->whenLoaded('parent', fn() => [
                 'id' => $this->parent->id,
                 'message' => $this->parent->message,

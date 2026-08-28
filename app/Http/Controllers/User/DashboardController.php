@@ -70,7 +70,7 @@ class DashboardController extends Controller
                 'user_id' => $request->user()->id,
                 'service_id' => $service->id,
                 'status_id' => $status->id,
-                'delivery_mode' => $data['delivery_mode'],
+                'delivery_mode' => 'hard_copy', 
                 'purpose' => $data['purpose'] ?? null,
                 'preferred_claiming_date' => $data['preferred_claiming_date'] ?? null,
             ]);
@@ -82,20 +82,25 @@ class DashboardController extends Controller
                 'note' => 'Request submitted via portal.',
             ]);
 
-            if ($service->isInternshipCertificate()) {
-                $certificateRequest->internshipDetails()->create([
-                    'internship_school_or_agency' => $data['internship_school_or_agency'],
-                    'grade_level_handled' => $data['grade_level_handled'] ?? null,
-                    'semester' => $data['semester'],
-                    'school_year' => $data['school_year'],
+            $certificateRequest->internshipDetails()->create([
+                'internship_school_or_agency' => $data['internship_school_or_agency'],
+                'grade_level_handled' => $data['grade_level_handled'] ?? null,
+                'semester' => $data['semester'],
+                'school_year' => $data['school_year'],
+            ]);
+
+            if ($request->hasFile('requirement_file')) {
+                $path = $request->file('requirement_file')->store('requirements', 'private');
+                $certificateRequest->documents()->create([
+                    'type' => 'requirement',
+                    'path' => $path,
+                    'uploaded_by' => $request->user()->id,
                 ]);
             }
 
             $certificateRequest->load(['service', 'status', 'user']);
         });
 
-        // Notifications moved outside the transaction — a mail/notification
-        // failure should never roll back a successfully-created request.
         $request->user()->notify(new \App\Notifications\RequestStatusChanged($certificateRequest));
         $admins = \App\Models\User::where('user_type', 'admin')->get();
         Notification::send($admins, new \App\Notifications\RequestStatusChanged($certificateRequest));
@@ -105,7 +110,8 @@ class DashboardController extends Controller
 
     private function userRequests()
     {
-        return CertificateRequest::with(['service', 'status'])
+        // Added statusHistory.toStatus to eager load the history items
+        return CertificateRequest::with(['service', 'status', 'statusHistory.toStatus'])
             ->where('user_id', auth()->id());
     }
 

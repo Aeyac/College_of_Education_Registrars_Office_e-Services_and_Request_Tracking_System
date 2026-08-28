@@ -15,10 +15,6 @@ const MySwal = Swal.mixin({
 });
 
 const INTERNSHIP_SERVICE_CODE = 'internship_certificate';
-const DELIVERY_MODES = [
-    { value: 'hard_copy', label: 'Hard Copy' },
-    { value: 'soft_copy', label: 'Soft Copy' },
-];
 
 const PROOF_DOCUMENT_TYPES = [
     { value: 'diploma', label: 'Diploma' },
@@ -61,7 +57,6 @@ function Modal({ title, onClose, maxWidth = 'max-w-md', children }) {
                         </svg>
                     </button>
                 </div>
-                {/* Scrollable content area */}
                 <div className="overflow-y-auto custom-scrollbar flex-1">
                     {children}
                 </div>
@@ -97,7 +92,7 @@ function QuickActionButton({ iconPath, name, onClick }) {
     );
 }
 
-function RequestRow({ request }) {
+function RequestRow({ request, onTrack }) {
     return (
         <div className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-yellow-200 transition-all">
             <div className="flex items-center gap-4 min-w-0">
@@ -108,12 +103,17 @@ function RequestRow({ request }) {
                 </div>
                 <div className="min-w-0">
                     <h4 className="font-bold text-sm text-slate-900 truncate">{request.document_type}</h4>
-                    <p className="text-[11px] font-medium text-slate-400 mt-0.5 truncate">{request.created_at}</p>
+                    <p className="text-[11px] font-medium text-slate-400 mt-0.5 truncate">#{request.id} • {request.created_at}</p>
                 </div>
             </div>
-            <span className={`px-3 py-1.5 rounded-md text-[9px] font-bold uppercase tracking-wider shrink-0 ml-3 ${getStatusStyle(request.status)}`}>
-                {request.status}
-            </span>
+            <div className="flex items-center gap-3 shrink-0 ml-3">
+                <span className={`hidden sm:inline-block px-3 py-1.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${getStatusStyle(request.status)}`}>
+                    {request.status}
+                </span>
+                <button onClick={() => onTrack(request)} className="text-yellow-700 hover:text-yellow-800 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm">
+                    Track
+                </button>
+            </div>
         </div>
     );
 }
@@ -122,10 +122,17 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
     const [isProofModalOpen, setIsProofModalOpen] = useState(false);
     const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
+    const [trackingRequest, setTrackingRequest] = useState(null);
 
     const requestForm = useForm({
-        service_id: '', delivery_mode: 'hard_copy', purpose: '', preferred_claiming_date: '',
-        internship_school_or_agency: '', grade_level_handled: '', semester: '', school_year: ''
+        service_id: '', 
+        purpose: '', 
+        preferred_claiming_date: '',
+        internship_school_or_agency: '', 
+        grade_level_handled: '', 
+        semester: '', 
+        school_year: '',
+        requirement_file: null 
     });
 
     const proofForm = useForm({ document_type: 'diploma', file: null });
@@ -137,16 +144,24 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
     const closeProofModal = () => { setIsProofModalOpen(false); proofForm.reset(); proofForm.clearErrors(); };
 
     const handleServiceChange = (e) => {
-        requestForm.setData({ ...requestForm.data, service_id: e.target.value, internship_school_or_agency: '', grade_level_handled: '', semester: '', school_year: '' });
+        requestForm.setData({ 
+            ...requestForm.data, 
+            service_id: e.target.value, 
+            internship_school_or_agency: '', 
+            grade_level_handled: '', 
+            semester: '', 
+            school_year: '' 
+        });
     };
 
     const submitRequest = (e) => {
         e.preventDefault();
         requestForm.post('/user/requests', {
+            forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
                 closeRequestModal();
-                MySwal.fire({ title: 'Request Sent!', text: 'Your document request was submitted successfully.', iconHtml: '<svg class="w-12 h-12 text-emerald-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>', timer: 2500, showConfirmButton: false });
+                MySwal.fire({ title: 'Request Sent!', text: 'Your document request was submitted successfully.', iconHtml: '<svg class="w-12 h-12 text-emerald-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" strokeLinejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>', timer: 2500, showConfirmButton: false });
             },
         });
     };
@@ -157,7 +172,7 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
             preserveScroll: true, forceFormData: true,
             onSuccess: () => {
                 closeProofModal();
-                MySwal.fire({ title: 'Uploaded!', text: 'Your proof of identity is pending review.', iconHtml: '<svg class="w-12 h-12 text-emerald-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>', timer: 2500, showConfirmButton: false });
+                MySwal.fire({ title: 'Uploaded!', text: 'Your proof of identity is pending review.', iconHtml: '<svg class="w-12 h-12 text-emerald-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" strokeLinejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>', timer: 2500, showConfirmButton: false });
             },
         });
     };
@@ -171,6 +186,9 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
         { name: 'FAQ / Help', iconPath: ICON_PATHS.faq, action: () => router.visit('/user/faq') },
         { name: 'Academic Calendar', iconPath: ICON_PATHS.calendar, action: () => setIsCalendarModalOpen(true) },
     ];
+
+    const inputClass = "w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none";
+    const labelClass = "block text-xs font-bold text-slate-500 uppercase mb-2";
 
     return (
         <UserLayout userRole={userRole}>
@@ -217,59 +235,135 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
                     )}
                 </div>
                 <div className="space-y-3">
-                    {requests.length > 0 ? requests.map((req) => <RequestRow key={req.id} request={req} />) : <div className="text-center py-10 bg-slate-50 border border-slate-100 rounded-2xl"><p className="text-sm font-bold text-slate-700">No requests yet.</p><p className="text-xs text-slate-500 mt-1">Submit a new request to get started.</p></div>}
+                    {requests.length > 0 ? requests.map((req) => <RequestRow key={req.id} request={req} onTrack={setTrackingRequest} />) : <div className="text-center py-10 bg-slate-50 border border-slate-100 rounded-2xl"><p className="text-sm font-bold text-slate-700">No requests yet.</p><p className="text-xs text-slate-500 mt-1">Submit a new request to get started.</p></div>}
                 </div>
             </div>
+
+            {/* Tracking / Audit Trail Modal */}
+            {trackingRequest && (
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+                        <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 bg-slate-50 shrink-0">
+                            <h3 className="font-bold text-slate-900 text-lg">Track Request</h3>
+                            <button onClick={() => setTrackingRequest(null)} className="p-2 bg-white rounded-full text-slate-500 hover:text-slate-800 shadow-sm"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                        </div>
+                        <div className="p-6 overflow-y-auto custom-scrollbar">
+                            <div className="bg-slate-50 p-4 rounded-xl text-sm border border-slate-200 shadow-inner mb-6">
+                                <p className="mb-1"><strong className="text-slate-700">Document:</strong> <span className="font-semibold text-slate-900">{trackingRequest.document_type}</span></p>
+                                <p><strong className="text-slate-700">Tracking ID:</strong> <span className="font-semibold text-slate-900">#{trackingRequest.id}</span></p>
+                            </div>
+
+                            <h4 className="text-sm font-bold text-slate-900 mb-4">Status History & Remarks</h4>
+                            <div className="relative pl-4 border-l-2 border-slate-200 space-y-5 mt-4">
+                                {trackingRequest.status_history?.length > 0 ? trackingRequest.status_history.map((log, idx) => (
+                                    <div key={idx} className="relative">
+                                        <div className="absolute -left-[23px] top-1 w-3 h-3 bg-yellow-400 rounded-full ring-4 ring-white"></div>
+                                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
+                                            <div className="flex justify-between items-start mb-1 gap-2">
+                                                <span className="font-bold text-slate-800">{log.status}</span>
+                                                <span className="text-slate-400 font-medium text-[10px] shrink-0">{log.date}</span>
+                                            </div>
+                                            {log.note ? (
+                                                <p className="text-slate-600 mt-1 italic leading-relaxed">"{log.note}"</p>
+                                            ) : (
+                                                <p className="text-slate-400 mt-1 italic">No remarks provided.</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <p className="text-sm text-slate-500 text-center">No tracking history available.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Request Document Modal */}
             {isRequestModalOpen && (
                 <Modal title="Request Document" onClose={closeRequestModal}>
-                    <form onSubmit={submitRequest} className="p-6 space-y-5">
-                        <div>
-                            <select value={requestForm.data.service_id} onChange={handleServiceChange} className="w-full border border-slate-300 text-slate-900 rounded-xl px-4 py-3 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none cursor-pointer" required>
-                                <option value="" disabled>Select Document...</option>
-                                {services.map((service) => <option key={service.id} value={service.id}>{service.label}</option>)}
-                            </select>
-                            <FieldError message={requestForm.errors.service_id} />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Delivery Mode</label>
-                            <div className="grid grid-cols-2 gap-3">
-                                {DELIVERY_MODES.map((mode) => (
-                                    <label key={mode.value} className={`border rounded-xl p-3 flex items-center cursor-pointer transition-all ${requestForm.data.delivery_mode === mode.value ? 'border-yellow-400 bg-yellow-50 ring-1 ring-yellow-400' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
-                                        <input type="radio" value={mode.value} checked={requestForm.data.delivery_mode === mode.value} onChange={(e) => requestForm.setData('delivery_mode', e.target.value)} className="text-yellow-500 focus:ring-yellow-500 border-slate-300" />
-                                        <span className="ml-2 text-sm font-bold text-slate-700">{mode.label}</span>
-                                    </label>
-                                ))}
+                    <form onSubmit={submitRequest} className="p-6 space-y-5 overflow-y-auto custom-scrollbar">
+                        
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 grid grid-cols-2 gap-3 mb-2">
+                            <div>
+                                <span className="block text-[10px] font-bold text-slate-400 uppercase">Full Name</span>
+                                <span className="text-sm font-semibold text-slate-800">{auth?.user?.first_name} {auth?.user?.last_name}</span>
                             </div>
-                            <FieldError message={requestForm.errors.delivery_mode} />
+                            <div>
+                                <span className="block text-[10px] font-bold text-slate-400 uppercase">Student Number</span>
+                                <span className="text-sm font-semibold text-slate-800">{auth?.user?.student_number || 'N/A'}</span>
+                            </div>
+                            <div>
+                                <span className="block text-[10px] font-bold text-slate-400 uppercase">Program / Major</span>
+                                <span className="text-sm font-semibold text-slate-800">{auth?.user?.course?.label || 'N/A'}</span>
+                            </div>
+                            <div>
+                                <span className="block text-[10px] font-bold text-slate-400 uppercase">Year / Batch</span>
+                                <span className="text-sm font-semibold text-slate-800">{auth?.user?.year_level || auth?.user?.batch_year || 'N/A'}</span>
+                            </div>
+                            <div className="col-span-2 mt-1 border-t border-slate-200/60 pt-2">
+                                <span className="block text-[10px] font-bold text-slate-400 uppercase">Contact Email & Number</span>
+                                <span className="text-sm font-semibold text-slate-800">{auth?.user?.email} | {auth?.user?.contact_number}</span>
+                            </div>
                         </div>
 
+                        <div>
+                            <label className={labelClass}>Document Type</label>
+                            <select value={requestForm.data.service_id} onChange={handleServiceChange} className={inputClass} required>
+                                <option value="" disabled>Select Document...</option>
+                                {services.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                            </select>
+                            {requestForm.errors.service_id && <p className="text-xs text-red-600 mt-1.5">{requestForm.errors.service_id}</p>}
+                        </div>
+
+                        {/* Conditionally render Internship Fields */}
                         {isInternshipService && (
-                            <div className="space-y-4 border border-slate-100 bg-slate-50/70 rounded-2xl p-5 shadow-inner">
-                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest border-b border-slate-200 pb-2 mb-2">Internship Details</h4>
-                                <div><input type="text" value={requestForm.data.internship_school_or_agency} onChange={(e) => requestForm.setData('internship_school_or_agency', e.target.value)} placeholder="Internship school / agency" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" required /><FieldError message={requestForm.errors.internship_school_or_agency} /></div>
-                                <div><input type="text" value={requestForm.data.grade_level_handled} onChange={(e) => requestForm.setData('grade_level_handled', e.target.value)} placeholder="Grade level handled (optional)" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" /><FieldError message={requestForm.errors.grade_level_handled} /></div>
+                            <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest border-b border-slate-200 pb-2 mb-2">Internship Details</p>
+                                <div>
+                                    <label className={labelClass}>School / Agency</label>
+                                    <input type="text" value={requestForm.data.internship_school_or_agency} onChange={e => requestForm.setData('internship_school_or_agency', e.target.value)} className={inputClass} required />
+                                    {requestForm.errors.internship_school_or_agency && <p className="text-xs text-red-600 mt-1.5">{requestForm.errors.internship_school_or_agency}</p>}
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Grade Level Handled (if applicable)</label>
+                                    <input type="text" value={requestForm.data.grade_level_handled} onChange={e => requestForm.setData('grade_level_handled', e.target.value)} className={inputClass} />
+                                </div>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div><input type="text" value={requestForm.data.semester} onChange={(e) => requestForm.setData('semester', e.target.value)} placeholder="Semester" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" required /><FieldError message={requestForm.errors.semester} /></div>
-                                    <div><input type="text" value={requestForm.data.school_year} onChange={(e) => requestForm.setData('school_year', e.target.value)} placeholder="School year" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" required /><FieldError message={requestForm.errors.school_year} /></div>
+                                    <div>
+                                        <label className={labelClass}>Semester</label>
+                                        <input type="text" placeholder="e.g. 1st Sem" value={requestForm.data.semester} onChange={e => requestForm.setData('semester', e.target.value)} className={inputClass} required />
+                                        {requestForm.errors.semester && <p className="text-xs text-red-600 mt-1.5">{requestForm.errors.semester}</p>}
+                                    </div>
+                                    <div>
+                                        <label className={labelClass}>School Year</label>
+                                        <input type="text" placeholder="e.g. 2025-2026" value={requestForm.data.school_year} onChange={e => requestForm.setData('school_year', e.target.value)} className={inputClass} required />
+                                        {requestForm.errors.school_year && <p className="text-xs text-red-600 mt-1.5">{requestForm.errors.school_year}</p>}
+                                    </div>
                                 </div>
                             </div>
                         )}
+
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Preferred Claiming Date (Optional)</label>
-                            <input type="date" value={requestForm.data.preferred_claiming_date} onChange={(e) => requestForm.setData('preferred_claiming_date', e.target.value)} min={new Date().toISOString().split('T')[0]} className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:ring-yellow-500 focus:border-yellow-500 outline-none cursor-pointer" />
-                            <FieldError message={requestForm.errors.preferred_claiming_date} />
+                            <label className={labelClass}>Purpose of Request</label>
+                            <textarea rows="2" value={requestForm.data.purpose} onChange={e => requestForm.setData('purpose', e.target.value)} placeholder="Please state your reason..." className={`${inputClass} resize-none`} required />
+                            {requestForm.errors.purpose && <p className="text-xs text-red-600 mt-1.5">{requestForm.errors.purpose}</p>}
                         </div>
+
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Purpose of Request</label>
-                            <textarea rows="3" value={requestForm.data.purpose} onChange={(e) => requestForm.setData('purpose', e.target.value)} placeholder="Please state your reason for requesting this document..." className="w-full border border-slate-300 rounded-xl shadow-sm text-sm focus:ring-yellow-500 p-3 resize-none outline-none" required /><FieldError message={requestForm.errors.purpose} />
+                            <label className={labelClass}>Required Supporting Document/s (if any)</label>
+                            <input type="file" onChange={e => requestForm.setData('requirement_file', e.target.files[0])} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-200 cursor-pointer" />
+                            {requestForm.errors.requirement_file && <p className="text-xs text-red-600 mt-1.5">{requestForm.errors.requirement_file}</p>}
                         </div>
-                        <div className="flex gap-3 pt-2">
-                            <button type="button" onClick={closeRequestModal} className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors text-sm">Cancel</button>
-                            <button type="submit" disabled={requestForm.processing} className="flex-1 py-3.5 bg-yellow-400 text-slate-900 font-bold rounded-xl shadow-md transition-colors hover:bg-yellow-500 text-sm disabled:opacity-60">{requestForm.processing ? 'Submitting...' : 'Submit Request'}</button>
+
+                        <div>
+                            <label className={labelClass}>Preferred Claiming Date (Optional)</label>
+                            <input type="date" value={requestForm.data.preferred_claiming_date} min={new Date().toISOString().split('T')[0]} onChange={e => requestForm.setData('preferred_claiming_date', e.target.value)} className={inputClass} />
                         </div>
+
+                        <button type="submit" disabled={requestForm.processing} className="w-full py-3.5 bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold rounded-xl shadow-md transition-colors text-sm disabled:opacity-60">
+                            {requestForm.processing ? 'Submitting...' : 'Submit Request'}
+                        </button>
                     </form>
                 </Modal>
             )}
@@ -316,9 +410,7 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
                             Review the official academic calendar for the current school year.
                         </p>
 
-                        {/* PDF Viewer Container */}
                         <div className="w-full h-[60vh] sm:h-[70vh] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 shadow-inner mb-6 relative">
-                            {/* Fallback text if iframe is loading or fails */}
                             <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm font-medium z-0">
                                 Loading Calendar...
                             </div>
