@@ -8,9 +8,11 @@ use App\Models\Announcement;
 use App\Models\AlumniVerification;
 use App\Models\CertificateRequest;
 use App\Models\Faculty;
+use App\Models\Inquiry;
 use App\Models\RequestService;
 use App\Models\RequestStatus;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -18,35 +20,35 @@ use Inertia\Response;
 
 class UserDashboardController extends Controller
 {
-    private const PENDING_STATUS_CODES = ['submitted', 'for_review', 'processing', 'for_compliance'];
-    private const COMPLETED_STATUS_CODES = ['ready_for_release', 'released'];
-    private const DEFAULT_REQUEST_STATUS_CODE = 'submitted';
+    // private const PENDING_STATUS_CODES = ['submitted', 'for_review', 'processing', 'for_compliance'];
+    // private const COMPLETED_STATUS_CODES = ['ready_for_release', 'released'];
+    // private const DEFAULT_REQUEST_STATUS_CODE = 'submitted';
 
-    public function dashboard(): Response
-    {
-        $requests = $this->userRequests()->latest()->get();
+    // public function dashboard(): Response
+    // {
+    //     $requests = $this->userRequests()->latest()->get();
 
-        return Inertia::render('User/Dashboard', [
-            'userRole' => $this->userDisplaySubtitle(),
-            'isAlumniVerified' => $this->isAlumniVerified(),
-            'stats' => [
-                'pending' => $requests->whereIn('status.code', self::PENDING_STATUS_CODES)->count(),
-                'completed' => $requests->whereIn('status.code', self::COMPLETED_STATUS_CODES)->count(),
-            ],
-            'requests' => $this->mapRequests($requests->take(3)),
-            'announcements' => $this->mapAnnouncements(Announcement::latest()->take(2)->get()),
-            'services' => $this->activeServices(),
-        ]);
-    }
+    //     return Inertia::render('User/Dashboard', [
+    //         'userRole' => $this->userDisplaySubtitle(),
+    //         'isAlumniVerified' => $this->isAlumniVerified(),
+    //         'stats' => [
+    //             'pending' => $requests->whereIn('status.code', self::PENDING_STATUS_CODES)->count(),
+    //             'completed' => $requests->whereIn('status.code', self::COMPLETED_STATUS_CODES)->count(),
+    //         ],
+    //         'requests' => $this->mapRequests($requests->take(3)),
+    //         'announcements' => $this->mapAnnouncements(Announcement::latest()->take(2)->get()),
+    //         'services' => $this->activeServices(),
+    //     ]);
+    // }
 
-    public function requests(): Response
-    {
-        return Inertia::render('User/Requests', [
-            'userRole' => $this->userDisplaySubtitle(),
-            'isAlumniVerified' => $this->isAlumniVerified(),
-            'requests' => $this->mapRequests($this->userRequests()->latest()->get()),
-        ]);
-    }
+    // public function requests(): Response
+    // {
+    //     return Inertia::render('User/Requests', [
+    //         'userRole' => $this->userDisplaySubtitle(),
+    //         'isAlumniVerified' => $this->isAlumniVerified(),
+    //         'requests' => $this->mapRequests($this->userRequests()->latest()->get()),
+    //     ]);
+    // }
 
     public function faculty(): Response
     {
@@ -217,7 +219,7 @@ class UserDashboardController extends Controller
         return redirect()->route('user.inquiries')->with('success', 'Inquiry thread started successfully.');
     }
 
-    public function replyInquiry(\Illuminate\Http\Request $request, $id): RedirectResponse
+    public function replyInquiry(Request $request, $id): RedirectResponse
     {
         $data = $request->validate([
             'message' => 'required|string|max:2000',
@@ -229,7 +231,7 @@ class UserDashboardController extends Controller
             return back()->withErrors(['message' => 'Your message contains inappropriate words.']);
         }
 
-        $inquiry = \App\Models\Inquiry::where('user_id', auth()->id())->findOrFail($id);
+        $inquiry = Inquiry::where('user_id', auth()->id())->findOrFail($id);
 
         $path = null;
         if ($request->hasFile('attachment')) {
@@ -302,7 +304,7 @@ class UserDashboardController extends Controller
     // =========================================================================
 
     public function faq(): Response { return Inertia::render('User/Faq', ['userRole' => $this->userDisplaySubtitle()]); }
-    public function markNotificationsAsRead(): \Illuminate\Http\RedirectResponse { auth()->user()->unreadNotifications->markAsRead(); return back(); }
+    public function markNotificationsAsRead(): RedirectResponse { auth()->user()->unreadNotifications->markAsRead(); return back(); }
 
     public function about(): Response
     {
@@ -494,90 +496,90 @@ class UserDashboardController extends Controller
         ]);
     }
 
-    private function userRequests()
-    {
-        return CertificateRequest::with(['service', 'status'])
-            ->where('user_id', auth()->id());
-    }
+    // private function userRequests()
+    // {
+    //     return CertificateRequest::with(['service', 'status'])
+    //         ->where('user_id', auth()->id());
+    // }
 
-    private function mapRequests(Collection $requests): Collection
-    {
-        return $requests->map(fn(CertificateRequest $req) => [
-            'id' => $req->id,
-            'document_type' => $req->service?->label ?? 'Document',
-            'format' => $req->delivery_mode === 'hard_copy' ? 'Hard Copy' : 'Soft Copy',
-            'status' => $req->status?->label ?? 'Pending',
-            'created_at' => $req->created_at->format('M d, Y'),
-        ]);
-    }
+    // private function mapRequests(Collection $requests): Collection
+    // {
+    //     return $requests->map(fn(CertificateRequest $req) => [
+    //         'id' => $req->id,
+    //         'document_type' => $req->service?->label ?? 'Document',
+    //         'format' => $req->delivery_mode === 'hard_copy' ? 'Hard Copy' : 'Soft Copy',
+    //         'status' => $req->status?->label ?? 'Pending',
+    //         'created_at' => $req->created_at->format('M d, Y'),
+    //     ]);
+    // }
 
-    private function mapAnnouncements(Collection $announcements): Collection
-    {
-        return $announcements->map(fn(Announcement $ann) => [
-            'id' => $ann->id,
-            'title' => $ann->title,
-            'content' => $ann->body,
-            'date' => $ann->created_at->format('M d, Y'),
-        ]);
-    }
+    // private function mapAnnouncements(Collection $announcements): Collection
+    // {
+    //     return $announcements->map(fn(Announcement $ann) => [
+    //         'id' => $ann->id,
+    //         'title' => $ann->title,
+    //         'content' => $ann->body,
+    //         'date' => $ann->created_at->format('M d, Y'),
+    //     ]);
+    // }
 
-    private function formatConsultationHours(Faculty $prof): string
-    {
-        $start = $prof->consultation_time_start ? \Carbon\Carbon::parse($prof->consultation_time_start) : null;
-        $end = $prof->consultation_time_end ? \Carbon\Carbon::parse($prof->consultation_time_end) : null;
-        $range = trim(($start?->format('g:i A') ?? '') . ($start && $end ? ' - ' : '') . ($end?->format('g:i A') ?? ''));
+    // private function formatConsultationHours(Faculty $prof): string
+    // {
+    //     $start = $prof->consultation_time_start ? \Carbon\Carbon::parse($prof->consultation_time_start) : null;
+    //     $end = $prof->consultation_time_end ? \Carbon\Carbon::parse($prof->consultation_time_end) : null;
+    //     $range = trim(($start?->format('g:i A') ?? '') . ($start && $end ? ' - ' : '') . ($end?->format('g:i A') ?? ''));
 
-        $hours = trim(($prof->consultation_days ?? '') . ' ' . $range);
-        return $hours ?: 'No schedule set';
-    }
+    //     $hours = trim(($prof->consultation_days ?? '') . ' ' . $range);
+    //     return $hours ?: 'No schedule set';
+    // }
 
-    private function defaultRequestStatus(): RequestStatus
-    {
-        return RequestStatus::where('code', self::DEFAULT_REQUEST_STATUS_CODE)->firstOrFail();
-    }
+    // private function defaultRequestStatus(): RequestStatus
+    // {
+    //     return RequestStatus::where('code', self::DEFAULT_REQUEST_STATUS_CODE)->firstOrFail();
+    // }
 
-    private function activeServices(): Collection
-    {
-        return RequestService::where('is_active', true)
-            ->orderBy('sort_order')
-            ->get(['id', 'code', 'label'])
-            ->map(fn(RequestService $service) => [
-                'id' => $service->id,
-                'code' => $service->code,
-                'label' => $service->label,
-            ]);
-    }
+    // private function activeServices(): Collection
+    // {
+    //     return RequestService::where('is_active', true)
+    //         ->orderBy('sort_order')
+    //         ->get(['id', 'code', 'label'])
+    //         ->map(fn(RequestService $service) => [
+    //             'id' => $service->id,
+    //             'code' => $service->code,
+    //             'label' => $service->label,
+    //         ]);
+    // }
 
-    private function userDisplaySubtitle(): string
-    {
-        $user = auth()->user()->load('course');
+    // private function userDisplaySubtitle(): string
+    // {
+    //     $user = auth()->user()->load('course');
 
-        if ($user->user_type === 'alumni') {
-            return 'Alumni   Batch ' . ($user->batch_year ?? 'N/A');
-        }
+    //     if ($user->user_type === 'alumni') {
+    //         return 'Alumni   Batch ' . ($user->batch_year ?? 'N/A');
+    //     }
 
-        $courseName = $user->course?->label ?? 'College of Education';
-        $yearLevel = $user->year_level;
+    //     $courseName = $user->course?->label ?? 'College of Education';
+    //     $yearLevel = $user->year_level;
 
-        $suffix = match ($yearLevel) {
-            1 => 'st',
-            2 => 'nd',
-            3 => 'rd',
-            default => 'th',
-        };
+    //     $suffix = match ($yearLevel) {
+    //         1 => 'st',
+    //         2 => 'nd',
+    //         3 => 'rd',
+    //         default => 'th',
+    //     };
 
-        return $courseName . '   ' . ($yearLevel ? $yearLevel . $suffix . ' Year' : 'N/A');
-    }
+    //     return $courseName . '   ' . ($yearLevel ? $yearLevel . $suffix . ' Year' : 'N/A');
+    // }
 
-    private function isAlumniVerified(): bool
-    {
-        $user = auth()->user();
-        if ($user->user_type !== 'alumni') {
-            return false;
-        }
+    // private function isAlumniVerified(): bool
+    // {
+    //     $user = auth()->user();
+    //     if ($user->user_type !== 'alumni') {
+    //         return false;
+    //     }
 
-        return AlumniVerification::where('user_id', $user->id)
-            ->where('status', 'verified')
-            ->exists();
-    }
+    //     return AlumniVerification::where('user_id', $user->id)
+    //         ->where('status', 'verified')
+    //         ->exists();
+    // }
 }

@@ -176,7 +176,7 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
         <UserLayout userRole={userRole}>
             <Head title="Dashboard" />
             
-            <div className="p-6 sm:p-8 pb-4 border-b border-slate-100 bg-white/90 backdrop-blur-md sticky top-0 z-10">
+            <div className="p-6 sm:p-8 pb-4 border-b border-slate-100 bg-white/90 backdrop-blur-md sticky top-0">
                 <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Dashboard</h2>
                 <p className="text-xs text-slate-500 mt-1">Welcome back, {auth?.user?.first_name || 'Student'}!</p>
             </div>

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\FilteredWord;
 use App\Models\RequestService;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -40,5 +41,15 @@ class DatabaseSeeder extends Seeder
             ['code' => 'copy_of_cobc'],
             ['label' => 'Copy of COBC', 'is_active' => true, 'sort_order' => 0]
         );
+
+        $defaultWords = [
+            'fuck', 'shit', 'bitch', 'asshole', 'dick', 'pussy',
+            'putangina', 'tangina', 'gago', 'bobo', 'tanga', 'inutil',
+            'ulol', 'punyeta', 'hayop', 'gaga', 'kupal', 'tarantado',
+        ];
+ 
+        foreach ($defaultWords as $word) {
+            FilteredWord::firstOrCreate(['word' => $word]);
+        }
     }
 }

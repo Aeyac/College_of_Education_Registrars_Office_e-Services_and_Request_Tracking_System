@@ -65,4 +65,39 @@ class User extends Authenticatable
     {
         return $this->user_type === 'admin';
     }
+
+
+
+
+    public function displaySubtitle(): string
+    {
+        $this->loadMissing('course');
+
+        if ($this->user_type === 'alumni') {
+            return 'Alumni   Batch ' . ($this->batch_year ?? 'N/A');
+        }
+
+        $courseName = $this->course?->label ?? 'College of Education';
+        $yearLevel = $this->year_level;
+
+        $suffix = match ($yearLevel) {
+            1 => 'st',
+            2 => 'nd',
+            3 => 'rd',
+            default => 'th',
+        };
+
+        return $courseName . '   ' . ($yearLevel ? $yearLevel . $suffix . ' Year' : 'N/A');
+    }
+
+    public function isVerifiedAlumni(): bool
+    {
+        if ($this->user_type !== 'alumni') {
+            return false;
+        }
+
+        return AlumniVerification::where('user_id', $this->id)
+            ->where('status', 'verified')
+            ->exists();
+    }
 }

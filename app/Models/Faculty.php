@@ -45,7 +45,19 @@ class Faculty extends Model
 
         return $query->where(function ($q) use ($term) {
             $q->where('name', 'like', "%{$term}%")
-              ->orWhere('department_or_program', 'like', "%{$term}%");
+                ->orWhere('department_or_program', 'like', "%{$term}%");
         });
+    }
+
+
+    public function formattedConsultationHours(): string
+    {
+        $start = $this->consultation_time_start ? \Carbon\Carbon::parse($this->consultation_time_start) : null;
+        $end = $this->consultation_time_end ? \Carbon\Carbon::parse($this->consultation_time_end) : null;
+
+        $range = trim(($start?->format('g:i A') ?? '') . ($start && $end ? ' - ' : '') . ($end?->format('g:i A') ?? ''));
+        $hours = trim(($this->consultation_days ?? '') . ' ' . $range);
+
+        return $hours ?: 'No schedule set';
     }
 }

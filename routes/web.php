@@ -1,12 +1,26 @@
 <?php
 
+use App\Http\Controllers\Admin\AlumniController;
+use App\Http\Controllers\Admin\AnnouncementController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\FacultyController;
+use App\Http\Controllers\Admin\FilteredWordController;
+use App\Http\Controllers\Admin\InquiryController;
+use App\Http\Controllers\Admin\RequestController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\ExportController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\User\AlumniVerificationController;
+use App\Http\Controllers\User\StaticPageController;
 use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use Inertia\Inertia;
+
+
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -19,75 +33,95 @@ Route::get('/', function () {
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// ========================================================
 // PUBLIC ROUTES
-// Inilabas natin ang Chatbot route dito para magamit sa Landing Page ng mga guests
-// ========================================================
 Route::post('/chat/ask', [\App\Http\Controllers\ChatbotController::class, 'ask'])->name('chat.ask');
+
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // === USER / STUDENT ROUTES ===
     Route::prefix('user')->name('user.')->middleware('role:student|alumni')->group(function () {
-        Route::get('/dashboard', [UserDashboardController::class, 'dashboard'])->name('dashboard');
-        Route::get('/requests', [UserDashboardController::class, 'requests'])->name('requests');
-        Route::post('/requests', [UserDashboardController::class, 'storeRequest'])->name('requests.store');
-        Route::get('/faculty', [UserDashboardController::class, 'faculty'])->name('faculty');
-        Route::get('/announcements', [UserDashboardController::class, 'announcements'])->name('announcements');
-        Route::post('/verify-alumni', [UserDashboardController::class, 'storeAlumniProof'])->name('verify-alumni');
-        Route::get('/documents', [UserDashboardController::class, 'documents'])->name('documents');
-        Route::get('/faq', [UserDashboardController::class, 'faq'])->name('faq');
-        Route::get('/about', [UserDashboardController::class, 'about'])->name('about');
-        Route::get('/privacy-policy', [UserDashboardController::class, 'privacy'])->name('privacy');
-        Route::get('/terms-of-service', [UserDashboardController::class, 'terms'])->name('terms');
-        Route::post('/notifications/mark-as-read', [UserDashboardController::class, 'markNotificationsAsRead'])->name('notifications.read');
-        
-        // Inquiries Thread (User)
-        Route::get('/inquiries', [UserDashboardController::class, 'inquiries'])->name('inquiries');
-        Route::post('/inquiries', [UserDashboardController::class, 'storeInquiry'])->name('inquiries.store');
-        Route::post('/inquiries/{id}/reply', [UserDashboardController::class, 'replyInquiry'])->name('inquiries.reply');
-        Route::put('/inquiries/messages/{id}', [UserDashboardController::class, 'editMessage'])->name('inquiries.messages.edit');
-        Route::delete('/inquiries/messages/{id}', [UserDashboardController::class, 'deleteMessage'])->name('inquiries.messages.destroy');
-        
-        // Inquiry Thread Actions (User)
-        Route::put('/inquiries/{id}/read', [UserDashboardController::class, 'markInquiryRead'])->name('inquiries.read');
-        Route::put('/inquiries/{id}/unread', [UserDashboardController::class, 'markInquiryUnread'])->name('inquiries.unread');
-        Route::delete('/inquiries/{id}', [UserDashboardController::class, 'deleteInquiry'])->name('inquiries.destroy');
+        Route::get('/dashboard', [App\Http\Controllers\User\DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/requests', [App\Http\Controllers\User\DashboardController::class, 'requests'])->name('requests');
+        Route::post('/requests', [App\Http\Controllers\User\DashboardController::class, 'store'])->name('requests.store');
+
+        Route::get('/faculty', [App\Http\Controllers\User\FacultyController::class, 'index'])->name('faculty');
+        Route::get('/announcements', [App\Http\Controllers\User\AnnouncementController::class, 'index'])->name('announcements');
+        Route::post('/verify-alumni', [AlumniVerificationController::class, 'store'])->name('verify-alumni');
+
+        Route::get('/faq', [StaticPageController::class, 'faq'])->name('faq');
+        Route::get('/about', [StaticPageController::class, 'about'])->name('about');
+        Route::get('/privacy-policy', [StaticPageController::class, 'privacy'])->name('privacy');
+        Route::get('/terms-of-service', [StaticPageController::class, 'terms'])->name('terms');
+
+        Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
+
+        Route::get('/inquiries', [App\Http\Controllers\User\InquiryController::class, 'index'])->name('inquiries');
+        Route::post('/inquiries', [App\Http\Controllers\User\InquiryController::class, 'store'])->name('inquiries.store');
+        Route::post('/inquiries/{id}/reply', [App\Http\Controllers\User\InquiryController::class, 'reply'])->name('inquiries.reply');
+        Route::put('/inquiries/messages/{id}', [App\Http\Controllers\User\InquiryController::class, 'updateMessage'])->name('inquiries.messages.edit');
+        Route::delete('/inquiries/messages/{id}', [App\Http\Controllers\User\InquiryController::class, 'destroyMessage'])->name('inquiries.messages.destroy');
+        Route::put('/inquiries/{id}/read', [App\Http\Controllers\User\InquiryController::class, 'markRead'])->name('inquiries.read');
+        Route::put('/inquiries/{id}/unread', [App\Http\Controllers\User\InquiryController::class, 'markUnread'])->name('inquiries.unread');
+        Route::delete('/inquiries/{id}', [App\Http\Controllers\User\InquiryController::class, 'destroy'])->name('inquiries.destroy');
     });
 
     // === ADMIN ROUTES ===
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
-        Route::get('/dashboard', [AdminDashboardController::class, 'dashboard'])->name('dashboard');
-        Route::get('/requests', [AdminDashboardController::class, 'requests'])->name('requests');
-        Route::put('/requests/{id}', [AdminDashboardController::class, 'updateRequest'])->name('requests.update');
-        Route::get('/alumni', [AdminDashboardController::class, 'alumni'])->name('alumni');
-        Route::put('/alumni/{id}', [AdminDashboardController::class, 'updateAlumni'])->name('alumni.update');
-        Route::get('/faculty', [AdminDashboardController::class, 'faculty'])->name('faculty');
-        Route::post('/faculty', [AdminDashboardController::class, 'storeFaculty'])->name('faculty.store');
-        Route::put('/faculty/{id}', [AdminDashboardController::class, 'updateFaculty'])->name('faculty.update');
-        Route::delete('/faculty/{id}', [AdminDashboardController::class, 'destroyFaculty'])->name('faculty.destroy');
-        Route::get('/announcements', [AdminDashboardController::class, 'announcements'])->name('announcements');
-        Route::post('/announcements', [AdminDashboardController::class, 'storeAnnouncement'])->name('announcements.store');
-        Route::put('/announcements/{id}', [AdminDashboardController::class, 'updateAnnouncement'])->name('announcements.update');
-        Route::delete('/announcements/{id}', [AdminDashboardController::class, 'destroyAnnouncement'])->name('announcements.destroy');
-        Route::get('/users', [AdminDashboardController::class, 'users'])->name('users');
-        Route::post('/users', [AdminDashboardController::class, 'storeUser'])->name('users.store');
-        Route::put('/users/{id}', [AdminDashboardController::class, 'updateUser'])->name('users.update');
-        Route::delete('/users/{id}', [AdminDashboardController::class, 'destroyUser'])->name('users.destroy');
-        Route::post('/notifications/mark-as-read', [AdminDashboardController::class, 'markNotificationsAsRead'])->name('notifications.read');
-        Route::get('/export/excel', [AdminDashboardController::class, 'exportExcel'])->name('export.excel');
-        Route::get('/export/pdf', [AdminDashboardController::class, 'exportPdf'])->name('export.pdf');
+        Route::get('/dashboard', [DashboardController::class, 'loadDashboard'])->name('dashboard');
 
-        // Inquiries Thread (Admin)
-        Route::get('/inquiries', [AdminDashboardController::class, 'inquiries'])->name('inquiries');
-        Route::post('/inquiries/{id}/reply', [AdminDashboardController::class, 'replyInquiry'])->name('inquiries.reply');
-        Route::put('/inquiries/{id}/status', [AdminDashboardController::class, 'updateInquiryStatus'])->name('inquiries.status');
-        Route::put('/inquiries/messages/{id}', [AdminDashboardController::class, 'editMessage'])->name('inquiries.messages.edit');
-        Route::delete('/inquiries/messages/{id}', [AdminDashboardController::class, 'deleteMessage'])->name('inquiries.messages.destroy');
-        
+
+        Route::get('/requests', [RequestController::class, 'loadRequest'])->name('requests');
+        Route::put('/requests/{id}', [RequestController::class, 'updateRequest'])->name('requests.update');
+
+
+        Route::get('/alumni', [AlumniController::class, 'loadAlumni'])->name('alumni');
+        Route::put('/alumni/{id}', [AlumniController::class, 'updateAlumni'])->name('alumni.update');
+
+
+        Route::get('/faculty', [FacultyController::class, 'loadFaculty'])->name('faculty');
+        Route::post('/faculty', [FacultyController::class, 'storeFaculty'])->name('faculty.store');
+        Route::put('/faculty/{id}', [FacultyController::class, 'updateFaculty'])->name('faculty.update');
+        Route::delete('/faculty/{id}', [FacultyController::class, 'destroyFaculty'])->name('faculty.destroy');
+
+
+        Route::get('/announcements', [AnnouncementController::class, 'loadAnnouncements'])->name('announcements');
+        Route::post('/announcements', [AnnouncementController::class, 'storeAnnouncement'])->name('announcements.store');
+        Route::put('/announcements/{id}', [AnnouncementController::class, 'updateAnnouncement'])->name('announcements.update');
+        Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroyAnnouncement'])->name('announcements.destroy');
+
+
+        Route::get('/users', [UserController::class, 'loadUsers'])->name('users');
+        Route::post('/users', [UserController::class, 'storeUser'])->name('users.store');
+        Route::put('/users/{id}', [UserController::class, 'updateUser'])->name('users.update');
+        Route::delete('/users/{id}', [UserController::class, 'destroyUser'])->name('users.destroy');
+
+
+        // fix this
+        Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
+        // fix this
+
+
+        Route::get('/export/excel', [ExportController::class, 'exportExcel'])->name('export.excel');
+        Route::get('/export/pdf', [ExportController::class, 'exportPdf'])->name('export.pdf');
+
+
+        // Inquiries meesage Thread (Admin)
+        Route::get('/inquiries', [InquiryController::class, 'inquiries'])->name('inquiries');
+        Route::post('/inquiries/{id}/reply', [InquiryController::class, 'replyInquiry'])->name('inquiries.reply');
+        Route::put('/inquiries/{id}/status', [InquiryController::class, 'updateInquiryStatus'])->name('inquiries.status');
+        Route::put('/inquiries/messages/{id}', [InquiryController::class, 'editMessage'])->name('inquiries.messages.edit');
+        Route::delete('/inquiries/messages/{id}', [InquiryController::class, 'deleteMessage'])->name('inquiries.messages.destroy');
+
+
         // Inquiry Thread Actions (Admin)
-        Route::put('/inquiries/{id}/read', [AdminDashboardController::class, 'markInquiryRead'])->name('inquiries.read');
-        Route::put('/inquiries/{id}/unread', [AdminDashboardController::class, 'markInquiryUnread'])->name('inquiries.unread');
-        Route::delete('/inquiries/{id}', [AdminDashboardController::class, 'deleteInquiry'])->name('inquiries.destroy');
+        Route::put('/inquiries/{id}/read', [InquiryController::class, 'markInquiryRead'])->name('inquiries.read');
+        Route::put('/inquiries/{id}/unread', [InquiryController::class, 'markInquiryUnread'])->name('inquiries.unread');
+        Route::delete('/inquiries/{id}', [InquiryController::class, 'deleteInquiry'])->name('inquiries.destroy');
+
+
+        Route::get('/filtered-words', [FilteredWordController::class, 'index'])->name('filtered-words');
+        Route::post('/filtered-words', [FilteredWordController::class, 'store'])->name('filtered-words.store');
+        Route::delete('/filtered-words/{id}', [FilteredWordController::class, 'destroy'])->name('filtered-words.destroy');
     });
 });
 
