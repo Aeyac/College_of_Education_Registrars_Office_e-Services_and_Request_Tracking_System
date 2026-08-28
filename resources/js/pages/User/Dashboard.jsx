@@ -100,7 +100,7 @@ function QuickActionButton({ iconPath, name, onClick }) {
 function RequestRow({ request }) {
     return (
         <div className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-yellow-200 transition-all">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 min-w-0">
                 <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shrink-0">
                     <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={ICON_PATHS.newRequest} />
@@ -175,18 +175,18 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
     return (
         <UserLayout userRole={userRole}>
             <Head title="Dashboard" />
-            
-            <div className="p-6 sm:p-8 pb-4 border-b border-slate-100 bg-white/90 backdrop-blur-md sticky top-0">
+
+            <div className="p-6 sm:p-8 pb-4 border-b border-slate-100 bg-white/90 backdrop-blur-md sticky top-0 z-10">
                 <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Dashboard</h2>
                 <p className="text-xs text-slate-500 mt-1">Welcome back, {auth?.user?.first_name || 'Student'}!</p>
             </div>
-            
+
             <div className="p-6 sm:p-8">
                 <div className="grid grid-cols-2 gap-4 sm:gap-6 mb-10">
                     <StatCard iconPath={ICON_PATHS.clock} iconBg="bg-yellow-50" iconColor="text-yellow-600" value={stats?.pending} label="Pending" />
                     <StatCard iconPath={ICON_PATHS.check} iconBg="bg-emerald-50" iconColor="text-emerald-600" value={stats?.completed} label="Completed" />
                 </div>
-                
+
                 <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Quick Actions</h2>
                 <div className="flex justify-start items-center gap-4 sm:gap-6 overflow-x-auto mb-10 pb-4 custom-scrollbar">
                     {quickActions.map((action) => (
@@ -232,7 +232,7 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
                             </select>
                             <FieldError message={requestForm.errors.service_id} />
                         </div>
-                        
+
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Delivery Mode</label>
                             <div className="grid grid-cols-2 gap-3">
@@ -249,11 +249,11 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
                         {isInternshipService && (
                             <div className="space-y-4 border border-slate-100 bg-slate-50/70 rounded-2xl p-5 shadow-inner">
                                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest border-b border-slate-200 pb-2 mb-2">Internship Details</h4>
-                                <div><input type="text" value={requestForm.data.internship_school_or_agency} onChange={(e) => requestForm.setData('internship_school_or_agency', e.target.value)} placeholder="Internship school / agency" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" required/><FieldError message={requestForm.errors.internship_school_or_agency} /></div>
+                                <div><input type="text" value={requestForm.data.internship_school_or_agency} onChange={(e) => requestForm.setData('internship_school_or_agency', e.target.value)} placeholder="Internship school / agency" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" required /><FieldError message={requestForm.errors.internship_school_or_agency} /></div>
                                 <div><input type="text" value={requestForm.data.grade_level_handled} onChange={(e) => requestForm.setData('grade_level_handled', e.target.value)} placeholder="Grade level handled (optional)" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" /><FieldError message={requestForm.errors.grade_level_handled} /></div>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div><input type="text" value={requestForm.data.semester} onChange={(e) => requestForm.setData('semester', e.target.value)} placeholder="Semester" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" required/><FieldError message={requestForm.errors.semester} /></div>
-                                    <div><input type="text" value={requestForm.data.school_year} onChange={(e) => requestForm.setData('school_year', e.target.value)} placeholder="School year" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" required/><FieldError message={requestForm.errors.school_year} /></div>
+                                    <div><input type="text" value={requestForm.data.semester} onChange={(e) => requestForm.setData('semester', e.target.value)} placeholder="Semester" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" required /><FieldError message={requestForm.errors.semester} /></div>
+                                    <div><input type="text" value={requestForm.data.school_year} onChange={(e) => requestForm.setData('school_year', e.target.value)} placeholder="School year" className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none" required /><FieldError message={requestForm.errors.school_year} /></div>
                                 </div>
                             </div>
                         )}
@@ -283,7 +283,7 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
                         </div>
                         <h4 className="font-extrabold text-slate-900 text-lg mb-1">Verify Alumni Status</h4>
                         <p className="text-sm text-slate-500 mb-6 px-4">Please upload a clear copy of your Diploma or Official Transcript of Records (TOR).</p>
-                        
+
                         <div className="grid grid-cols-2 gap-3 mb-5">
                             {PROOF_DOCUMENT_TYPES.map((type) => (
                                 <label key={type.value} className={`border rounded-xl p-3 flex items-center justify-center cursor-pointer transition-all ${proofForm.data.document_type === type.value ? 'border-yellow-400 bg-yellow-50 ring-1 ring-yellow-400' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
@@ -293,7 +293,7 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
                             ))}
                         </div>
                         <FieldError message={proofForm.errors.document_type} />
-                        
+
                         <div className="text-left">
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Upload File (PDF, JPG, PNG)</label>
                             <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => proofForm.setData('file', e.target.files[0])} className="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-slate-100 file:text-slate-700 file:font-semibold hover:file:bg-slate-200 border border-slate-200 rounded-xl cursor-pointer" required />
@@ -315,29 +315,29 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
                         <p className="text-sm text-slate-500 mb-6 text-center">
                             Review the official academic calendar for the current school year.
                         </p>
-                        
+
                         {/* PDF Viewer Container */}
                         <div className="w-full h-[60vh] sm:h-[70vh] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 shadow-inner mb-6 relative">
                             {/* Fallback text if iframe is loading or fails */}
                             <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm font-medium z-0">
                                 Loading Calendar...
                             </div>
-                            <iframe 
-                                src="/downloads/Approved-Academic-Calendar-for-SY-2025-26-(BORv1) v4 2026 (1).pdf" 
-                                title="Academic Calendar" 
+                            <iframe
+                                src="/downloads/Approved-Academic-Calendar-for-SY-2025-26-(BORv1) v4 2026 (1).pdf"
+                                title="Academic Calendar"
                                 className="w-full h-full relative z-10"
                             />
                         </div>
 
                         <div className="flex gap-3">
-                            <button 
-                                type="button" 
-                                onClick={() => setIsCalendarModalOpen(false)} 
+                            <button
+                                type="button"
+                                onClick={() => setIsCalendarModalOpen(false)}
                                 className="flex-1 py-3.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm transition-colors hover:bg-slate-200"
                             >
                                 Close
                             </button>
-                            <a 
+                            <a
                                 href="/downloads/Approved-Academic-Calendar-for-SY-2025-26-(BORv1) v4 2026 (1).pdf"
                                 download="Approved-Academic-Calendar-for-SY-2025-26-(BORv1) v4 2026 (1).pdf"
                                 className="flex-[2] py-3.5 bg-yellow-400 text-slate-900 font-bold rounded-xl shadow-md transition-colors hover:bg-yellow-500 text-sm flex items-center justify-center gap-2"

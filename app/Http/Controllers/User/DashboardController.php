@@ -24,16 +24,20 @@ class DashboardController extends Controller
 
     public function index(): Response
     {
-        $requests = $this->userRequests()->latest()->get();
+        $query = $this->userRequests();
+
+        $stats = [
+            'pending' => (clone $query)->whereHas('status', fn($q) => $q->whereIn('code', self::PENDING_STATUS_CODES))->count(),
+            'completed' => (clone $query)->whereHas('status', fn($q) => $q->whereIn('code', self::COMPLETED_STATUS_CODES))->count(),
+        ];
+
+        $recentRequests = $query->latest()->take(3)->get();
 
         return Inertia::render('User/Dashboard', [
             'userRole' => auth()->user()->displaySubtitle(),
             'isAlumniVerified' => auth()->user()->isVerifiedAlumni(),
-            'stats' => [
-                'pending' => $requests->whereIn('status.code', self::PENDING_STATUS_CODES)->count(),
-                'completed' => $requests->whereIn('status.code', self::COMPLETED_STATUS_CODES)->count(),
-            ],
-            'requests' => CertificateRequestResource::collection($requests->take(3))->resolve(),
+            'stats' => $stats,
+            'requests' => CertificateRequestResource::collection($recentRequests)->resolve(),
             'announcements' => AnnouncementResource::collection(Announcement::latest()->take(2)->get())->resolve(),
             'services' => $this->activeServices(),
         ]);
@@ -41,10 +45,16 @@ class DashboardController extends Controller
 
     public function requests(): Response
     {
+        $paginatedRequests = $this->userRequests()
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
         return Inertia::render('User/Requests', [
             'userRole' => auth()->user()->displaySubtitle(),
             'isAlumniVerified' => auth()->user()->isVerifiedAlumni(),
-            'requests' => CertificateRequestResource::collection($this->userRequests()->latest()->get())->resolve(),
+            'requests' => CertificateRequestResource::collection($paginatedRequests),
+            'services' => $this->activeServices(),
         ]);
     }
 
@@ -109,7 +119,7 @@ class DashboardController extends Controller
         return RequestService::where('is_active', true)
             ->orderBy('sort_order')
             ->get(['id', 'code', 'label'])
-            ->map(fn (RequestService $service) => [
+            ->map(fn(RequestService $service) => [
                 'id' => $service->id,
                 'code' => $service->code,
                 'label' => $service->label,
