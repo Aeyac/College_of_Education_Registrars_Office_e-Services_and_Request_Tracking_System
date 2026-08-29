@@ -415,7 +415,7 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
                                 Loading Calendar...
                             </div>
                             <iframe
-                                src="/downloads/Approved-Academic-Calendar-for-SY-2025-26-(BORv1) v4 2026 (1).pdf"
+                                src="/downloads/Academic-Calendar-for-SY-2026-27-Official V6.pdf"
                                 title="Academic Calendar"
                                 className="w-full h-full relative z-10"
                             />
@@ -430,8 +430,8 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
                                 Close
                             </button>
                             <a
-                                href="/downloads/Approved-Academic-Calendar-for-SY-2025-26-(BORv1) v4 2026 (1).pdf"
-                                download="Approved-Academic-Calendar-for-SY-2025-26-(BORv1) v4 2026 (1).pdf"
+                                href="/downloads/Academic-Calendar-for-SY-2026-27-Official V6.pdf"
+                                download="Academic-Calendar-for-SY-2026-27-Official V6.pdf"
                                 className="flex-[2] py-3.5 bg-yellow-400 text-slate-900 font-bold rounded-xl shadow-md transition-colors hover:bg-yellow-500 text-sm flex items-center justify-center gap-2"
                             >
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
