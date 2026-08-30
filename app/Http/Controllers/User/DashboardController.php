@@ -82,12 +82,15 @@ class DashboardController extends Controller
                 'note' => 'Request submitted via portal.',
             ]);
 
-            $certificateRequest->internshipDetails()->create([
-                'internship_school_or_agency' => $data['internship_school_or_agency'],
-                'grade_level_handled' => $data['grade_level_handled'] ?? null,
-                'semester' => $data['semester'],
-                'school_year' => $data['school_year'],
-            ]);
+            // FIX: Only save internship details if the service is actually an Internship Certificate
+            if ($service->isInternshipCertificate()) {
+                $certificateRequest->internshipDetails()->create([
+                    'internship_school_or_agency' => $data['internship_school_or_agency'],
+                    'grade_level_handled' => $data['grade_level_handled'] ?? null,
+                    'semester' => $data['semester'],
+                    'school_year' => $data['school_year'],
+                ]);
+            }
 
             if ($request->hasFile('requirement_file')) {
                 $path = $request->file('requirement_file')->store('requirements', 'private');
@@ -110,7 +113,6 @@ class DashboardController extends Controller
 
     private function userRequests()
     {
-        // Added statusHistory.toStatus to eager load the history items
         return CertificateRequest::with(['service', 'status', 'statusHistory.toStatus'])
             ->where('user_id', auth()->id());
     }
