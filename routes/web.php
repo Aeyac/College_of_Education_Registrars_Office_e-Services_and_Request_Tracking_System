@@ -38,31 +38,35 @@ Route::post('/chat/ask', [\App\Http\Controllers\ChatbotController::class, 'ask']
 
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    // === USER / STUDENT ROUTES ===
     Route::prefix('user')->name('user.')->middleware('role:student|alumni')->group(function () {
-        Route::get('/dashboard', [App\Http\Controllers\User\DashboardController::class, 'index'])->name('dashboard');
-        Route::get('/requests', [App\Http\Controllers\User\DashboardController::class, 'requests'])->name('requests');
-        Route::post('/requests', [App\Http\Controllers\User\DashboardController::class, 'store'])->name('requests.store');
 
-        Route::get('/faculty', [App\Http\Controllers\User\FacultyController::class, 'index'])->name('faculty');
-        Route::get('/announcements', [App\Http\Controllers\User\AnnouncementController::class, 'index'])->name('announcements');
+        // Reachable even while pending
+        Route::get('/pending-verification', [AlumniVerificationController::class, 'pending'])->name('pending-verification');
         Route::post('/verify-alumni', [AlumniVerificationController::class, 'store'])->name('verify-alumni');
 
-        Route::get('/faq', [StaticPageController::class, 'faq'])->name('faq');
-        Route::get('/about', [StaticPageController::class, 'about'])->name('about');
-        Route::get('/privacy-policy', [StaticPageController::class, 'privacy'])->name('privacy');
-        Route::get('/terms-of-service', [StaticPageController::class, 'terms'])->name('terms');
+        // Everything else requires verified alumni (students pass through untouched — middleware only checks user_type === 'alumni')
+        Route::middleware('verified.alumni')->group(function () {
+            Route::get('/dashboard', [App\Http\Controllers\User\DashboardController::class, 'index'])->name('dashboard');
+            Route::get('/requests', [App\Http\Controllers\User\DashboardController::class, 'requests'])->name('requests');
+            Route::post('/requests', [App\Http\Controllers\User\DashboardController::class, 'store'])->name('requests.store');
+            Route::get('/faculty', [App\Http\Controllers\User\FacultyController::class, 'index'])->name('faculty');
+            Route::get('/announcements', [App\Http\Controllers\User\AnnouncementController::class, 'index'])->name('announcements');
+            Route::get('/faq', [StaticPageController::class, 'faq'])->name('faq');
+            Route::get('/about', [StaticPageController::class, 'about'])->name('about');
+            Route::get('/privacy-policy', [StaticPageController::class, 'privacy'])->name('privacy');
+            Route::get('/terms-of-service', [StaticPageController::class, 'terms'])->name('terms');
+            Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
 
-        Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
-
-        Route::get('/inquiries', [App\Http\Controllers\User\InquiryController::class, 'index'])->name('inquiries');
-        Route::post('/inquiries', [App\Http\Controllers\User\InquiryController::class, 'store'])->name('inquiries.store');
-        Route::post('/inquiries/{id}/reply', [App\Http\Controllers\User\InquiryController::class, 'reply'])->name('inquiries.reply');
-        Route::put('/inquiries/messages/{id}', [App\Http\Controllers\User\InquiryController::class, 'updateMessage'])->name('inquiries.messages.edit');
-        Route::delete('/inquiries/messages/{id}', [App\Http\Controllers\User\InquiryController::class, 'destroyMessage'])->name('inquiries.messages.destroy');
-        Route::put('/inquiries/{id}/read', [App\Http\Controllers\User\InquiryController::class, 'markRead'])->name('inquiries.read');
-        Route::put('/inquiries/{id}/unread', [App\Http\Controllers\User\InquiryController::class, 'markUnread'])->name('inquiries.unread');
-        Route::delete('/inquiries/{id}', [App\Http\Controllers\User\InquiryController::class, 'destroy'])->name('inquiries.destroy');
+            Route::get('/inquiries', [App\Http\Controllers\User\InquiryController::class, 'index'])->name('inquiries');
+            Route::get('/inquiries/attachment/{id}', [InquiryController::class, 'viewAttachment'])->name('inquiries.attachment');
+            Route::post('/inquiries', [App\Http\Controllers\User\InquiryController::class, 'store'])->name('inquiries.store');
+            Route::post('/inquiries/{id}/reply', [App\Http\Controllers\User\InquiryController::class, 'reply'])->name('inquiries.reply');
+            Route::put('/inquiries/messages/{id}', [App\Http\Controllers\User\InquiryController::class, 'updateMessage'])->name('inquiries.messages.edit');
+            Route::delete('/inquiries/messages/{id}', [App\Http\Controllers\User\InquiryController::class, 'destroyMessage'])->name('inquiries.messages.destroy');
+            Route::put('/inquiries/{id}/read', [App\Http\Controllers\User\InquiryController::class, 'markRead'])->name('inquiries.read');
+            Route::put('/inquiries/{id}/unread', [App\Http\Controllers\User\InquiryController::class, 'markUnread'])->name('inquiries.unread');
+            Route::delete('/inquiries/{id}', [App\Http\Controllers\User\InquiryController::class, 'destroy'])->name('inquiries.destroy');
+        });
     });
 
     // === ADMIN ROUTES ===
@@ -76,6 +80,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/alumni', [AlumniController::class, 'loadAlumni'])->name('alumni');
         Route::put('/alumni/{id}', [AlumniController::class, 'updateAlumni'])->name('alumni.update');
+        Route::get('/alumni/{id}/proof', [AlumniController::class, 'viewProof'])->name('alumni.proof');
 
 
         Route::get('/faculty', [FacultyController::class, 'loadFaculty'])->name('faculty');
@@ -107,6 +112,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Inquiries meesage Thread (Admin)
         Route::get('/inquiries', [InquiryController::class, 'inquiries'])->name('inquiries');
+        Route::get('/inquiries/attachment/{id}', [InquiryController::class, 'viewAttachment'])->name('inquiries.attachment');
         Route::post('/inquiries/{id}/reply', [InquiryController::class, 'replyInquiry'])->name('inquiries.reply');
         Route::put('/inquiries/{id}/status', [InquiryController::class, 'updateInquiryStatus'])->name('inquiries.status');
         Route::put('/inquiries/messages/{id}', [InquiryController::class, 'editMessage'])->name('inquiries.messages.edit');

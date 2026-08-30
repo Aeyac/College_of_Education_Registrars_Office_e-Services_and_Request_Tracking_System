@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'role' => RoleMiddleware::class,
+            'verified.alumni' => \App\Http\Middleware\EnsureAlumniIsVerified::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

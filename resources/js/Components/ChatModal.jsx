@@ -8,24 +8,43 @@ export default function ChatModal({ inquiry, onClose, basePath, onResolve }) {
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
     const replyForm = useForm({ message: '', parent_id: null, attachment: null });
+    console.log(inquiry)
 
-    // Real-time fast polling (Every 1 second) para walang delay sa chat
+
     useEffect(() => {
         if (!inquiry) return;
-        
-        const interval = setInterval(() => {
-            router.reload({ only: ['inquiries'], preserveScroll: true, preserveState: true });
-        }, 1000);
 
-        // Instant sync kapag binalikan ang tab o window
-        const handleFocus = () => {
-            router.reload({ only: ['inquiries'], preserveScroll: true, preserveState: true });
+        const POLL_INTERVAL = 4000; // 4s — near-real-time without hammering the server
+        let interval = null;
+
+        const startPolling = () => {
+            if (interval) return;
+            interval = setInterval(() => {
+                router.reload({ only: ['inquiries'], preserveScroll: true, preserveState: true });
+            }, POLL_INTERVAL);
         };
-        window.addEventListener('focus', handleFocus);
+
+        const stopPolling = () => {
+            clearInterval(interval);
+            interval = null;
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                stopPolling();
+            } else {
+                // tab became visible again — refetch immediately, then resume polling
+                router.reload({ only: ['inquiries'], preserveScroll: true, preserveState: true });
+                startPolling();
+            }
+        };
+
+        if (!document.hidden) startPolling();
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
-            clearInterval(interval);
-            window.removeEventListener('focus', handleFocus);
+            stopPolling();
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [inquiry?.id]);
 
@@ -68,8 +87,8 @@ export default function ChatModal({ inquiry, onClose, basePath, onResolve }) {
     };
 
     const handleDeleteMsg = (msgId) => {
-        router.delete(`${basePath}/messages/${msgId}`, { 
-            preserveScroll: true, 
+        router.delete(`${basePath}/messages/${msgId}`, {
+            preserveScroll: true,
             preserveState: true,
             onSuccess: () => router.reload({ only: ['inquiries'], preserveScroll: true, preserveState: true })
         });
@@ -131,7 +150,7 @@ export default function ChatModal({ inquiry, onClose, basePath, onResolve }) {
                             <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0 flex items-center justify-center font-bold text-xs text-slate-600 shadow-sm overflow-hidden mb-1">
                                 {msg.sender_avatar ? <img src={msg.sender_avatar} className="w-full h-full object-cover" /> : msg.sender_name.charAt(0)}
                             </div>
-                            
+
                             <div className={`flex flex-col max-w-[75%] ${msg.is_own ? 'items-end' : 'items-start'}`}>
                                 {/* Sender Name Label */}
                                 <span className="text-[11px] font-bold text-slate-500 mb-1 px-1">
@@ -160,7 +179,7 @@ export default function ChatModal({ inquiry, onClose, basePath, onResolve }) {
                                         </div>
                                     )}
                                     <p className="whitespace-pre-wrap">{msg.message}</p>
-                                    
+
                                     {/* Timestamp & Conditional Edited Label */}
                                     <div className="flex justify-end gap-2 items-center mt-1.5 opacity-50">
                                         {Boolean(msg.is_edited) && <span className="text-[9px] font-bold italic">(Edited)</span>}

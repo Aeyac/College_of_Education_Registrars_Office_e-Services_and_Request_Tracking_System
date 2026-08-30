@@ -61,7 +61,7 @@ export default function MyRequests({ requests, services = [], userRole, auth, is
     return (
         <UserLayout userRole={userRole}>
             <Head title="My Requests" />
-            <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md rounded-t-3xl flex flex-col sm:flex-row justify-between sm:items-center gap-4 z-20">
+            <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md rounded-t-3xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div><h2 className="text-xl font-extrabold text-slate-900 tracking-tight">My Requests</h2><p className="text-xs text-slate-500 mt-1">Track and manage your official document requests.</p></div>
                 <button onClick={() => setIsModalOpen(true)} disabled={auth?.user?.user_type === 'alumni' && !isAlumniVerified} className="w-full sm:w-auto px-6 py-2.5 bg-yellow-400 text-slate-900 font-bold rounded-xl shadow-md hover:bg-yellow-500 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed">+ Submit New Request</button>
             </div>

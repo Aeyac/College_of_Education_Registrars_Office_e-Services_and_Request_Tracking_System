@@ -8,7 +8,7 @@ import { useState } from 'react';
 
 export default function Register({ courses = [] }) {
     const [step, setStep] = useState(1);
-    
+
     // Modal States
     const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
     const [agreedTerms, setAgreedTerms] = useState(false);
@@ -27,7 +27,7 @@ export default function Register({ courses = [] }) {
         password: '',
         password_confirmation: '',
         user_type: '',
-        profile_picture: null,
+        proof: null,
     });
 
     // BULLETPROOF CHECK: Ensures courses is always an array to prevent White Screen (crash)
@@ -44,6 +44,7 @@ export default function Register({ courses = [] }) {
             major_id: '',
             year_level: '',
             batch_year: '',
+            proof: null,
         }));
         setStep(2);
     };
@@ -143,7 +144,7 @@ export default function Register({ courses = [] }) {
                                     <h3 className="font-bold text-slate-900 text-lg mb-1">Student</h3>
                                     <p className="text-slate-500 text-sm">Currently enrolled and requesting CED registrar services.</p>
                                 </button>
-                                
+
                                 <button
                                     type="button"
                                     onClick={() => selectUserType('alumni')}
@@ -188,18 +189,13 @@ export default function Register({ courses = [] }) {
                             </div>
 
                             <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Profile Picture Field */}
-                                <div className="md:col-span-2">
-                                    <InputLabel value="Profile Picture (Optional)" className="text-slate-800 font-semibold mb-1.5" />
-                                    <input type="file" accept="image/*" onChange={(e) => setData('profile_picture', e.target.files[0])} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100 border border-slate-300 rounded-xl" />
-                                </div>
-                                
+
                                 <div>
                                     <InputLabel htmlFor="first_name" value="First Name" className="text-slate-800 font-semibold mb-1.5" />
                                     <TextInput id="first_name" type="text" value={data.first_name} onChange={(e) => setData('first_name', e.target.value)} placeholder="First Name" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
                                     <InputError message={errors.first_name} className="mt-1 text-red-600" />
                                 </div>
-                                
+
                                 <div>
                                     <InputLabel htmlFor="last_name" value="Last Name" className="text-slate-800 font-semibold mb-1.5" />
                                     <TextInput id="last_name" type="text" value={data.last_name} onChange={(e) => setData('last_name', e.target.value)} placeholder="Last Name" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
@@ -275,12 +271,28 @@ export default function Register({ courses = [] }) {
                                     )}
                                 </div>
 
+                                {data.user_type === 'alumni' && (
+                                    <div className="md:col-span-2">
+                                        <InputLabel htmlFor="proof" value="Proof of Alumni Status (Diploma/TOR/ID)" className="text-slate-800 font-semibold mb-1.5" />
+                                        <input
+                                            id="proof"
+                                            type="file"
+                                            accept=".jpg,.jpeg,.png,.pdf"
+                                            onChange={(e) => setData('proof', e.target.files[0] ?? null)}
+                                            className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-yellow-100 file:text-yellow-800 hover:file:bg-yellow-200 cursor-pointer border border-slate-300 rounded-xl bg-white focus:outline-none"
+                                            required
+                                        />
+                                        <p className="mt-1 text-xs text-slate-500">Supported formats: JPG, PNG, PDF (Max 10MB)</p>
+                                        <InputError message={errors.proof} className="mt-1 text-red-600" />
+                                    </div>
+                                )}
+
                                 <div>
                                     <InputLabel htmlFor="password" value="Password" className="text-slate-800 font-semibold mb-1.5" />
                                     <TextInput id="password" type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} placeholder="Create password" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
                                     <InputError message={errors.password} className="mt-1 text-red-600" />
                                 </div>
-                                
+
                                 <div>
                                     <InputLabel htmlFor="password_confirmation" value="Confirm Password" className="text-slate-800 font-semibold mb-1.5" />
                                     <TextInput id="password_confirmation" type="password" value={data.password_confirmation} onChange={(e) => setData('password_confirmation', e.target.value)} placeholder="Confirm password" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
@@ -319,9 +331,9 @@ export default function Register({ courses = [] }) {
                 </div>
             </div>
 
-            <LegalModal 
-                isOpen={isLegalModalOpen} 
-                onClose={() => setIsLegalModalOpen(false)} 
+            <LegalModal
+                isOpen={isLegalModalOpen}
+                onClose={() => setIsLegalModalOpen(false)}
                 agreedTerms={agreedTerms}
                 setAgreedTerms={setAgreedTerms}
                 agreedPrivacy={agreedPrivacy}

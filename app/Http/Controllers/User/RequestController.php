@@ -21,9 +21,6 @@ class RequestController extends Controller
         ]);
     }
 
-   
-
-
     private function userRequests()
     {
         return CertificateRequest::with(['service', 'status'])

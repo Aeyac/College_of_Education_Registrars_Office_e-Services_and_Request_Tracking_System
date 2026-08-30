@@ -7,6 +7,8 @@ export default function ManageRequests({ requests = [] }) {
     const [searchTerm, setSearchTerm] = useState('');
     const { data, setData, put, processing, reset } = useForm({ status_code: '', note: '' });
 
+    console.log(requests)
+
     const handleUpdate = (e) => {
         e.preventDefault();
         put(`/admin/requests/${selectedRequest.id}`, { onSuccess: () => { setSelectedRequest(null); reset(); } });

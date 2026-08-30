@@ -1,16 +1,6 @@
 <?php
 
 return [
-
-    //Used by RequestDocumentController and AlumniVerificationController for 
-    // requirement/verification/output documents and alumni identity proofs
-    'private' => [
-        'driver' => 'local',
-        'root' => storage_path('app/private'),
-        'visibility' => 'private',
-        'throw' => false,
-    ],
-
     /*
     |--------------------------------------------------------------------------
     | Default Filesystem Disk
@@ -54,6 +44,15 @@ return [
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
+        ],
+
+        //Used by RequestDocumentController and AlumniVerificationController for 
+        // requirement/verification/output documents and alumni identity proofs
+        'private' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'visibility' => 'private',
+            'throw' => false,
         ],
 
         's3' => [

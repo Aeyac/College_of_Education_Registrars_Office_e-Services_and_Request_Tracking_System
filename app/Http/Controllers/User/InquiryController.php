@@ -9,6 +9,7 @@ use App\Models\InquiryMessage;
 use App\Rules\NotProfane;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,7 +21,7 @@ class InquiryController extends Controller
             ->where('user_id', auth()->id())
             ->latest('updated_at')
             ->get()
-            ->map(fn (Inquiry $inq) => [
+            ->map(fn(Inquiry $inq) => [
                 'id' => $inq->id,
                 'subject' => $inq->subject,
                 'status' => $inq->status,
@@ -45,7 +46,7 @@ class InquiryController extends Controller
 
         $path = null;
         if ($request->hasFile('attachment')) {
-            $path = $request->file('attachment')->store('inquiries', 'public');
+            $path = $request->file('attachment')->store('inquiries', 'private');
         }
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($data, $path) {
@@ -78,7 +79,7 @@ class InquiryController extends Controller
         $inquiry = Inquiry::where('user_id', auth()->id())->findOrFail($id);
         $path = null;
         if ($request->hasFile('attachment')) {
-            $path = $request->file('attachment')->store('inquiries', 'public');
+            $path = $request->file('attachment')->store('inquiries', 'private');
         }
 
         $inquiry->messages()->create([
@@ -109,6 +110,21 @@ class InquiryController extends Controller
         ]);
 
         return back();
+    }
+
+    public function viewAttachment($id)
+    {
+        $message = InquiryMessage::findOrFail($id);
+
+        if ($message->inquiry->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if (!$message->attachment_path || !Storage::disk('private')->exists($message->attachment_path)) {
+            abort(404);
+        }
+
+        return Storage::disk('private')->response($message->attachment_path);
     }
 
     public function destroyMessage($id): RedirectResponse

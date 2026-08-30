@@ -9,6 +9,7 @@ use App\Models\Course;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 class AlumniController extends Controller
 {
@@ -22,10 +23,10 @@ class AlumniController extends Controller
             'major' => $a->user && $a->user->major ? $a->user->major->label : 'N/A',
             'batch' => $a->user ? $a->user->batch_year : 'N/A',
             'proof' => basename($a->path),
-            'proof_url' => asset('storage/' . $a->path), 
+            'proof_url' => route('admin.alumni.proof', $a->id),
             'status' => ucfirst($a->status),
         ]);
-        
+
         $courses = Course::where('is_active', true)->get();
 
         return Inertia::render('Admin/Alumni', ['alumni' => $alumni, 'courses' => $courses]);
@@ -36,5 +37,17 @@ class AlumniController extends Controller
         $alumni = AlumniVerification::findOrFail($id);
         $alumni->update(['status' => $request->input('status')]);
         return back()->with('success', 'Alumni verification status updated.');
+    }
+
+    public function viewProof($id)
+    {
+        $alumni = AlumniVerification::findOrFail($id);
+
+        if (!Storage::disk('private')->exists($alumni->path)) {
+            abort(404);
+        }
+
+        return Storage::disk('private')
+            ->response($alumni->path);
     }
 }

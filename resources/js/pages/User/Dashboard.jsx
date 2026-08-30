@@ -124,6 +124,8 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
     const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
     const [trackingRequest, setTrackingRequest] = useState(null);
 
+
+    console.log(isAlumniVerified)
     const requestForm = useForm({
         service_id: '', 
         purpose: '', 

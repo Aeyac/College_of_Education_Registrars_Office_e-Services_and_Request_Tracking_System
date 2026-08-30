@@ -10,6 +10,7 @@ use App\Notifications\InquiryReplied;
 use App\Rules\NotProfane;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class InquiryController extends Controller
@@ -20,13 +21,13 @@ class InquiryController extends Controller
     public function inquiries()
     {
         $inquiries = Inquiry::with([
-                'user',
-                'messages.user',
-                'messages.parent.user',
-            ])
+            'user',
+            'messages.user',
+            'messages.parent.user',
+        ])
             ->latest('updated_at')
             ->get()
-            ->map(fn ($inquiry) => [
+            ->map(fn($inquiry) => [
                 'id' => $inquiry->id,
                 'student_name' => $inquiry->user
                     ? $inquiry->user->first_name . ' ' . $inquiry->user->last_name
@@ -75,7 +76,7 @@ class InquiryController extends Controller
         if ($request->hasFile('attachment')) {
             $path = $request
                 ->file('attachment')
-                ->store('inquiries', 'public');
+                ->store('inquiries', 'private');
         }
 
         $inquiry->messages()->create([
@@ -199,5 +200,17 @@ class InquiryController extends Controller
             'success',
             'Inquiry deleted successfully.'
         );
+    }
+
+
+    public function viewAttachment($id)
+    {
+        $message = InquiryMessage::findOrFail($id);
+
+        if (!$message->attachment_path || !Storage::disk('private')->exists($message->attachment_path)) {
+            abort(404);
+        }
+
+        return Storage::disk('private')->response($message->attachment_path);
     }
 }

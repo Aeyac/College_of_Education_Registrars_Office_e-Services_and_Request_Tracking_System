@@ -9,7 +9,7 @@ export default function AlumniVerifications({ alumni = [], courses = [] }) {
     const [statusFilter, setStatusFilter] = useState('pending');
     const [sortField, setSortField] = useState('name');
     const [sortDirection, setSortDirection] = useState('asc');
-
+console.log(alumni)
     const handleVerify = (status) => {
         router.put(`/admin/alumni/${selectedAlumni.id}`, { status: status }, { 
             onSuccess: () => setSelectedAlumni(null),
@@ -40,7 +40,6 @@ export default function AlumniVerifications({ alumni = [], courses = [] }) {
                 const matchesSearch = 
                     !searchTerm || 
                     a.name.toLowerCase().includes(searchLower) || 
-                    a.student_id.toLowerCase().includes(searchLower) ||
                     a.major.toLowerCase().includes(searchLower);
                 
                 const matchesCourse = courseFilter === 'all' || a.course === courseFilter;
@@ -70,7 +69,7 @@ export default function AlumniVerifications({ alumni = [], courses = [] }) {
                         type="text" 
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search name, student ID, major..." 
+                        placeholder="Search name, Alumni ID, major..." 
                         className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm focus:ring-yellow-400 outline-none shadow-sm" 
                     />
                     <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm shadow-sm outline-none">
@@ -90,7 +89,7 @@ export default function AlumniVerifications({ alumni = [], courses = [] }) {
                         <table className="w-full text-left min-w-[1000px]">
                             <thead className="bg-slate-50 border-b border-slate-100 select-none">
                                 <tr>
-                                    <th onClick={() => handleSort('student_id')} className="py-4 px-6 text-xs font-bold text-slate-500 uppercase cursor-pointer hover:bg-slate-100">Student ID</th>
+                                    <th onClick={() => handleSort('alumni_id')} className="py-4 px-6 text-xs font-bold text-slate-500 uppercase cursor-pointer hover:bg-slate-100">Alumni ID</th>
                                     <th onClick={() => handleSort('name')} className="py-4 px-6 text-xs font-bold text-slate-500 uppercase cursor-pointer hover:bg-slate-100">Name</th>
                                     <th onClick={() => handleSort('course')} className="py-4 px-6 text-xs font-bold text-slate-500 uppercase cursor-pointer hover:bg-slate-100">Course & Major</th>
                                     <th onClick={() => handleSort('batch')} className="py-4 px-6 text-xs font-bold text-slate-500 uppercase cursor-pointer hover:bg-slate-100">Batch</th>
@@ -102,7 +101,7 @@ export default function AlumniVerifications({ alumni = [], courses = [] }) {
                             <tbody className="divide-y divide-slate-100">
                                 {processedAlumni.length > 0 ? processedAlumni.map((alum) => (
                                     <tr key={alum.id} className="hover:bg-slate-50 transition-colors">
-                                        <td className="py-4 px-6 text-sm font-bold text-slate-900 whitespace-nowrap">{alum.student_id}</td>
+                                        <td className="py-4 px-6 text-sm font-bold text-slate-900 whitespace-nowrap">{alum.id}</td>
                                         <td className="py-4 px-6 text-sm font-medium text-slate-700 whitespace-nowrap">{alum.name}</td>
                                         <td className="py-4 px-6 text-sm text-slate-600 whitespace-nowrap">
                                             <span className="font-medium text-slate-800 block truncate max-w-[200px]">{alum.course}</span>

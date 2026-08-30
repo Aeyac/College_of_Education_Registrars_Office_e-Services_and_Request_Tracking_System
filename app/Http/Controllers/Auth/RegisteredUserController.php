@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AlumniVerification;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
@@ -30,7 +31,6 @@ class RegisteredUserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        // Build the email rules dynamically to avoid nullable conflicts
         $emailRules = ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class];
         if ($request->input('user_type') === 'student') {
             $emailRules[] = 'regex:/@clsu2?\.edu\.ph$/';
@@ -48,13 +48,14 @@ class RegisteredUserController extends Controller
             'batch_year' => [Rule::requiredIf(fn() => $request->input('user_type') === 'alumni'), 'nullable', 'integer', 'min:1900'],
             'contact_number' => ['required', 'string', 'max:50'],
             'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
-            'profile_picture' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'proof' => [
+                Rule::requiredIf(fn() => $request->input('user_type') === 'alumni'),
+                'nullable',
+                'file',
+                'mimes:jpg,jpeg,png,pdf',
+                'max:10240', // 10MB
+            ],
         ]);
-
-        $profilePath = null;
-        if ($request->hasFile('profile_picture')) {
-            $profilePath = $request->file('profile_picture')->store('profiles', 'public');
-        }
 
         $user = User::create([
             'first_name' => $validated['first_name'],
@@ -67,15 +68,24 @@ class RegisteredUserController extends Controller
             'year_level' => $validated['year_level'] ?? null,
             'batch_year' => $validated['batch_year'] ?? null,
             'contact_number' => $validated['contact_number'],
-            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
-            'profile_picture' => $profilePath,
+            'password' => Hash::make($validated['password']),
         ]);
 
         $user->assignRole($validated['user_type']);
 
-        event(new \Illuminate\Auth\Events\Registered($user));
+        if ($validated['user_type'] === 'alumni') {
+            $proofPath = $request->file('proof')->store('alumni-proofs', 'private');
 
-        \Illuminate\Support\Facades\Auth::login($user);
+            AlumniVerification::create([
+                'user_id' => $user->id,
+                'path' => $proofPath,
+                'status' => 'pending',
+            ]);
+        }
+
+        event(new Registered($user));
+
+        Auth::login($user);
 
         return redirect(route('user.dashboard', absolute: false));
     }

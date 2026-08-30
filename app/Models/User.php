@@ -26,6 +26,8 @@ class User extends Authenticatable
         'year_level',
         'batch_year',
         'contact_number',
+
+        
     ];
 
     protected $hidden = [

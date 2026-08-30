@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAlumniVerificationRequest;
 use App\Models\AlumniVerification;
 use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
 
 class AlumniVerificationController extends Controller
 {
@@ -24,4 +25,24 @@ class AlumniVerificationController extends Controller
 
         return back()->with('success', 'Verification proof uploaded successfully.');
     }
+
+    public function pending()
+    {
+        $user = auth()->user();
+
+        if ($user->isVerifiedAlumni()) {
+            return redirect()->route('user.dashboard');
+        }
+
+        $verification = $user->alumniVerification;
+
+        return Inertia::render('User/AlumniPending', [
+            'submittedAt' => $verification->created_at
+                ->timezone('Asia/Manila')
+                ->format('M d, Y h:i A'),
+            'proofFileName' => basename($verification->proof_path),
+        ]);
+    }
+
+
 }
