@@ -21,13 +21,30 @@ class CertificateRequest extends Model
         'delivery_mode', // soft_copy | hard_copy
         'purpose',
         'preferred_claiming_date',
+        'archived_at',
     ];
 
     protected function casts(): array
     {
         return [
             'preferred_claiming_date' => 'date',
+            'archived_at' => 'datetime',
         ];
+    }
+
+    public function scopeNotArchived($query)
+    {
+        return $query->whereNull('archived_at');
+    }
+
+    public function scopeArchived($query)
+    {
+        return $query->whereNotNull('archived_at');
+    }
+
+    public function isArchived(): bool
+    {
+        return !is_null($this->archived_at);
     }
 
     public function getActivitylogOptions(): LogOptions

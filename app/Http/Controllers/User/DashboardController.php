@@ -70,7 +70,7 @@ class DashboardController extends Controller
                 'user_id' => $request->user()->id,
                 'service_id' => $service->id,
                 'status_id' => $status->id,
-                'delivery_mode' => 'hard_copy', 
+                'delivery_mode' => $request->delivery_mode, 
                 'purpose' => $data['purpose'] ?? null,
                 'preferred_claiming_date' => $data['preferred_claiming_date'] ?? null,
             ]);

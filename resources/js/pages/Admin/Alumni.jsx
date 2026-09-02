@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { useState, useMemo } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { Icon } from '@/Components/Icon';
 
 export default function AlumniVerifications({ alumni = [], courses = [] }) {
     const [selectedAlumni, setSelectedAlumni] = useState(null);
@@ -76,7 +77,7 @@ console.log(alumni)
                         <option value="all">All Courses</option>
                         {courses.map(c => <option key={c.id} value={c.label}>{c.label}</option>)}
                     </select>
-                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm shadow-sm outline-none">
+                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-2xl py-3 px-8 text-sm shadow-sm outline-none">
                         <option value="all">All Statuses</option>
                         <option value="pending">Pending</option>
                         <option value="verified">Verified</option>
@@ -119,7 +120,25 @@ console.log(alumni)
                                             <button onClick={() => setSelectedAlumni(alum)} className="text-slate-700 font-bold px-4 py-2 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 transition-colors">Action</button>
                                         </td>
                                     </tr>
-                                )) : <tr><td colSpan="7" className="py-12 text-center text-slate-500 text-sm">No verifications found.</td></tr>}
+                                )) : (
+                                    <tr>
+                                        <td colSpan="7" className="py-16 text-center">
+                                            <Icon path="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" className="w-10 h-10 mx-auto text-slate-300 mb-3" />
+                                            <p className="text-slate-500 text-sm font-medium">No pending verifications found.</p>
+                                            {(searchTerm || statusFilter !== 'all' || docTypeFilter !== 'all') && (
+                                                <p className="text-slate-400 text-xs mt-1">
+                                                    Try different filters, or{' '}
+                                                    <button
+                                                        onClick={() => { setSearchTerm(''); setStatusFilter('all'); setDocTypeFilter('all'); }}
+                                                        className="text-yellow-700 font-semibold hover:underline"
+                                                    >
+                                                        clear all filters
+                                                    </button>.
+                                                </p>
+                                            )}
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>

@@ -6,16 +6,17 @@ import Swal from 'sweetalert2';
 export default function MyRequests({ requests, services = [], userRole, auth, isAlumniVerified }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [trackingRequest, setTrackingRequest] = useState(null);
-    
-    const form = useForm({ 
-        service_id: '', 
-        purpose: '', 
-        preferred_claiming_date: '', 
-        internship_school_or_agency: '', 
-        grade_level_handled: '', 
-        semester: '', 
-        school_year: '', 
-        requirement_file: null 
+
+    const form = useForm({
+        service_id: '',
+        delivery_mode: '',
+        purpose: '',
+        preferred_claiming_date: '',
+        internship_school_or_agency: '',
+        grade_level_handled: '',
+        semester: '',
+        school_year: '',
+        requirement_file: null
     });
 
     const showAlert = (title, text, iconHtml) => Swal.mixin({
@@ -31,14 +32,18 @@ export default function MyRequests({ requests, services = [], userRole, auth, is
     const closeModal = () => { setIsModalOpen(false); form.reset(); form.clearErrors(); };
 
     const handleServiceChange = (e) => {
-        form.setData({ 
-            ...form.data, 
-            service_id: e.target.value, 
-            internship_school_or_agency: '', 
-            grade_level_handled: '', 
-            semester: '', 
-            school_year: '' 
+        form.setData({
+            ...form.data,
+            service_id: e.target.value,
+            internship_school_or_agency: '',
+            grade_level_handled: '',
+            semester: '',
+            school_year: ''
         });
+    };
+
+    const handleDeliveryModeChange = (e) => {
+        form.setData('delivery_mode', e.target.value);
     };
 
     const submitRequest = (e) => {
@@ -46,9 +51,9 @@ export default function MyRequests({ requests, services = [], userRole, auth, is
         form.post('/user/requests', {
             forceFormData: true,
             preserveScroll: true,
-            onSuccess: () => { 
-                closeModal(); 
-                showAlert('Request Submitted!', 'Your document request has been successfully sent.', '<svg class="w-12 h-12 text-emerald-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" strokeLinejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>'); 
+            onSuccess: () => {
+                closeModal();
+                showAlert('Request Submitted!', 'Your document request has been successfully sent.', '<svg class="w-12 h-12 text-emerald-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" strokeLinejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>');
             },
             onError: () => showAlert('Could Not Submit', 'Please check the form for errors and try again.', '<svg class="w-12 h-12 text-red-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" strokeLinejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>')
         });
@@ -153,7 +158,7 @@ export default function MyRequests({ requests, services = [], userRole, auth, is
                             <button onClick={closeModal} className="p-2 bg-white rounded-full text-slate-500 hover:text-slate-800 shadow-sm"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
                         </div>
                         <form onSubmit={submitRequest} className="p-6 space-y-5 overflow-y-auto custom-scrollbar">
-                            
+
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 grid grid-cols-2 gap-3 mb-2">
                                 <div>
                                     <span className="block text-[10px] font-bold text-slate-400 uppercase">Full Name</span>
@@ -182,6 +187,16 @@ export default function MyRequests({ requests, services = [], userRole, auth, is
                                 <select value={form.data.service_id} onChange={handleServiceChange} className={inputClass} required>
                                     <option value="" disabled>Select Document...</option>
                                     {services.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                                </select>
+                                {form.errors.service_id && <p className="text-xs text-red-600 mt-1.5">{form.errors.service_id}</p>}
+                            </div>
+
+                            <div>
+                                <label className={labelClass}>Delivery Mode</label>
+                                <select value={form.data.delivery_mode} onChange={handleDeliveryModeChange} className={inputClass} required>
+                                    <option value="" disabled>Select Delivery Mode...</option>
+                                    <option value="soft_copy">Soft Copy</option>
+                                    <option value="hard_copy">Hard Copy</option>
                                 </select>
                                 {form.errors.service_id && <p className="text-xs text-red-600 mt-1.5">{form.errors.service_id}</p>}
                             </div>

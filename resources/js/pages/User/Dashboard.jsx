@@ -125,16 +125,18 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
     const [trackingRequest, setTrackingRequest] = useState(null);
 
 
-    console.log(isAlumniVerified)
+
+    console.log(requests)
     const requestForm = useForm({
-        service_id: '', 
-        purpose: '', 
+        service_id: '',
+        purpose: '',
+        delivery_mode: '',
         preferred_claiming_date: '',
-        internship_school_or_agency: '', 
-        grade_level_handled: '', 
-        semester: '', 
+        internship_school_or_agency: '',
+        grade_level_handled: '',
+        semester: '',
         school_year: '',
-        requirement_file: null 
+        requirement_file: null
     });
 
     const proofForm = useForm({ document_type: 'diploma', file: null });
@@ -146,14 +148,18 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
     const closeProofModal = () => { setIsProofModalOpen(false); proofForm.reset(); proofForm.clearErrors(); };
 
     const handleServiceChange = (e) => {
-        requestForm.setData({ 
-            ...requestForm.data, 
-            service_id: e.target.value, 
-            internship_school_or_agency: '', 
-            grade_level_handled: '', 
-            semester: '', 
-            school_year: '' 
+        requestForm.setData({
+            ...requestForm.data,
+            service_id: e.target.value,
+            internship_school_or_agency: '',
+            grade_level_handled: '',
+            semester: '',
+            school_year: ''
         });
+    };
+
+    const handleDeliveryModeChange = (e) => {
+        requestForm.setData('delivery_mode', e.target.value);
     };
 
     const submitRequest = (e) => {
@@ -196,7 +202,7 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
         <UserLayout userRole={userRole}>
             <Head title="Dashboard" />
 
-            <div className="p-6 sm:p-8 pb-4 border-b border-slate-100 bg-white/90 backdrop-blur-md sticky top-0 z-10">
+            <div className="p-6 sm:p-8 pb-4 border-b border-slate-100 bg-white/90 backdrop-blur-md sticky top-0">
                 <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Dashboard</h2>
                 <p className="text-xs text-slate-500 mt-1">Welcome back, {auth?.user?.first_name || 'Student'}!</p>
             </div>
@@ -285,7 +291,7 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
             {isRequestModalOpen && (
                 <Modal title="Request Document" onClose={closeRequestModal}>
                     <form onSubmit={submitRequest} className="p-6 space-y-5 overflow-y-auto custom-scrollbar">
-                        
+
                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 grid grid-cols-2 gap-3 mb-2">
                             <div>
                                 <span className="block text-[10px] font-bold text-slate-400 uppercase">Full Name</span>
@@ -316,6 +322,16 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, is
                                 {services.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                             </select>
                             {requestForm.errors.service_id && <p className="text-xs text-red-600 mt-1.5">{requestForm.errors.service_id}</p>}
+                        </div>
+
+                        <div>
+                            <label className={labelClass}>Delivery Mode</label>
+                            <select value={requestForm.data.delivery_mode} onChange={handleDeliveryModeChange} className={inputClass} required>
+                                <option value="" disabled>Select Delivery Mode...</option>
+                                <option value="soft_copy">Soft Copy</option>
+                                <option value="hard_copy">Hard Copy</option>
+                            </select>
+                            {requestForm.errors.delivery_mode && <p className="text-xs text-red-600 mt-1.5">{requestForm.errors.delivery_mode}</p>}
                         </div>
 
                         {/* Conditionally render Internship Fields */}
