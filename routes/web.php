@@ -13,9 +13,11 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\User\AlumniVerificationController;
+use App\Http\Controllers\User\FeedbackController;
 use App\Http\Controllers\User\StaticPageController;
 use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\HomeController;
+use App\Models\Feedback;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use Inertia\Inertia;
@@ -66,6 +68,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/inquiries/{id}/read', [App\Http\Controllers\User\InquiryController::class, 'markRead'])->name('inquiries.read');
             Route::put('/inquiries/{id}/unread', [App\Http\Controllers\User\InquiryController::class, 'markUnread'])->name('inquiries.unread');
             Route::delete('/inquiries/{id}', [App\Http\Controllers\User\InquiryController::class, 'destroy'])->name('inquiries.destroy');
+
+            Route::post('/user/requests/{id}/feedback', [FeedbackController::class, 'storeFeedback'])->name('feedback.store');
         });
     });
 
@@ -128,7 +132,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/filtered-words', [FilteredWordController::class, 'index'])->name('filtered-words');
         Route::post('/filtered-words', [FilteredWordController::class, 'store'])->name('filtered-words.store');
         Route::delete('/filtered-words/{id}', [FilteredWordController::class, 'destroy'])->name('filtered-words.destroy');
-        
+
         Route::patch('/requests/{id}/archive', [RequestController::class, 'archiveRequest'])->name('requests.archive');
         Route::patch('/requests/{id}/unarchive', [RequestController::class, 'unarchiveRequest'])->name('requests.unarchive');
     });
