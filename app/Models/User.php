@@ -21,11 +21,14 @@ class User extends Authenticatable
         'password',
         'user_type',
         'student_number',
+        'google_id',
         'course_id',
         'major_id',
         'year_level',
         'batch_year',
         'contact_number',
+        'otp',
+        'otp_expires_at',
 
         
     ];

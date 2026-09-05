@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\PreventBackHistory::class, // Added middleware
         ]);
         $middleware->alias([
+            'profile.complete' => \App\Http\Middleware\CheckProfileComplete::class,
             'role' => RoleMiddleware::class,
             'verified.alumni' => \App\Http\Middleware\EnsureAlumniIsVerified::class,
         ]);
