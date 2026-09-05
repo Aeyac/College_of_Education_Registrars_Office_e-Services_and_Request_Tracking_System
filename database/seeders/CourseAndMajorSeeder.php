@@ -36,6 +36,7 @@ class CourseAndMajorSeeder extends Seeder
                     ['code' => 'agri_fishery_arts', 'label' => 'Agri-Fishery and Arts'],
                     ['code' => 'home_economics', 'label' => 'Home Economics'],
                     ['code' => 'industrial_arts', 'label' => 'Industrial Arts'],
+                    ['code' => 'info_tech', 'label' => 'Information and Communications Technology'],
                 ]
             ],
         ];

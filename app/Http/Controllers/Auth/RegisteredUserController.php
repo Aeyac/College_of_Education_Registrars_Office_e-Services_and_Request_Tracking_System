@@ -21,11 +21,11 @@ class RegisteredUserController extends Controller
 {
     public function create(): Response
     {
+        
+        $courses = Course::with('majors')->orderBy('sort_order')->get(); 
+
         return Inertia::render('Auth/Register', [
-            'courses' => Cache::remember('registration.courses', now()->addHours(6), function () {
-                return Course::with(['majors' => fn($q) => $q->select('id', 'course_id', 'code', 'label')])
-                    ->where('is_active', true)->orderBy('sort_order')->get(['id', 'code', 'label']);
-            }),
+            'courses' => $courses
         ]);
     }
 
@@ -70,6 +70,17 @@ class RegisteredUserController extends Controller
             'contact_number' => $validated['contact_number'],
             'password' => Hash::make($validated['password']),
         ]);
+        
+        $otp = rand(100000, 999999);
+        
+        $user->update([
+            'otp' => $otp,
+            'otp_expires_at' => now()->addMinutes(10)
+        ]);
+        
+        
+        \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($otp));
+        
 
         $user->assignRole($validated['user_type']);
 
@@ -87,6 +98,7 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(route('user.dashboard', absolute: false));
+        // Palitan ito mula user.dashboard patungong verification.notice
+        return redirect()->route('verification.notice');
     }
 }

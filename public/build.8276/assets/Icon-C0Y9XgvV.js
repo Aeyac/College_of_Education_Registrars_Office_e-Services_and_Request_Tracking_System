@@ -1,0 +1,1 @@
+import{t as e}from"./app-IfyV8Swf.js";var t=e(),n=({path:e,className:n=`w-4 h-4`})=>(0,t.jsx)(`svg`,{className:n,fill:`none`,viewBox:`0 0 24 24`,stroke:`currentColor`,strokeWidth:`2`,children:(0,t.jsx)(`path`,{strokeLinecap:`round`,strokeLinejoin:`round`,d:e})});export{n as t};
