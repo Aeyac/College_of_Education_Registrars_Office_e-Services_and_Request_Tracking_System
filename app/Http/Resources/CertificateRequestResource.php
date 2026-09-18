@@ -14,11 +14,15 @@ class CertificateRequestResource extends JsonResource
             'document_type' => $this->service?->label ?? 'Document',
             'format' => $this->delivery_mode === 'hard_copy' ? 'Hard Copy' : 'Soft Copy',
             'status' => $this->status?->label ?? 'Pending',
+            'status_code' => $this->status?->code ?? 'submitted',
             'created_at' => $this->created_at->timezone('Asia/Manila')->format('M d, Y h:i A'),
+            'received_at' => $this->received_at
+                ? $this->received_at->timezone('Asia/Manila')->format('M d, Y h:i A')
+                : null,
             'student_name' => $this->whenLoaded(
                 'user',
                 fn() =>
-                $this->user->first_name . ' ' . $this->user->last_name
+                    $this->user->first_name . ' ' . $this->user->last_name
             ),
             // Map the history timeline including the notes and PH timezone
             'status_history' => $this->whenLoaded('statusHistory', fn() => $this->statusHistory->map(fn($h) => [

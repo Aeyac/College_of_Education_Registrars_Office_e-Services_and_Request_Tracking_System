@@ -10,11 +10,11 @@ export default function AlumniVerifications({ alumni = [], courses = [] }) {
     const [statusFilter, setStatusFilter] = useState('pending');
     const [sortField, setSortField] = useState('name');
     const [sortDirection, setSortDirection] = useState('asc');
-console.log(alumni)
+    console.log(alumni)
     const handleVerify = (status) => {
-        router.put(`/admin/alumni/${selectedAlumni.id}`, { status: status }, { 
+        router.put(`/admin/alumni/${selectedAlumni.id}`, { status: status }, {
             onSuccess: () => setSelectedAlumni(null),
-            preserveScroll: true 
+            preserveScroll: true
         });
     };
 
@@ -38,14 +38,14 @@ console.log(alumni)
         return alumni
             .filter((a) => {
                 const searchLower = searchTerm.toLowerCase();
-                const matchesSearch = 
-                    !searchTerm || 
-                    a.name.toLowerCase().includes(searchLower) || 
+                const matchesSearch =
+                    !searchTerm ||
+                    a.name.toLowerCase().includes(searchLower) ||
                     a.major.toLowerCase().includes(searchLower);
-                
+
                 const matchesCourse = courseFilter === 'all' || a.course === courseFilter;
                 const matchesStatus = statusFilter === 'all' || a.status.toLowerCase() === statusFilter.toLowerCase();
-                
+
                 return matchesSearch && matchesCourse && matchesStatus;
             })
             .sort((a, b) => {
@@ -66,12 +66,12 @@ console.log(alumni)
 
             <div className="p-6 sm:p-8 space-y-4">
                 <div className="flex flex-col lg:flex-row gap-3 justify-between">
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search name, Alumni ID, major..." 
-                        className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm focus:ring-yellow-400 outline-none shadow-sm" 
+                        placeholder="Search name, Alumni ID, major..."
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm focus:ring-yellow-400 outline-none shadow-sm"
                     />
                     <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm shadow-sm outline-none">
                         <option value="all">All Courses</option>
@@ -153,16 +153,21 @@ console.log(alumni)
                         </div>
                         <h3 className="font-extrabold text-slate-900 text-lg mb-2">Verify {selectedAlumni.name}</h3>
                         <p className="text-sm text-slate-500 mb-6">Review the uploaded proof to grant access to certificate requests.</p>
-                        
+
                         <a href={selectedAlumni.proof_url} target="_blank" rel="noopener noreferrer" className="inline-block px-4 py-3 bg-slate-50 text-blue-700 font-bold rounded-xl text-sm mb-6 w-full border border-slate-200 truncate shadow-sm hover:bg-slate-100">
                             {selectedAlumni.proof}
                         </a>
-                        
+
                         <div className="flex gap-3">
                             <button onClick={() => handleVerify('rejected')} className="flex-1 py-3 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 font-bold rounded-xl text-sm transition-colors">Reject</button>
                             <button onClick={() => handleVerify('verified')} className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-sm shadow-md transition-colors">Approve</button>
                         </div>
-                        <button onClick={() => setSelectedAlumni(null)} className="mt-6 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors">Cancel & Close</button>
+                        <button
+                            onClick={() => setSelectedAlumni(null)}
+                            className="mt-6 px-4 py-2 text-sm font-bold text-slate-500 rounded-md hover:text-slate-700 transition-colors"
+                        >
+                            Cancel & Close
+                        </button>
                     </div>
                 </div>
             )}

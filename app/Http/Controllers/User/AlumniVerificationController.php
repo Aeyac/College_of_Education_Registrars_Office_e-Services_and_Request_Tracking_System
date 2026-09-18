@@ -41,6 +41,7 @@ class AlumniVerificationController extends Controller
                 ->timezone('Asia/Manila')
                 ->format('M d, Y h:i A'),
             'proofFileName' => basename($verification->proof_path),
+            'status' => basename($verification->status),
         ]);
     }
 

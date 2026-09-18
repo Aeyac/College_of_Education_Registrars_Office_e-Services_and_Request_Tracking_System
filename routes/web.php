@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\Admin\AlumniController;
 use App\Http\Controllers\Admin\AnnouncementController;
+use App\Http\Controllers\Admin\AuditTrailController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FacultyController;
 use App\Http\Controllers\Admin\FilteredWordController;
 use App\Http\Controllers\Admin\InquiryController;
 use App\Http\Controllers\Admin\RequestController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\CertificateRequestController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
@@ -54,11 +56,19 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::get('/pending-verification', [AlumniVerificationController::class, 'pending'])->name('pending-verification');
         Route::post('/verify-alumni', [AlumniVerificationController::class, 'store'])->name('verify-alumni');
 
+        Route::post('/requests/{certificateRequest}/receive', [CertificateRequestController::class, 'markReceived'])
+            ->name('requests.receive');
+        Route::patch('/requests/{certificateRequest}/archive', [CertificateRequestController::class, 'archive'])
+            ->name('requests.archive');
+        Route::patch('/requests/{certificateRequest}/unarchive', [CertificateRequestController::class, 'unarchive'])
+            ->name('requests.unarchive');
+
         // Everything else requires verified alumni
         Route::middleware('verified.alumni')->group(function () {
             Route::get('/dashboard', [App\Http\Controllers\User\DashboardController::class, 'index'])->name('dashboard');
             Route::get('/requests', [App\Http\Controllers\User\DashboardController::class, 'requests'])->name('requests');
             Route::post('/requests', [App\Http\Controllers\User\DashboardController::class, 'store'])->name('requests.store');
+
             Route::get('/faculty', [App\Http\Controllers\User\FacultyController::class, 'index'])->name('faculty');
             Route::get('/announcements', [App\Http\Controllers\User\AnnouncementController::class, 'index'])->name('announcements');
             Route::get('/faq', [StaticPageController::class, 'faq'])->name('faq');
@@ -77,7 +87,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
             Route::put('/inquiries/{id}/unread', [InquiryController::class, 'markUnread'])->name('inquiries.unread');
             Route::delete('/inquiries/{id}', [InquiryController::class, 'destroy'])->name('inquiries.destroy');
 
-            Route::post('/user/requests/{id}/feedback', [FeedbackController::class, 'storeFeedback'])->name('feedback.store');
+            Route::post('/requests/{id}/feedback', [FeedbackController::class, 'storeFeedback'])->name('feedback.store');
         });
     });
 
@@ -123,6 +133,8 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
 
         Route::patch('/requests/{id}/archive', [RequestController::class, 'archiveRequest'])->name('requests.archive');
         Route::patch('/requests/{id}/unarchive', [RequestController::class, 'unarchiveRequest'])->name('requests.unarchive');
+
+        Route::get('/audit-trail', [AuditTrailController::class, 'index'])->name('admin.audit-trail');
     });
 });
 

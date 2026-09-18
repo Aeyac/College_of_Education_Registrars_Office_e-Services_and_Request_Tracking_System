@@ -43,9 +43,12 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function requests(): Response
+    public function requests(\Illuminate\Http\Request $request): Response
     {
+        $showArchived = $request->boolean('archived');
+
         $paginatedRequests = $this->userRequests()
+            ->when($showArchived, fn($q) => $q->archived(), fn($q) => $q->notArchived())
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -55,6 +58,7 @@ class DashboardController extends Controller
             'isAlumniVerified' => auth()->user()->isVerifiedAlumni(),
             'requests' => CertificateRequestResource::collection($paginatedRequests),
             'services' => $this->activeServices(),
+            'showingArchived' => $showArchived,
         ]);
     }
 

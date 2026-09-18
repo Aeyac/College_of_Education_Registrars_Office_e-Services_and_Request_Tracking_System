@@ -22,6 +22,7 @@ class CertificateRequest extends Model
         'purpose',
         'preferred_claiming_date',
         'archived_at',
+        'received_at',
     ];
 
     protected function casts(): array
@@ -29,6 +30,7 @@ class CertificateRequest extends Model
         return [
             'preferred_claiming_date' => 'date',
             'archived_at' => 'datetime',
+            'received_at' => 'datetime',
         ];
     }
 

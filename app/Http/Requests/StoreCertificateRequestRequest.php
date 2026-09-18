@@ -19,7 +19,7 @@ class StoreCertificateRequestRequest extends FormRequest
         return [
             'service_id' => ['required', 'exists:request_services,id'],
             'purpose' => ['required', 'string', 'max:2000'],
-            'preferred_claiming_date' => ['nullable', 'date', 'after_or_equal:today'],
+            'preferred_claiming_date' => ['nullable', 'date', 'after_or_equal:' . now()->addDays(3)->toDateString()],
             'requirement_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
 
             // Internship-specific fields (Conditionally Required)
