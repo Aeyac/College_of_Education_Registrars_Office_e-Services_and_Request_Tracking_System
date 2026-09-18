@@ -24,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        /*
+        
         Vite::prefetch(concurrency: 3);
         
         // Force HTTPS only when deployed to the live server (production)
@@ -39,5 +41,6 @@ class AppServiceProvider extends ServiceProvider
                 ]);
             }
         }
+            */
     }
 }
