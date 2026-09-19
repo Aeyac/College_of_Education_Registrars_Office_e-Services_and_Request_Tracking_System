@@ -1,10 +1,118 @@
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
-import TextInput from '@/Components/TextInput';
 import LegalModal from '@/Components/LegalModal';
-
+import TextInput from '@/Components/TextInput';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+
+
+const MAX_YEAR_LEVEL = 6; // irregular students can stay up to 6 years
+const ACADEMIC_YEAR_START_MONTH = 6; // June (1 = January ... 12 = December)
+const MIN_BATCH_YEAR = 1900;
+
+const TODAY = new Date();
+const CURRENT_YEAR = TODAY.getFullYear();
+
+// Jan–May still belongs to the academic year that started last June.
+const ACADEMIC_YEAR =
+    TODAY.getMonth() + 1 >= ACADEMIC_YEAR_START_MONTH ? CURRENT_YEAR : CURRENT_YEAR - 1;
+
+const MIN_YEAR = ACADEMIC_YEAR - (MAX_YEAR_LEVEL - 1);
+
+const toYearCode = (year) => String(year % 100).padStart(2, '0');
+const YEAR_CODE_RANGE = `${toYearCode(MIN_YEAR)}–${toYearCode(ACADEMIC_YEAR)}`;
+
+const YEAR_LABELS = { 1: '1st Year', 2: '2nd Year', 3: '3rd Year' };
+
+// "26-1234" -> 1 (Dec 2026 – May 2027), 2 (from June 2027). Null if out of range. 
+const getYearLevel = (studentNumber) => {
+    if (studentNumber.length < 2) return null;
+
+    const enrollmentYear = 2000 + Number(studentNumber.slice(0, 2));
+    const level = ACADEMIC_YEAR - enrollmentYear + 1;
+
+    return level >= 1 && level <= MAX_YEAR_LEVEL ? level : null;
+};
+
+const formatYearLevel = (level) => (level ? (YEAR_LABELS[level] ?? `${level}th Year`) : '');
+
+// Error message for a complete (4-digit) batch year, or null if it's valid / still being typed. 
+const getBatchYearError = (value) => {
+    if (value.length < 4) return null;
+
+    const year = Number(value);
+
+    if (year > CURRENT_YEAR) return `Batch year cannot be in the future (latest: ${CURRENT_YEAR}).`;
+    if (year < MIN_BATCH_YEAR) return `Batch year cannot be earlier than ${MIN_BATCH_YEAR}.`;
+
+    return null;
+};
+
+const formatStudentNumber = (raw) => {
+    const digits = raw.replace(/\D/g, '').slice(0, 6);
+    return digits.length > 2 ? `${digits.slice(0, 2)}-${digits.slice(2)}` : digits;
+};
+
+// Stored value is "+639171234567"; this only affects what is displayed.
+const formatContactNumber = (value) => {
+    const digits = value.replace(/\D/g, '');
+
+    if (!digits) return '';
+    if (!digits.startsWith('63')) return `+${digits}`;
+
+    const rest = digits.slice(2);
+    const groups = [rest.slice(0, 3), rest.slice(3, 6), rest.slice(6)].filter(Boolean);
+
+    return ['+63', ...groups].join(' ');
+};
+
+const inputClass =
+    'w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900';
+const selectClass = `${inputClass} px-4 bg-white cursor-pointer disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed`;
+const linkButtonClass = 'font-bold text-yellow-700 hover:text-yellow-600 transition-colors';
+
+const ROLES = [
+    {
+        value: 'student',
+        title: 'Student',
+        description: 'Currently enrolled and requesting CED registrar services.',
+        icon: [
+            'M12 14l9-5-9-5-9 5 9 5z',
+            'M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z',
+        ],
+    },
+    {
+        value: 'alumni',
+        title: 'Alumni',
+        description: 'Already graduated and requesting document certificates.',
+        icon: ['M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
+    },
+];
+
+
+function Icon({ paths, className = 'w-5 h-5' }) {
+    return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {paths.map((d) => (
+                <path key={d} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={d} />
+            ))}
+        </svg>
+    );
+}
+
+const ARROW_LEFT = ['M10 19l-7-7m0 0l7-7m-7 7h18'];
+
+function Field({ id, label, error, hint, className = '', children }) {
+    return (
+        <div className={className}>
+            <InputLabel htmlFor={id} value={label} className="text-slate-800 font-semibold mb-1.5" />
+            {children}
+            {hint && !error && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+            <InputError message={error} className="mt-1 text-red-600" />
+        </div>
+    );
+}
+
 
 export default function Register({ courses = [] }) {
     const [step, setStep] = useState(1);
@@ -12,14 +120,15 @@ export default function Register({ courses = [] }) {
     const [agreedTerms, setAgreedTerms] = useState(false);
     const [agreedPrivacy, setAgreedPrivacy] = useState(false);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    // NOTE: year_level is intentionally NOT part of the form. It's derived from
+    // the student number (here for display, and again on the server for saving).
+    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         first_name: '',
         last_name: '',
         email: '',
         student_number: '',
         course_id: '',
         major_id: '',
-        year_level: '',
         batch_year: '',
         contact_number: '',
         password: '',
@@ -28,54 +137,89 @@ export default function Register({ courses = [] }) {
         proof: null,
     });
 
-    const safeCourses = Array.isArray(courses) ? courses : [];
-    const selectedCourse = safeCourses.find((c) => String(c.id) === String(data.course_id));
-    const availableMajors = selectedCourse?.majors ?? [];
+    const isStudent = data.user_type === 'student';
+    const isAlumni = data.user_type === 'alumni';
+
+    const availableMajors = useMemo(
+        () => courses.find((c) => String(c.id) === data.course_id)?.majors ?? [],
+        [courses, data.course_id],
+    );
+
+    const yearLevel = useMemo(() => getYearLevel(data.student_number), [data.student_number]);
+
+    const studentNumberError =
+        data.student_number.length >= 2 && !yearLevel
+            ? `Student number must start with ${YEAR_CODE_RANGE}.`
+            : null;
+
+    const batchYearError = useMemo(() => getBatchYearError(data.batch_year), [data.batch_year]);
+
+    const agreed = agreedTerms && agreedPrivacy;
 
     const selectUserType = (value) => {
-        setData((prevData) => ({
-            ...prevData,
+        setData((prev) => ({
+            ...prev,
             user_type: value,
             student_number: '',
             course_id: '',
             major_id: '',
-            year_level: '',
             batch_year: '',
             proof: null,
         }));
+        clearErrors();
         setStep(2);
     };
 
-    const backToRoleSelect = () => {
-        setStep(1);
+    const handleCourseChange = (e) => {
+        setData((prev) => ({ ...prev, course_id: e.target.value, major_id: '' }));
     };
 
-    const handleCourseChange = (e) => {
-        setData((prevData) => ({
-            ...prevData,
-            course_id: e.target.value,
-            major_id: '',
-        }));
+    const handleStudentNumberChange = (e) => {
+        setData('student_number', formatStudentNumber(e.target.value));
+    };
+
+    const handleBatchYearChange = (e) => {
+        setData('batch_year', e.target.value.replace(/\D/g, '').slice(0, 4));
+    };
+
+    const handleContactNumberChange = (e) => {
+        let digits = e.target.value.replace(/\D/g, '');
+
+        // Local format 09XX... -> international 639XX...
+        if (digits.startsWith('0')) digits = `63${digits.slice(1)}`;
+
+        digits = digits.slice(0, 12);
+        setData('contact_number', digits ? `+${digits}` : '');
+    };
+
+    const handleAgreeChange = (e) => {
+        setAgreedTerms(e.target.checked);
+        setAgreedPrivacy(e.target.checked);
+    };
+
+    const openLegalModal = (e) => {
+        e.preventDefault();
+        setIsLegalModalOpen(true);
     };
 
     const submit = (e) => {
         e.preventDefault();
+
+        // The error messages are already shown under the fields.
+        if (isStudent && !yearLevel) return;
+        if (isAlumni && batchYearError) return;
+
         post(route('register'), {
             forceFormData: true,
             onFinish: () => reset('password', 'password_confirmation'),
         });
     };
 
-    const handleMainCheckboxChange = (e) => {
-        const isChecked = e.target.checked;
-        setAgreedTerms(isChecked);
-        setAgreedPrivacy(isChecked);
-    };
-
     return (
         <div className="min-h-screen flex bg-slate-50 font-sans selection:bg-yellow-300 selection:text-slate-900">
             <Head title="Create Your Account" />
 
+            {/* Left panel (desktop) */}
             <div className="hidden lg:flex lg:w-1/2 lg:h-screen lg:sticky lg:top-0 bg-slate-950 relative items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-tr from-yellow-500/20 to-slate-900/90 z-10"></div>
                 <img
@@ -87,9 +231,7 @@ export default function Register({ courses = [] }) {
                     href="/"
                     className="absolute top-8 left-8 z-20 flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-yellow-400 transition-colors"
                 >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
+                    <Icon paths={ARROW_LEFT} className="w-4 h-4" />
                     Back to Home
                 </Link>
                 <div className="relative z-20 flex flex-col items-center text-center px-12 max-w-lg">
@@ -105,8 +247,10 @@ export default function Register({ courses = [] }) {
                 </div>
             </div>
 
+            {/* Right panel */}
             <div className="w-full lg:w-1/2 flex flex-col items-center justify-start lg:justify-center p-6 sm:p-12 z-20 bg-white overflow-y-auto">
                 <div className="w-full max-w-lg py-4">
+                    {/* Mobile header */}
                     <div className="flex items-center justify-between mb-8 lg:hidden pb-4 border-b border-slate-100">
                         <div className="flex items-center gap-3.5">
                             <img src="/images/cedlogo.png" alt="Logo" className="w-12 h-12 rounded-full border-2 border-yellow-400 shadow-sm shrink-0" />
@@ -117,6 +261,7 @@ export default function Register({ courses = [] }) {
                         </Link>
                     </div>
 
+                    {/* Step 1: role select */}
                     {step === 1 && (
                         <>
                             <div className="mb-6">
@@ -125,34 +270,20 @@ export default function Register({ courses = [] }) {
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <button
-                                    type="button"
-                                    onClick={() => selectUserType('student')}
-                                    className="group text-left p-6 rounded-2xl border-2 border-slate-200 hover:border-yellow-500 hover:bg-yellow-50/50 transition-colors shadow-sm"
-                                >
-                                    <div className="w-12 h-12 rounded-xl bg-slate-900 text-yellow-400 flex items-center justify-center mb-4 group-hover:bg-yellow-500 group-hover:text-slate-950 transition-colors">
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z" />
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                                        </svg>
-                                    </div>
-                                    <h3 className="font-bold text-slate-900 text-lg mb-1">Student</h3>
-                                    <p className="text-slate-500 text-sm">Currently enrolled and requesting CED registrar services.</p>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => selectUserType('alumni')}
-                                    className="group text-left p-6 rounded-2xl border-2 border-slate-200 hover:border-yellow-500 hover:bg-yellow-50/50 transition-colors shadow-sm"
-                                >
-                                    <div className="w-12 h-12 rounded-xl bg-slate-900 text-yellow-400 flex items-center justify-center mb-4 group-hover:bg-yellow-500 group-hover:text-slate-950 transition-colors">
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                    </div>
-                                    <h3 className="font-bold text-slate-900 text-lg mb-1">Alumni</h3>
-                                    <p className="text-slate-500 text-sm">Already graduated and requesting document certificates.</p>
-                                </button>
+                                {ROLES.map((role) => (
+                                    <button
+                                        key={role.value}
+                                        type="button"
+                                        onClick={() => selectUserType(role.value)}
+                                        className="group text-left p-6 rounded-2xl border-2 border-slate-200 hover:border-yellow-500 hover:bg-yellow-50/50 transition-colors shadow-sm"
+                                    >
+                                        <div className="w-12 h-12 rounded-xl bg-slate-900 text-yellow-400 flex items-center justify-center mb-4 group-hover:bg-yellow-500 group-hover:text-slate-950 transition-colors">
+                                            <Icon paths={role.icon} className="w-6 h-6" />
+                                        </div>
+                                        <h3 className="font-bold text-slate-900 text-lg mb-1">{role.title}</h3>
+                                        <p className="text-slate-500 text-sm">{role.description}</p>
+                                    </button>
+                                ))}
                             </div>
 
                             <div className="flex items-center my-6">
@@ -176,118 +307,173 @@ export default function Register({ courses = [] }) {
 
                             <p className="text-center text-sm text-slate-600">
                                 Already have an account?{' '}
-                                <Link href={route('login')} className="font-bold text-yellow-700 hover:text-yellow-600 transition-colors">
+                                <Link href={route('login')} className={linkButtonClass}>
                                     Log in here
                                 </Link>
                             </p>
                         </>
                     )}
 
+                    {/* Step 2: details */}
                     {step === 2 && (
                         <>
                             <div className="mb-6">
                                 <button
                                     type="button"
-                                    onClick={backToRoleSelect}
+                                    onClick={() => setStep(1)}
                                     className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 mb-3 transition-colors"
                                 >
-                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                    </svg>
+                                    <Icon paths={ARROW_LEFT} className="w-3.5 h-3.5" />
                                     Change role
                                 </button>
                                 <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
-                                    {data.user_type === 'alumni' ? 'Alumni Registration' : 'Student Registration'}
+                                    {isAlumni ? 'Alumni Registration' : 'Student Registration'}
                                 </h1>
                                 <p className="text-slate-600 text-sm">Please fill in your information to get started.</p>
                             </div>
 
                             <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Field id="first_name" label="First Name" error={errors.first_name}>
+                                    <TextInput id="first_name" type="text" value={data.first_name} onChange={(e) => setData('first_name', e.target.value)} placeholder="First Name" className={inputClass} required />
+                                </Field>
 
-                                <div>
-                                    <InputLabel htmlFor="first_name" value="First Name" className="text-slate-800 font-semibold mb-1.5" />
-                                    <TextInput id="first_name" type="text" value={data.first_name} onChange={(e) => setData('first_name', e.target.value)} placeholder="First Name" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
-                                    <InputError message={errors.first_name} className="mt-1 text-red-600" />
-                                </div>
+                                <Field id="last_name" label="Last Name" error={errors.last_name}>
+                                    <TextInput id="last_name" type="text" value={data.last_name} onChange={(e) => setData('last_name', e.target.value)} placeholder="Last Name" className={inputClass} required />
+                                </Field>
 
-                                <div>
-                                    <InputLabel htmlFor="last_name" value="Last Name" className="text-slate-800 font-semibold mb-1.5" />
-                                    <TextInput id="last_name" type="text" value={data.last_name} onChange={(e) => setData('last_name', e.target.value)} placeholder="Last Name" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
-                                    <InputError message={errors.last_name} className="mt-1 text-red-600" />
-                                </div>
+                                <Field
+                                    id="email"
+                                    label="Email Address"
+                                    className="md:col-span-2"
+                                    error={errors.email}
+                                    hint={isStudent ? 'Please use your official CLSU email address.' : null}
+                                >
+                                    <TextInput
+                                        id="email"
+                                        type="email"
+                                        value={data.email}
+                                        onChange={(e) => setData('email', e.target.value)}
+                                        placeholder={isStudent ? 'username@clsu.edu.ph' : 'Enter your email address'}
+                                        className={inputClass}
+                                        autoComplete="email"
+                                        required
+                                    />
+                                </Field>
 
-                                <div className="md:col-span-2">
-                                    <InputLabel htmlFor="email" value="Email Address" className="text-slate-800 font-semibold mb-1.5" />
-                                    <TextInput id="email" type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} placeholder={data.user_type === 'student' ? "username@clsu.edu.ph" : "Enter your email address"} className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
-                                    {data.user_type === 'student' && !errors.email && (
-                                        <p className="mt-1 text-xs text-slate-500">Please use your official CLSU email address.</p>
-                                    )}
-                                    <InputError message={errors.email} className="mt-1 text-red-600" />
-                                </div>
+                                <Field id="contact_number" label="Contact Number" className="md:col-span-2" error={errors.contact_number}>
+                                    <TextInput
+                                        id="contact_number"
+                                        type="tel"
+                                        inputMode="tel"
+                                        autoComplete="tel"
+                                        value={formatContactNumber(data.contact_number)}
+                                        onChange={handleContactNumberChange}
+                                        placeholder="+63 917 123 4567"
+                                        maxLength={16}
+                                        className={inputClass}
+                                        required
+                                    />
+                                </Field>
 
-                                <div className="md:col-span-2">
-                                    <InputLabel htmlFor="contact_number" value="Contact Number" className="text-slate-800 font-semibold mb-1.5" />
-                                    <TextInput id="contact_number" type="text" value={data.contact_number} onChange={(e) => setData('contact_number', e.target.value)} placeholder="e.g. 09171234567" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
-                                    <InputError message={errors.contact_number} className="mt-1 text-red-600" />
-                                </div>
-
-                                {data.user_type === 'student' && (
-                                    <div className="md:col-span-2">
-                                        <InputLabel htmlFor="student_number" value="Student Number" className="text-slate-800 font-semibold mb-1.5" />
-                                        <TextInput id="student_number" type="text" value={data.student_number} onChange={(e) => setData('student_number', e.target.value)} placeholder="e.g. 21-1234" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
-                                        <InputError message={errors.student_number} className="mt-1 text-red-600" />
-                                    </div>
+                                {isStudent && (
+                                    <Field
+                                        id="student_number"
+                                        label="Student Number"
+                                        className="md:col-span-2"
+                                        error={errors.student_number || studentNumberError}
+                                        hint={`Valid year prefixes: ${YEAR_CODE_RANGE}`}
+                                    >
+                                        <TextInput
+                                            id="student_number"
+                                            type="text"
+                                            inputMode="numeric"
+                                            value={data.student_number}
+                                            onChange={handleStudentNumberChange}
+                                            placeholder={`e.g. ${toYearCode(ACADEMIC_YEAR)}-1234`}
+                                            maxLength={7}
+                                            pattern="\d{2}-\d{4}"
+                                            title="Format: YY-NNNN"
+                                            className={inputClass}
+                                            required
+                                        />
+                                    </Field>
                                 )}
 
-                                <div>
-                                    <InputLabel htmlFor="course_id" value="Course" className="text-slate-800 font-semibold mb-1.5" />
-                                    <select id="course_id" value={data.course_id} onChange={handleCourseChange} className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer" required>
+                                <Field id="course_id" label="Course" error={errors.course_id}>
+                                    <select id="course_id" value={data.course_id} onChange={handleCourseChange} className={selectClass} required>
                                         <option value="" disabled>Select course</option>
-                                        {safeCourses.map((course) => (
+                                        {courses.map((course) => (
                                             <option key={course.id} value={course.id}>{course.label}</option>
                                         ))}
                                     </select>
-                                    <InputError message={errors.course_id} className="mt-1 text-red-600" />
-                                </div>
+                                </Field>
 
-                                <div>
-                                    <InputLabel htmlFor="major_id" value="Major" className="text-slate-800 font-semibold mb-1.5" />
-                                    <select id="major_id" value={data.major_id} onChange={(e) => setData('major_id', e.target.value)} className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed" required={availableMajors.length > 0} disabled={availableMajors.length === 0}>
-                                        <option value="" disabled>{data.course_id === '' ? 'Select a course first' : availableMajors.length > 0 ? 'Select major' : 'No major for this course'}</option>
+                                <Field id="major_id" label="Major" error={errors.major_id}>
+                                    <select
+                                        id="major_id"
+                                        value={data.major_id}
+                                        onChange={(e) => setData('major_id', e.target.value)}
+                                        className={selectClass}
+                                        required={availableMajors.length > 0}
+                                        disabled={availableMajors.length === 0}
+                                    >
+                                        <option value="" disabled>
+                                            {data.course_id === ''
+                                                ? 'Select a course first'
+                                                : availableMajors.length > 0
+                                                    ? 'Select major'
+                                                    : 'No major for this course'}
+                                        </option>
                                         {availableMajors.map((major) => (
                                             <option key={major.id} value={major.id}>{major.label}</option>
                                         ))}
                                     </select>
-                                    <InputError message={errors.major_id} className="mt-1 text-red-600" />
-                                </div>
+                                </Field>
 
-                                <div className="md:col-span-2">
-                                    {data.user_type === 'alumni' ? (
-                                        <>
-                                            <InputLabel htmlFor="batch_year" value="Batch Year (Graduated)" className="text-slate-800 font-semibold mb-1.5" />
-                                            <TextInput id="batch_year" type="number" min="1900" max={new Date().getFullYear()} value={data.batch_year} onChange={(e) => setData('batch_year', e.target.value)} placeholder="e.g. 2020" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
-                                            <InputError message={errors.batch_year} className="mt-1 text-red-600" />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <InputLabel htmlFor="year_level" value="Year Level" className="text-slate-800 font-semibold mb-1.5" />
-                                            <select id="year_level" value={data.year_level} onChange={(e) => setData('year_level', e.target.value)} className="w-full px-4 py-2.5 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer" required>
-                                                <option value="" disabled>Select year level</option>
-                                                <option value="1">1st Year</option>
-                                                <option value="2">2nd Year</option>
-                                                <option value="3">3rd Year</option>
-                                                <option value="4">4th Year</option>
-                                                <option value="5">5th Year</option>
-                                                <option value="6">6th Year</option>
-                                            </select>
-                                            <InputError message={errors.year_level} className="mt-1 text-red-600" />
-                                        </>
-                                    )}
-                                </div>
+                                {isAlumni ? (
+                                    <Field
+                                        id="batch_year"
+                                        label="Batch Year (Graduated)"
+                                        className="md:col-span-2"
+                                        error={errors.batch_year || batchYearError}
+                                        hint={`Year you graduated (up to ${CURRENT_YEAR}).`}
+                                    >
+                                        <TextInput
+                                            id="batch_year"
+                                            type="text"
+                                            inputMode="numeric"
+                                            value={data.batch_year}
+                                            onChange={handleBatchYearChange}
+                                            placeholder="e.g. 2020"
+                                            maxLength={4}
+                                            pattern="\d{4}"
+                                            title="Enter a 4-digit year"
+                                            className={inputClass}
+                                            required
+                                        />
+                                    </Field>
+                                ) : (
+                                    <Field id="year_level" label="Year Level" className="md:col-span-2">
+                                        <TextInput
+                                            id="year_level"
+                                            type="text"
+                                            value={formatYearLevel(yearLevel)}
+                                            placeholder="Automatically determined from your student number"
+                                            className={`${inputClass} bg-slate-100`}
+                                            readOnly
+                                            tabIndex={-1}
+                                        />
+                                    </Field>
+                                )}
 
-                                {data.user_type === 'alumni' && (
-                                    <div className="md:col-span-2">
-                                        <InputLabel htmlFor="proof" value="Proof of Alumni Status (Diploma/TOR/ID)" className="text-slate-800 font-semibold mb-1.5" />
+                                {isAlumni && (
+                                    <Field
+                                        id="proof"
+                                        label="Proof of Alumni Status (Diploma/TOR/ID)"
+                                        className="md:col-span-2"
+                                        error={errors.proof}
+                                        hint="Supported formats: JPG, PNG, PDF (Max 10MB)"
+                                    >
                                         <input
                                             id="proof"
                                             type="file"
@@ -296,46 +482,42 @@ export default function Register({ courses = [] }) {
                                             className="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-yellow-100 file:text-yellow-800 hover:file:bg-yellow-200 cursor-pointer border border-slate-300 rounded-xl bg-white focus:outline-none"
                                             required
                                         />
-                                        <p className="mt-1 text-xs text-slate-500">Supported formats: JPG, PNG, PDF (Max 10MB)</p>
-                                        <InputError message={errors.proof} className="mt-1 text-red-600" />
-                                    </div>
+                                    </Field>
                                 )}
 
-                                <div>
-                                    <InputLabel htmlFor="password" value="Password" className="text-slate-800 font-semibold mb-1.5" />
-                                    <TextInput id="password" type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} placeholder="Create password" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
-                                    <InputError message={errors.password} className="mt-1 text-red-600" />
-                                </div>
+                                <Field id="password" label="Password" error={errors.password}>
+                                    <TextInput id="password" type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} placeholder="Create password" className={inputClass} autoComplete="new-password" required />
+                                </Field>
 
-                                <div>
-                                    <InputLabel htmlFor="password_confirmation" value="Confirm Password" className="text-slate-800 font-semibold mb-1.5" />
-                                    <TextInput id="password_confirmation" type="password" value={data.password_confirmation} onChange={(e) => setData('password_confirmation', e.target.value)} placeholder="Confirm password" className="w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900" required />
-                                    <InputError message={errors.password_confirmation} className="mt-1 text-red-600" />
-                                </div>
+                                <Field id="password_confirmation" label="Confirm Password" error={errors.password_confirmation}>
+                                    <TextInput id="password_confirmation" type="password" value={data.password_confirmation} onChange={(e) => setData('password_confirmation', e.target.value)} placeholder="Confirm password" className={inputClass} autoComplete="new-password" required />
+                                </Field>
 
-                                {/* Terms Checkbox Syncs with Modal */}
+                                {/* Terms checkbox (synced with the legal modal) */}
                                 <div className="md:col-span-2 flex items-center text-sm mt-1">
                                     <input
                                         type="checkbox"
                                         id="terms"
                                         className="rounded border-slate-300 text-yellow-500 focus:ring-yellow-400 mr-2 cursor-pointer"
+                                        checked={agreed}
+                                        onChange={handleAgreeChange}
                                         required
-                                        checked={agreedTerms && agreedPrivacy}
-                                        onChange={handleMainCheckboxChange}
                                     />
                                     <label htmlFor="terms" className="text-slate-600 text-xs sm:text-sm">
-                                        I agree to the <button type="button" onClick={(e) => { e.preventDefault(); setIsLegalModalOpen(true); }} className="font-bold text-yellow-700 hover:text-yellow-600 transition-colors">Terms of Service</button> and <button type="button" onClick={(e) => { e.preventDefault(); setIsLegalModalOpen(true); }} className="font-bold text-yellow-700 hover:text-yellow-600 transition-colors">Privacy Policy</button>.
+                                        I agree to the{' '}
+                                        <button type="button" onClick={openLegalModal} className={linkButtonClass}>Terms of Service</button>
+                                        {' '}and{' '}
+                                        <button type="button" onClick={openLegalModal} className={linkButtonClass}>Privacy Policy</button>.
                                     </label>
                                 </div>
 
                                 <div className="md:col-span-2 mt-2">
                                     <button
+                                        type="submit"
                                         disabled={processing}
                                         className="w-full py-3.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold rounded-xl transition-colors shadow-md shadow-yellow-500/20 disabled:opacity-70 flex items-center justify-center gap-2"
                                     >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                                        </svg>
+                                        <Icon paths={['M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z']} />
                                         Register Account
                                     </button>
                                 </div>
