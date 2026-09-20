@@ -14,7 +14,8 @@ class RequestStatusChanged extends Notification implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        protected CertificateRequest $certRequest,
+        public CertificateRequest $certRequest,
+        public ?string $note = null,
     ) {
     }
 
@@ -47,15 +48,25 @@ class RequestStatusChanged extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $status = $this->certRequest->status;
+        $code = $this->certRequest->status->code ?? '';
+
+        $subject = match ($code) {
+            'processing' => 'Your certificate request is being processed',
+            'ready_for_release' => 'Your certificate is ready for release',
+            'released' => 'Your certificate has been released',
+            'rejected' => 'Your certificate request was rejected',
+            'for_compliance' => 'Action needed: your certificate request requires compliance',
+            default => 'Update on your certificate request',
+        };
 
         return (new MailMessage)
-            ->subject('Update on your ' . $this->certRequest->service->label . ' request')
-            ->greeting('Hi ' . $notifiable->first_name . ',')
-            ->line($this->messageFor($status->code, $notifiable))
-            ->action('View Request', route('requests.show', $this->certRequest))
-            ->line('CED Registrar\'s Office - WRCIMS');
+            ->subject($subject)
+            ->view('emails.request-status', [
+                'certRequest' => $this->certRequest,
+                'note' => $this->note,
+            ]);
     }
+
 
     protected function messageFor(string $statusCode, object $notifiable): string
     {

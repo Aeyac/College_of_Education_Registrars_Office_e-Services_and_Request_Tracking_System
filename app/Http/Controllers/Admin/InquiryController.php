@@ -166,6 +166,12 @@ class InquiryController extends Controller
         );
     }
 
+    public function markRead($id): RedirectResponse
+    {
+        Inquiry::where('user_id', auth()->id())->findOrFail($id)->update(['is_read_by_user' => true]);
+        return back();
+    }
+    
     /**
      * Mark an inquiry as read by the admin.
      */

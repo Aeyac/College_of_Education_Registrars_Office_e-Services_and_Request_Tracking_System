@@ -6,7 +6,8 @@ use App\Http\Controllers\Admin\AuditTrailController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FacultyController;
 use App\Http\Controllers\Admin\FilteredWordController;
-use App\Http\Controllers\Admin\InquiryController;
+use App\Http\Controllers\Admin\InquiryController as AdminInquiryController;
+use App\Http\Controllers\User\InquiryController as UserInquiryController;
 use App\Http\Controllers\Admin\RequestController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\CertificateRequestController;
@@ -54,7 +55,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
 
         // Reachable even while pending
         Route::get('/pending-verification', [AlumniVerificationController::class, 'pending'])->name('pending-verification');
-        Route::post('/verify-alumni', [AlumniVerificationController::class, 'store'])->name('verify-alumni');
+        // Route::post('/verify-alumni', [AlumniVerificationController::class, 'store'])->name('verify-alumni');
 
         Route::post('/requests/{certificateRequest}/receive', [CertificateRequestController::class, 'markReceived'])
             ->name('requests.receive');
@@ -62,6 +63,8 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
             ->name('requests.archive');
         Route::patch('/requests/{certificateRequest}/unarchive', [CertificateRequestController::class, 'unarchive'])
             ->name('requests.unarchive');
+        Route::patch('/requests/{certificateRequest}/cancel', [CertificateRequestController::class, 'cancel'])
+            ->name('requests.cancel');
 
         // Everything else requires verified alumni
         Route::middleware('verified.alumni')->group(function () {
@@ -77,15 +80,15 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
             Route::get('/terms-of-service', [StaticPageController::class, 'terms'])->name('terms');
             Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
 
-            Route::get('/inquiries', [App\Http\Controllers\User\InquiryController::class, 'index'])->name('inquiries');
-            Route::get('/inquiries/attachment/{id}', [InquiryController::class, 'viewAttachment'])->name('inquiries.attachment');
-            Route::post('/inquiries', [App\Http\Controllers\User\InquiryController::class, 'store'])->name('inquiries.store');
-            Route::post('/inquiries/{id}/reply', [InquiryController::class, 'reply'])->name('inquiries.reply');
-            Route::put('/inquiries/messages/{id}', [InquiryController::class, 'updateMessage'])->name('inquiries.messages.edit');
-            Route::delete('/inquiries/messages/{id}', [InquiryController::class, 'destroyMessage'])->name('inquiries.messages.destroy');
-            Route::put('/inquiries/{id}/read', [InquiryController::class, 'markRead'])->name('inquiries.read');
-            Route::put('/inquiries/{id}/unread', [InquiryController::class, 'markUnread'])->name('inquiries.unread');
-            Route::delete('/inquiries/{id}', [InquiryController::class, 'destroy'])->name('inquiries.destroy');
+            Route::get('/inquiries', [UserInquiryController::class, 'index'])->name('inquiries');
+            Route::get('/inquiries/attachment/{id}', [UserInquiryController::class, 'viewAttachment'])->name('inquiries.attachment');
+            Route::post('/inquiries', [UserInquiryController::class, 'store'])->name('inquiries.store');
+            Route::post('/inquiries/{id}/reply', [UserInquiryController::class, 'reply'])->name('inquiries.reply');
+            Route::put('/inquiries/messages/{id}', [UserInquiryController::class, 'updateMessage'])->name('inquiries.messages.edit');
+            Route::delete('/inquiries/messages/{id}', [UserInquiryController::class, 'destroyMessage'])->name('inquiries.messages.destroy');
+            Route::put('/inquiries/{id}/read', [UserInquiryController::class, 'markRead'])->name('inquiries.read');
+            Route::put('/inquiries/{id}/unread', [UserInquiryController::class, 'markUnread'])->name('inquiries.unread');
+            Route::delete('/inquiries/{id}', [UserInquiryController::class, 'destroy'])->name('inquiries.destroy');
 
             Route::post('/requests/{id}/feedback', [FeedbackController::class, 'storeFeedback'])->name('feedback.store');
         });
@@ -117,16 +120,17 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::get('/export/excel', [ExportController::class, 'exportExcel'])->name('export.excel');
         Route::get('/export/pdf', [ExportController::class, 'exportPdf'])->name('export.pdf');
 
-        Route::get('/inquiries', [InquiryController::class, 'inquiries'])->name('inquiries');
-        Route::get('/inquiries/attachment/{id}', [InquiryController::class, 'viewAttachment'])->name('inquiries.attachment');
-        Route::post('/inquiries/{id}/reply', [InquiryController::class, 'replyInquiry'])->name('inquiries.reply');
-        Route::put('/inquiries/{id}/status', [InquiryController::class, 'updateInquiryStatus'])->name('inquiries.status');
-        Route::put('/inquiries/messages/{id}', [InquiryController::class, 'editMessage'])->name('inquiries.messages.edit');
-        Route::delete('/inquiries/messages/{id}', [InquiryController::class, 'deleteMessage'])->name('inquiries.messages.destroy');
-        Route::put('/inquiries/{id}/read', [InquiryController::class, 'markInquiryRead'])->name('inquiries.read');
-        Route::put('/inquiries/{id}/unread', [InquiryController::class, 'markInquiryUnread'])->name('inquiries.unread');
-        Route::delete('/inquiries/{id}', [InquiryController::class, 'deleteInquiry'])->name('inquiries.destroy');
+        Route::get('/inquiries', [AdminInquiryController::class, 'inquiries'])->name('inquiries');
+        Route::get('/inquiries/attachment/{id}', [AdminInquiryController::class, 'viewAttachment'])->name('inquiries.attachment');
+        Route::post('/inquiries/{id}/reply', [AdminInquiryController::class, 'replyInquiry'])->name('inquiries.reply');
+        Route::put('/inquiries/{id}/status', [AdminInquiryController::class, 'updateInquiryStatus'])->name('inquiries.status');
+        Route::put('/inquiries/messages/{id}', [AdminInquiryController::class, 'editMessage'])->name('inquiries.messages.edit');
+        Route::delete('/inquiries/messages/{id}', [AdminInquiryController::class, 'deleteMessage'])->name('inquiries.messages.destroy');
+        Route::put('/inquiries/{id}/read', [AdminInquiryController::class, 'markInquiryRead'])->name('inquiries.read');
+        Route::put('/inquiries/{id}/unread', [AdminInquiryController::class, 'markInquiryUnread'])->name('inquiries.unread');
+        Route::delete('/inquiries/{id}', [AdminInquiryController::class, 'deleteInquiry'])->name('inquiries.destroy');
 
+        
         Route::get('/filtered-words', [FilteredWordController::class, 'index'])->name('filtered-words');
         Route::post('/filtered-words', [FilteredWordController::class, 'store'])->name('filtered-words.store');
         Route::delete('/filtered-words/{id}', [FilteredWordController::class, 'destroy'])->name('filtered-words.destroy');

@@ -38,7 +38,8 @@ class DatabaseSeeder extends Seeder
             ['code' => 'ready_for_release', 'label' => 'Ready for Release', 'sort_order' => 4],
             ['code' => 'released', 'label' => 'Released', 'sort_order' => 5],
             ['code' => 'for_compliance', 'label' => 'For Compliance', 'sort_order' => 6],
-            ['code' => 'cancelled_returned', 'label' => 'Cancelled / Returned', 'sort_order' => 7],
+            ['code' => 'cancelled', 'label' => 'Cancelled', 'sort_order' => 7],
+            ['code' => 'rejected', 'label' => 'Rejected', 'sort_order' => 8],
         ];
 
         foreach ($statuses as $status) {
@@ -47,9 +48,24 @@ class DatabaseSeeder extends Seeder
 
         // 3. Profanity Filter Words
         $defaultWords = [
-            'fuck', 'shit', 'bitch', 'asshole', 'dick', 'pussy',
-            'putangina', 'tangina', 'gago', 'bobo', 'tanga', 'inutil',
-            'ulol', 'punyeta', 'hayop', 'gaga', 'kupal', 'tarantado',
+            'fuck',
+            'shit',
+            'bitch',
+            'asshole',
+            'dick',
+            'pussy',
+            'putangina',
+            'tangina',
+            'gago',
+            'bobo',
+            'tanga',
+            'inutil',
+            'ulol',
+            'punyeta',
+            'hayop',
+            'gaga',
+            'kupal',
+            'tarantado',
         ];
 
         foreach ($defaultWords as $word) {

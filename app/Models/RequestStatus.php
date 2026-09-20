@@ -15,4 +15,10 @@ class RequestStatus extends Model
     {
         return $this->hasMany(CertificateRequest::class, 'status_id');
     }
+
+    public static function idFor(string $code): int
+    {
+        return static::where('code', $code)->firstOrFail()->id;
+    }
+    
 }

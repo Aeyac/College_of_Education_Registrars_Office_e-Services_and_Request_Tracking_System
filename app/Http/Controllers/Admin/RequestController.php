@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Admin;
-
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\AlumniVerification;
 use App\Models\CertificateRequest;
@@ -14,7 +14,7 @@ use Inertia\Inertia;
 class RequestController extends Controller
 {
 
-    private const NOT_ALLOWED_TO_UPDATE = ['cancelled_returned', 'released', 'ready_for_release'];
+    private const NOT_ALLOWED_TO_UPDATE = ['cancelled_returned', 'released', 'rejected'];
 
     public function loadRequest(Request $request)
     {
@@ -54,6 +54,7 @@ class RequestController extends Controller
         ]);
     }
 
+
     public function updateRequest(Request $request, $id)
     {
         $certRequest = CertificateRequest::findOrFail($id);
@@ -69,11 +70,19 @@ class RequestController extends Controller
             ['label' => ucwords(str_replace('_', ' ', $statusCode))]
         );
 
+        $statusChanged = $certRequest->status_id !== $newStatus->id;
+
         $certRequest->transitionTo($newStatus, auth()->user(), $request->input('note'));
         $certRequest->load(['service', 'status']);
 
-        if ($certRequest->user) {
-            $certRequest->user->notify(new RequestStatusChanged($certRequest));
+        if ($statusChanged && $certRequest->user) {
+            try {
+                $certRequest->user->notify(
+                    new RequestStatusChanged($certRequest, $request->input('note'))
+                );
+            } catch (\Throwable $e) {
+                report($e); // the status update still succeeds if the email fails
+            }
         }
 
         return back()->with('success', 'Status updated.');
@@ -84,7 +93,7 @@ class RequestController extends Controller
         $certRequest = CertificateRequest::findOrFail($id);
 
         $currentStatus = RequestStatus::findOrFail($certRequest->status_id);
-        abort_unless(in_array($currentStatus->code, self::NOT_ALLOWED_TO_UPDATE), 422, 'Only resolved requests (released, ready for release, or cancelled/returned) can be archived.');
+        abort_unless(in_array($currentStatus->code, self::NOT_ALLOWED_TO_UPDATE), 422, 'Only resolved requests (released, rejected, or cancelled/returned) can be archived.');
 
         $certRequest->update(['archived_at' => now()]);
 

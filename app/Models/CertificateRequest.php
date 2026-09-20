@@ -114,4 +114,10 @@ class CertificateRequest extends Model
 
         $this->update(['status_id' => $newStatus->id]);
     }
+
+    public function isCancellable(): bool
+    {
+        return in_array($this->status?->code, ['submitted'], true); // add your other cancellable codes
+    }
+
 }

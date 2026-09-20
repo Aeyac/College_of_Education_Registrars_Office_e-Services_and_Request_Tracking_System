@@ -3,14 +3,14 @@ import { Head, useForm, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Icon } from '@/Components/Icon';
 
-const LOCKED_STATUSES = new Set(['cancelled_returned', 'released', 'ready_for_release']);
-const NOTE_REQ_STATUSES = new Set(['cancelled_returned', 'for_compliance']);
+const LOCKED_STATUSES = new Set(['cancelled', 'released', 'rejected']);
+const NOTE_REQ_STATUSES = new Set(['rejected', 'for_compliance']);
 
 const STATUS_MAP = [
     { keys: ['pending', 'review'], style: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
     { keys: ['processing'], style: 'bg-blue-100 text-blue-800 border-blue-200' },
     { keys: ['compliance'], style: 'bg-purple-100 text-purple-800 border-purple-200' },
-    { keys: ['cancel', 'return'], style: 'bg-red-100 text-red-800 border-red-200' },
+    { keys: ['cancel', 'rejected'], style: 'bg-red-100 text-red-800 border-red-200' },
     { keys: ['ready', 'released'], style: 'bg-emerald-100 text-emerald-800 border-emerald-200' }
 ];
 
@@ -25,9 +25,12 @@ const STATUS_FILTER_OPTIONS = [
     { value: 'processing', label: 'Processing' },
     { value: 'ready_for_release', label: 'Ready for Release' },
     { value: 'released', label: 'Released' },
-    { value: 'cancelled_returned', label: 'Rejected / Return' },
+    { value: 'cancelled', label: 'Cancelled' },
     { value: 'for_compliance', label: 'For Compliance' },
+    { value: 'rejected', label: 'Rejected' },
 ];
+
+const STATUS_UPDATE_OPTIONS = STATUS_FILTER_OPTIONS.filter(s => s.value !== 'cancelled');
 
 const Badge = ({ children, className }) => (
     <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${className}`}>
@@ -342,7 +345,7 @@ export default function ManageRequests({ requests = [], showingArchived = false 
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Change Status</label>
                                         <select value={data.status_code} onChange={e => setData('status_code', e.target.value)} className="w-full border border-slate-300 text-slate-900 rounded-xl p-3 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none">
-                                            {STATUS_FILTER_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                                            {STATUS_UPDATE_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                                         </select>
                                     </div>
 

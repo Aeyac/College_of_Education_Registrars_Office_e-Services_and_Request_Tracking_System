@@ -53,6 +53,7 @@ class RegisteredUserController extends Controller
             $emailRules[] = 'regex:/@clsu2?\.edu\.ph$/';
         }
 
+
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
@@ -127,6 +128,7 @@ class RegisteredUserController extends Controller
                 'otp' => $otp,
                 'otp_expires_at' => now()->addMinutes(self::OTP_TTL_MINUTES),
             ]);
+
 
             $user->assignRole($validated['user_type']);
 

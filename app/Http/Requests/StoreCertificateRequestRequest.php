@@ -19,7 +19,11 @@ class StoreCertificateRequestRequest extends FormRequest
         return [
             'service_id' => ['required', 'exists:request_services,id'],
             'purpose' => ['required', 'string', 'max:2000'],
-            'preferred_claiming_date' => ['nullable', 'date', 'after_or_equal:' . now()->addDays(3)->toDateString()],
+            'preferred_claiming_date' => [
+                'required',
+                'date',
+                'after_or_equal:' . now()->addDays(3)->toDateString(),
+            ],
             'requirement_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
 
             // Internship-specific fields (Conditionally Required)
@@ -57,6 +61,7 @@ class StoreCertificateRequestRequest extends FormRequest
             'internship_school_or_agency.required' => 'The internship school/agency is required for Internship Certificate requests.',
             'semester.required' => 'The semester is required for Internship Certificate requests.',
             'school_year.required' => 'The school year is required for Internship Certificate requests.',
+            'preferred_claiming_date.after_or_equal' => 'Preferred claiming date must be at least 3 days from today.',
         ];
     }
 }

@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers\Admin;
-
 use App\Http\Controllers\Controller;
 use App\Models\AlumniVerification;
 use App\Models\CertificateRequest;
@@ -10,6 +9,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
+use App\Mail\AlumniVerificationStatusMail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 
 class AlumniController extends Controller
 {
@@ -34,8 +36,28 @@ class AlumniController extends Controller
 
     public function updateAlumni(Request $request, $id)
     {
-        $alumni = AlumniVerification::findOrFail($id);
-        $alumni->update(['status' => $request->input('status')]);
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['pending', 'verified', 'rejected'])],
+        ]);
+
+        $alumni = AlumniVerification::with('user')->findOrFail($id);
+
+        $alumni->status = $validated['status'];
+        $statusChanged = $alumni->isDirty('status');
+        $alumni->save();
+
+        if (
+            $statusChanged
+            && in_array($alumni->status, ['verified', 'rejected'])
+            && $alumni->user?->email
+        ) {
+            try {
+                Mail::to($alumni->user->email)->send(new AlumniVerificationStatusMail($alumni));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
         return back()->with('success', 'Alumni verification status updated.');
     }
 

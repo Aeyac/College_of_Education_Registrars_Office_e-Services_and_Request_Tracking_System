@@ -49,6 +49,20 @@ class CertificateRequestController extends Controller
         return back()->with('success', 'Request restored.');
     }
 
+    public function cancel(CertificateRequest $certificateRequest)
+    {
+        abort_unless($certificateRequest->user_id === auth()->id(), 403);
+
+        if (!$certificateRequest->isCancellable()) {
+            return back()->with('error', 'This request can no longer be cancelled.');
+        }
+
+        $certificateRequest->update([
+            'status_id' => RequestStatus::idFor('cancelled'),
+        ]);
+
+        return back()->with('success', 'Request cancelled.');
+    }
 
     // public function index(): Response
     // {

@@ -13,8 +13,8 @@ class OtpVerificationController extends Controller
     public function notice(Request $request)
     {
         return $request->user()->hasVerifiedEmail()
-                    ? redirect()->intended(route('user.dashboard', absolute: false))
-                    : Inertia::render('Auth/VerifyOtp', ['status' => session('status')]);
+            ? redirect()->intended(route('user.dashboard', absolute: false))
+            : Inertia::render('Auth/VerifyOtp', ['status' => session('status')]);
     }
 
     public function verify(Request $request)
@@ -22,7 +22,7 @@ class OtpVerificationController extends Controller
         $request->validate(['otp' => 'required|numeric|digits:6']);
 
         $user = $request->user();
-        
+
         // Track failed attempts in session
         $attempts = session('otp_attempts', 0);
 
@@ -33,7 +33,7 @@ class OtpVerificationController extends Controller
         if ($user->otp == $request->otp && now()->lessThanOrEqualTo($user->otp_expires_at)) {
             // Reset attempts on success
             session()->forget('otp_attempts');
-            
+
             $user->markEmailAsVerified();
             $user->update(['otp' => null, 'otp_expires_at' => null]);
 

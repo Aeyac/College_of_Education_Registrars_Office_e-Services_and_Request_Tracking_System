@@ -5,7 +5,7 @@ import ChatModal from '@/Components/ChatModal';
 import Swal from 'sweetalert2';
 
 export default function MyInquiries({ userRole, inquiries = [] }) {
-    const { auth } = usePage().props;
+    // const { auth } = usePage().props;
     const [selectedInquiryId, setSelectedInquiryId] = useState(null);
     const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 
