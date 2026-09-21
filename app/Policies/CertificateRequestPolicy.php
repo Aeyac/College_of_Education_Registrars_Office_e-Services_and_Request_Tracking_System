@@ -57,4 +57,15 @@ class CertificateRequestPolicy
     {
         return $user->isAdmin();
     }
+
+    public function viewSoftCopy(User $user, CertificateRequest $certificateRequest): bool
+    {
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        // Students: only their own request, and only while it's ready/released
+        return $certificateRequest->user_id === $user->id
+            && $certificateRequest->isSoftCopyAvailableToOwner();
+    }
 }

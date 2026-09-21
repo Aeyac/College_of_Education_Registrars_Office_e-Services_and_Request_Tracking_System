@@ -4,6 +4,7 @@ import UserLayout from '@/Layouts/UserLayout';
 import FeedbackModal from './FeedbackModal';
 import RequestDocumentModal from '@/Components/RequestDocumentModal';
 import Swal from 'sweetalert2';
+import SoftCopyViewerModal from '@/Components/SoftCopyViewerModal';
 
 const LOCKED_STATUSES = new Set(['cancelled_returned', 'cancelled', 'released']);
 
@@ -22,7 +23,9 @@ const ICONS = {
     close: 'M6 18L18 6M6 6l12 12',
     check: 'M5 13l4 4L19 7',
     warning: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+    eye: 'M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
 };
+
 
 const showAlert = (title, text, iconPath) => Swal.mixin({
     customClass: {
@@ -112,9 +115,12 @@ export default function MyRequests({
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [docTypeFilter, setDocTypeFilter] = useState('all');
+    const [softCopyRequest, setSoftCopyRequest] = useState(null);
 
     const requestList = requests?.data ?? [];
     const paginationLinks = requests?.meta?.links ?? requests?.links ?? [];
+
+    const [viewing, setViewing] = useState(null);
 
     const documentTypes = useMemo(
         () => [...new Set(requestList.map(r => r.document_type).filter(Boolean))].sort(),
@@ -324,6 +330,8 @@ export default function MyRequests({
                                         </span>
                                     )}
 
+                                  
+
                                     <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
                                         {isCompleted && (
                                             !isReceived ? (
@@ -354,8 +362,8 @@ export default function MyRequests({
                                             <button
                                                 onClick={() => setFeedbackTarget(req)}
                                                 className={`inline-flex items-center justify-center gap-1.5 min-h-[42px] px-3 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm ${hasFeedback
-                                                        ? 'bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200'
-                                                        : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200'
+                                                    ? 'bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200'
+                                                    : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200'
                                                     }`}
                                             >
                                                 <span>{hasFeedback ? 'View Feedback' : 'Add Feedback'}</span>
@@ -372,6 +380,18 @@ export default function MyRequests({
                                                     <path strokeLinecap="round" strokeLinejoin="round" d={ICONS.close} />
                                                 </svg>
                                                 {cancellingId === req.id ? 'Cancelling...' : 'Cancel'}
+                                            </button>
+                                        )}
+
+                                        {req.soft_copy_available && (
+                                            <button
+                                                onClick={() => setSoftCopyRequest(req)}
+                                                className="inline-flex items-center justify-center gap-1.5 min-h-[42px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm"
+                                            >
+                                                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d={ICONS.eye} />
+                                                </svg>
+                                                View Document
                                             </button>
                                         )}
 
@@ -434,10 +454,10 @@ export default function MyRequests({
                                 preserveState
                                 dangerouslySetInnerHTML={{ __html: link.label }}
                                 className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors ${link.active
-                                        ? 'bg-yellow-400 text-slate-900'
-                                        : link.url
-                                            ? 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                                            : 'bg-white border border-slate-100 text-slate-300 cursor-not-allowed'
+                                    ? 'bg-yellow-400 text-slate-900'
+                                    : link.url
+                                        ? 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                                        : 'bg-white border border-slate-100 text-slate-300 cursor-not-allowed'
                                     }`}
                             />
                         ))}
@@ -458,6 +478,10 @@ export default function MyRequests({
                     services={services}
                     onClose={() => setIsModalOpen(false)}
                 />
+            )}
+
+            {softCopyRequest && (
+                <SoftCopyViewerModal request={softCopyRequest} onClose={() => setSoftCopyRequest(null)} />
             )}
         </UserLayout>
     );

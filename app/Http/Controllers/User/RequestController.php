@@ -69,6 +69,8 @@ class RequestController extends Controller
             'format' => $req->delivery_mode === 'hard_copy' ? 'Hard Copy' : 'Soft Copy',
             'status' => $req->status?->label ?? 'Pending',
             'created_at' => $req->created_at->format('M d, Y'),
+            'soft_copy_available' => $req->isSoftCopyAvailableToOwner(),
+            'output_document_name' => $req->outputDocument?->original_name,
         ]);
     }
 }

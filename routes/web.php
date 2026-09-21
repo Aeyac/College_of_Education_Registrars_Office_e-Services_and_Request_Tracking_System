@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FacultyController;
 use App\Http\Controllers\Admin\FilteredWordController;
 use App\Http\Controllers\Admin\InquiryController as AdminInquiryController;
+use App\Http\Controllers\SoftCopyController;
 use App\Http\Controllers\User\InquiryController as UserInquiryController;
 use App\Http\Controllers\Admin\RequestController;
 use App\Http\Controllers\Admin\UserController;
@@ -51,6 +52,12 @@ Route::middleware('auth')->group(function () {
 
 // === USER ROUTES ===
 Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
+    Route::get('/requests/{certificateRequest}/soft-copy', [SoftCopyController::class, 'show'])
+        ->name('requests.soft-copy.show');
+    Route::get('/requests/{certificateRequest}/soft-copy/download', [SoftCopyController::class, 'download'])
+        ->name('requests.soft-copy.download');
+
+
     Route::prefix('user')->name('user.')->middleware('role:student|alumni')->group(function () {
 
         // Reachable even while pending
@@ -130,7 +137,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::put('/inquiries/{id}/unread', [AdminInquiryController::class, 'markInquiryUnread'])->name('inquiries.unread');
         Route::delete('/inquiries/{id}', [AdminInquiryController::class, 'deleteInquiry'])->name('inquiries.destroy');
 
-        
+
         Route::get('/filtered-words', [FilteredWordController::class, 'index'])->name('filtered-words');
         Route::post('/filtered-words', [FilteredWordController::class, 'store'])->name('filtered-words.store');
         Route::delete('/filtered-words/{id}', [FilteredWordController::class, 'destroy'])->name('filtered-words.destroy');

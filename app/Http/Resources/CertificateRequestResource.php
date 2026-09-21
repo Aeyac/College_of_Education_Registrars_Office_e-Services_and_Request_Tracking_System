@@ -32,6 +32,10 @@ class CertificateRequestResource extends JsonResource
             ])),
             'has_feedback' => $this->feedback !== null,
             'feedback' => $this->feedback,
+            'soft_copy_available' => $this->isSoftCopyAvailableToOwner(),
+            'output_document_name' => $this->isSoftCopyAvailableToOwner()
+                ? $this->outputDocument?->original_name
+                : null,
         ];
     }
 }

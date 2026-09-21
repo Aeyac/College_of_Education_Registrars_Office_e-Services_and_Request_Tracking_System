@@ -5,6 +5,7 @@ import { Icon } from '@/Components/Icon';
 
 const LOCKED_STATUSES = new Set(['cancelled', 'released', 'rejected']);
 const NOTE_REQ_STATUSES = new Set(['rejected', 'for_compliance']);
+const OUTPUT_REQUIRED_STATUSES = new Set(['ready_for_release', 'released']);
 
 const STATUS_MAP = [
     { keys: ['pending', 'review'], style: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
@@ -46,7 +47,12 @@ export default function ManageRequests({ requests = [], showingArchived = false 
     const [docTypeFilter, setDocTypeFilter] = useState('all');
     const [exporting, setExporting] = useState(null);
     const [archiving, setArchiving] = useState(null); // holds the id currently being archived/restored
-    const { data, setData, put, processing, reset } = useForm({ status_code: '', note: '' });
+    const { data, setData, post, processing, reset, errors } = useForm({
+        _method: 'put',
+        status_code: '',
+        note: '',
+        soft_copy: null,
+    });
 
     const closeModal = () => { setSelectedRequest(null); reset(); };
 
@@ -57,7 +63,7 @@ export default function ManageRequests({ requests = [], showingArchived = false 
 
     const handleUpdate = (e) => {
         e.preventDefault();
-        put(`/admin/requests/${selectedRequest.id}`, { onSuccess: closeModal });
+        post(`/admin/requests/${selectedRequest.id}`, { forceFormData: true, onSuccess: closeModal });
     };
 
     const handleExport = (type) => {
@@ -117,6 +123,11 @@ export default function ManageRequests({ requests = [], showingArchived = false 
     }, [requests, searchTerm, statusFilter, docTypeFilter]);
 
     const noteIsRequired = NOTE_REQ_STATUSES.has(data.status_code);
+    const mustUpload =
+        selectedRequest?.is_soft_copy &&
+        OUTPUT_REQUIRED_STATUSES.has(data.status_code) &&
+        !selectedRequest.output_document;
+
     const isViewOnly = selectedRequest && (LOCKED_STATUSES.has(selectedRequest.status_code) || selectedRequest.is_archived);
 
     return (
@@ -335,6 +346,27 @@ export default function ManageRequests({ requests = [], showingArchived = false 
                                 )}
                             </div>
 
+                            {selectedRequest.is_soft_copy && (
+                                <div className="bg-slate-50 p-4 rounded-xl text-sm border border-slate-200">
+                                    <p className="text-xs font-bold text-slate-500 uppercase mb-2">Soft Copy</p>
+                                    {selectedRequest.output_document ? (
+                                        <div className="flex items-center justify-between gap-3">
+                                            <a href={route('requests.soft-copy.show', selectedRequest.id)}
+                                                target="_blank" rel="noopener noreferrer"
+                                                className="font-semibold text-blue-700 hover:underline truncate">
+                                                {selectedRequest.output_document.name}
+                                            </a>
+                                            <a href={route('requests.soft-copy.download', selectedRequest.id)}
+                                                className="shrink-0 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-100">
+                                                Download
+                                            </a>
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-slate-500">No soft copy uploaded yet.</p>
+                                    )}
+                                </div>
+                            )}
+
                             {isViewOnly ? (
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Status</label>
@@ -344,10 +376,30 @@ export default function ManageRequests({ requests = [], showingArchived = false 
                                 <form onSubmit={handleUpdate} className="space-y-4">
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Change Status</label>
-                                        <select value={data.status_code} onChange={e => setData('status_code', e.target.value)} className="w-full border border-slate-300 text-slate-900 rounded-xl p-3 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none">
+                                        <select value={data.status_code}
+                                            onChange={e => {
+                                                const code = e.target.value;
+                                                setData(d => ({ ...d, status_code: code, soft_copy: OUTPUT_REQUIRED_STATUSES.has(code) ? d.soft_copy : null }));
+                                            }}
+                                            className="w-full border border-slate-300 text-slate-900 rounded-xl p-3 text-sm focus:ring-yellow-500 focus:border-yellow-500 outline-none">
                                             {STATUS_UPDATE_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                                         </select>
                                     </div>
+
+                                    {selectedRequest.is_soft_copy && OUTPUT_REQUIRED_STATUSES.has(data.status_code) && (
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">
+                                                {selectedRequest.output_document ? 'Replace Soft Copy' : 'Upload Soft Copy'}{' '}
+                                                <span className={`normal-case font-medium ${mustUpload ? 'text-red-500' : 'text-slate-400'}`}>
+                                                    ({mustUpload ? 'required' : 'optional'}, PDF, max 5 MB)
+                                                </span>
+                                            </label>
+                                            <input type="file" accept="application/pdf" required={mustUpload}
+                                                onChange={e => setData('soft_copy', e.target.files[0] ?? null)}
+                                                className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-xs file:font-bold hover:file:bg-slate-200" />
+                                            {errors.soft_copy && <p className="text-xs text-red-500 mt-1">{errors.soft_copy}</p>}
+                                        </div>
+                                    )}
 
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-2">

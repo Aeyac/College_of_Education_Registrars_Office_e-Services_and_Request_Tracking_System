@@ -10,14 +10,21 @@ class RequestDocument extends Model
 {
     use HasFactory;
 
+    public const TYPE_OUTPUT = 'output';
+    public const DISK = 'private';
+
     protected $fillable = [
         'request_id',
-        'type', // requirement | verification | output
+        'type',
         'path',
+        'original_name',
+        'size',
         'uploaded_by',
         'verified_by',
         'verified_at',
     ];
+
+    protected $hidden = ['path'];
 
     protected function casts(): array
     {
