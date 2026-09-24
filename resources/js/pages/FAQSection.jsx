@@ -103,6 +103,16 @@ const faqSections = [
             { q: "57. Can I drop a subject anytime?", a: "No. Dropping of courses is subject to university deadlines, procedures, and academic policies." },
             { q: "58. What happens if I stop attending a class without officially dropping it?", a: "Failure to officially process the dropping of a course may have academic consequences based on university policy." }
         ]
+    },
+    {
+        section: "J. GRADUATION AND ACADEMIC EVALUATION",
+        items: [
+            { q: "59. Who determines if I am already qualified to graduate?", a: "Graduation eligibility is determined through official academic evaluation based on completion of curriculum requirements and university graduation policies." },
+            { q: "60. Can the CED Registrar's Office help check my remaining subjects?", a: "Yes. The office may assist in reviewing curriculum requirements and identifying possible academic deficiencies, subject to verification against official university records." },
+            { q: "61. Does having no remaining classes automatically mean I am cleared for graduation?", a: "Not necessarily. Graduation may also require completion of other academic, administrative, and institutional requirements." },
+            { q: "62. Where should I process official graduation documents?", a: "Official graduation-related records and documents should be processed through the offices designated by the university." },
+            { q: "63. Where can I ask about Latin honors or other academic distinctions?", a: "Eligibility for academic honors is determined according to the current university academic policies and Student Handbook. Students may inquire with the CED Registrar's Office for guidance, but final evaluation follows official university procedures." }
+        ]
     }
 ]; //[cite: 1]
 
