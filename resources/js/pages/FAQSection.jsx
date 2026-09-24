@@ -95,6 +95,14 @@ const faqSections = [
             { q: "54. Can I process an INC while on LOA?", a: "This depends on the status of the INC, the applicable completion period, and existing university policies. The student should have the record evaluated before proceeding." },
             { q: "55. What is readmission?", a: "Readmission refers to the formal process required for a student who has stopped studying or whose enrollment status requires approval before returning to the university." }
         ]
+    },
+    {
+        section: "I. ADDING, DROPPING, AND CHANGING SUBJECTS",
+        items: [
+            { q: "56. Can I add or change a subject after enrollment?", a: "Adding or changing courses may only be done within the official period and following the prescribed university procedures." },
+            { q: "57. Can I drop a subject anytime?", a: "No. Dropping of courses is subject to university deadlines, procedures, and academic policies." },
+            { q: "58. What happens if I stop attending a class without officially dropping it?", a: "Failure to officially process the dropping of a course may have academic consequences based on university policy." }
+        ]
     }
 ]; //[cite: 1]
 
