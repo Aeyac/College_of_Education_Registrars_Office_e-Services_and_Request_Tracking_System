@@ -17,6 +17,21 @@ const faqSections = [
             { q: "11. Can I ask the CED Registrar's Office about my academic concerns?", a: "Yes. Students may inquire about College of Education academic policies, curriculum concerns, prerequisites, academic load, internship-related requirements, and other matters within the scope of the college. If the concern belongs to another office, the student will be referred accordingly." },
             { q: "12. Can another person process a transaction for me?", a: "This depends on the nature of the transaction and university policy. Authorization and valid identification may be required for transactions involving personal or academic information." }
         ]
+    },
+    {
+        section: "B. INTERNSHIP/PRACTICE TEACHING CERTIFICATE",
+        items: [
+            { q: "13. How can I request an Internship or Practice Teaching Certificate?", a: "Submit a request to the CED Registrar's Office together with the information and supporting documents required for verification." },
+            { q: "14. What information may be required for an Internship Certificate?", a: "The office may request information such as your complete name, student number, degree program, major, semester and school year of internship, cooperating school, duration of internship, grade level handled, and other information necessary for verification." },
+            { q: "15. Why do I need to provide supporting documents when requesting an Internship Certificate?", a: "Supporting documents allow the office to verify the accuracy of the information that will appear in the certification." },
+            { q: "16. Can the CED Registrar certify information that cannot be verified from available records?", a: "No. The office can only certify information that can be supported by official or verifiable records." },
+            { q: "17. Can I request that specific information be added to my Internship Certificate?", a: "You may request it, but the information can only be included if it is relevant, appropriate, and supported by available records." },
+            { q: "18. Can an Internship Certificate be issued immediately?", a: "Processing time depends on the completeness of the submitted information, availability of records, verification requirements, and office workload." },
+            { q: "19. How will I know if my Internship Certificate is ready?", a: "If the proposed online system is implemented, the status may be viewed through the system or communicated through the contact information provided by the requester." },
+            { q: "20. What possible statuses may appear for my certificate request?", a: "The status may appear as Submitted, For Review, For Compliance, Processing, Ready for Release, Released, Returned, or Cancelled, depending on the progress of the request." },
+            { q: "21. What does \"For Compliance\" mean?", a: "It means that additional, corrected, or missing information or documents are needed before the office can continue processing the request." },
+            { q: "22. What should I do if there is an error in the certificate issued to me?", a: "Immediately contact the CED Registrar's Office and provide the correct information and supporting document, if necessary, so the matter can be reviewed." }
+        ]
     }
 ]; //[cite: 1]
 
