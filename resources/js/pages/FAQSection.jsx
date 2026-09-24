@@ -113,6 +113,16 @@ const faqSections = [
             { q: "62. Where should I process official graduation documents?", a: "Official graduation-related records and documents should be processed through the offices designated by the university." },
             { q: "63. Where can I ask about Latin honors or other academic distinctions?", a: "Eligibility for academic honors is determined according to the current university academic policies and Student Handbook. Students may inquire with the CED Registrar's Office for guidance, but final evaluation follows official university procedures." }
         ]
+    },
+    {
+        section: "K. STUDENT RECORDS AND DATA PRIVACY",
+        items: [
+            { q: "64. Can the CED Registrar's Office give my academic information to another person?", a: "Student information is protected and should only be disclosed in accordance with university policies, the Data Privacy Act, and appropriate authorization." },
+            { q: "65. Can my parent or guardian request my academic information?", a: "Access to student information is subject to applicable privacy rules, university policies, and appropriate authorization." },
+            { q: "66. Why am I required to provide identification for some requests?", a: "Identity verification helps protect academic records and personal information from unauthorized access." },
+            { q: "67. Can I submit another student's request using my account?", a: "No. Users should only submit requests using their own account unless they are formally authorized to act on behalf of another person." },
+            { q: "68. What should I do if my personal information in the system is incorrect?", a: "Report the error immediately. Changes involving official university records may require supporting documents and processing through the office authorized to maintain the official record." }
+        ]
     }
 ]; //[cite: 1]
 
