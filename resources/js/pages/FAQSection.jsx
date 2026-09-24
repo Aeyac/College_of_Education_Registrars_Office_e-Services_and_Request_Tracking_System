@@ -32,6 +32,21 @@ const faqSections = [
             { q: "21. What does \"For Compliance\" mean?", a: "It means that additional, corrected, or missing information or documents are needed before the office can continue processing the request." },
             { q: "22. What should I do if there is an error in the certificate issued to me?", a: "Immediately contact the CED Registrar's Office and provide the correct information and supporting document, if necessary, so the matter can be reviewed." }
         ]
+    },
+    {
+        section: "C. CURRICULUM, PREREQUISITES, AND ENROLLMENT CONCERNS",
+        items: [
+            { q: "23. What curriculum should I follow?", a: "Students should generally follow the curriculum officially applicable to their program and admission or curriculum classification, subject to current university rules and approved curriculum changes." },
+            { q: "24. Can I take a subject even if I have not completed its prerequisite?", a: "Generally, prerequisite requirements must first be satisfied before enrolling in the succeeding course unless an approved university policy provides otherwise." },
+            { q: "25. What is a prerequisite?", a: "A prerequisite is a course or requirement that must normally be completed before a student may enroll in another specified course." },
+            { q: "26. What is a co-requisite?", a: "A co-requisite is a course or requirement that must be taken together with another course or under conditions specified in the approved curriculum." },
+            { q: "27. Can prerequisite or co-requisite requirements be waived?", a: "Students should not assume that prerequisites or co-requisites can be waived. Any exception must be supported by applicable university policy and approved by the proper authority." },
+            { q: "28. Can I take Internship if I have not completed the required Field Study or prerequisite courses?", a: "Internship eligibility is subject to the prerequisites indicated in the approved curriculum and existing university policies. Students should have their academic records evaluated before enrollment." },
+            { q: "29. Can I enroll in a subject that is not included in my curriculum?", a: "No. Students may only enroll in courses included in the study program of the degree they are pursuing." },
+            { q: "30. What should I do if the course code or course title in my enrollment is different from my curriculum?", a: "Report the discrepancy immediately to the CED Registrar's Office or your department so the course can be checked against the approved curriculum." },
+            { q: "31. Can one course substitute for another course in my curriculum?", a: "Course substitution is not automatic. It requires proper evaluation and approval in accordance with university policies." },
+            { q: "32. Can I take two courses at the same time if one is a prerequisite of the other?", a: "Normally, a prerequisite should be completed first. Concurrent enrollment is allowed only when specifically permitted by the approved curriculum or applicable university policy." }
+        ]
     }
 ]; //[cite: 1]
 
