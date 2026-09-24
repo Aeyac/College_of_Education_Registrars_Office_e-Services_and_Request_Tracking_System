@@ -3,10 +3,10 @@ import { useState } from 'react';
 import Header from '@/Components/Header';
 import Footer from '@/Components/Footer';
 import Chatbox from '@/Components/Chatbox';
+import FAQSection from '@/pages/FAQSection';
 
 export default function Welcome({ auth, announcements = [] }) {
     // State for accordions
-    const [openFaq, setOpenFaq] = useState(null);
     const [openCourse, setOpenCourse] = useState(null);
     
     // State for Announcement Modal
@@ -85,37 +85,6 @@ export default function Welcome({ auth, announcements = [] }) {
         {
             title: "Bachelor of Technology and Livelihood Education",
             majors: ["Agri-Fisheries and Arts", "Home Economics", "Industrial Arts"]
-        }
-    ];
-
-    const faqs = [
-        {
-            q: "How do I request an internship certificate?",
-            a: "You can request an internship certificate by navigating to the 'Request for Internship Certificate' section in our E-Services portal, filling out the required details, and attaching necessary documents."
-        },
-        {
-            q: "What details are needed for the certificate?",
-            a: "You will need to provide your full name, student number, program/major, year level/batch, contact info, internship school/agency, semester/school year of internship, and preferred claiming date."
-        },
-        {
-            q: "How long is the processing time?",
-            a: "Standard processing time for an internship certificate is 3-5 working days upon submission of complete requirements, depending on the volume of requests."
-        },
-        {
-            q: "How can I check the status of my request?",
-            a: "You can monitor the real-time status of your request (e.g., Submitted, Processing, Ready for Release) through your personalized student dashboard under 'Status Tracking'."
-        },
-        {
-            q: "What should I do if my information is incorrect?",
-            a: "If you notice an error in your submitted request, please use the 'Registrar Inquiries' feature immediately to inform the staff before the certificate is processed."
-        },
-        {
-            q: "When and where can I claim the certificate?",
-            a: "Once your status is updated to 'Ready for Release', you will receive a notification regarding your claiming schedule. Certificates are claimed at the CED Registrar's Office."
-        },
-        {
-            q: "Who may claim the certificate on my behalf?",
-            a: "If you cannot claim the document personally, your authorized representative must present an authorization letter, a photocopy of your valid ID, and their own valid ID."
         }
     ];
 
@@ -356,39 +325,7 @@ export default function Welcome({ auth, announcements = [] }) {
                 </section>
 
                 {/* FAQ Section */}
-                <section id="faq" className="py-20 px-6 md:px-12 bg-white max-w-4xl mx-auto scroll-mt-20 mb-14">
-                    <div className="flex flex-col items-center mb-10">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
-                            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Frequently Asked Questions</h2>
-                        </div>
-                        <p className="text-slate-500 text-center text-sm">Everything you need to know about internship certificate processing.</p>
-                    </div>
-
-                    <div className="space-y-4">
-                        {faqs.map((faq, index) => (
-                            <div key={index} className="border border-slate-200 rounded-xl overflow-hidden">
-                                <button
-                                    className="w-full px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors focus:outline-none"
-                                    onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                                >
-                                    <span className="font-semibold text-slate-800 text-left">{faq.q}</span>
-                                    <svg
-                                        className={`w-5 h-5 text-slate-500 transform transition-transform duration-200 ${openFaq === index ? 'rotate-180' : ''}`}
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </button>
-                                <div className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${openFaq === index ? 'max-h-40 py-4 opacity-100' : 'max-h-0 py-0 opacity-0'}`}>
-                                    <p className="text-slate-600 text-sm leading-relaxed">{faq.a}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
+                <FAQSection />
             </main>
 
             <Footer />
