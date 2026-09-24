@@ -3,11 +3,11 @@ import { useState, useEffect } from 'react';
 
 // Nilipat natin sa labas para ma-access ng scroll spy
 const navLinks = [
-    { href: '#home', label: 'Home' }, 
+    { href: '#home', label: 'Home' },
     { href: '#about', label: 'About' },
-    { href: '#services', label: 'Services' }, 
+    { href: '#services', label: 'Services' },
     { href: '#courses', label: 'Courses' },
-    { href: '#announcement', label: 'Announcements' }, 
+    { href: '#announcement', label: 'Announcements' },
     { href: '#faq', label: 'FAQ' },
 ];
 
@@ -39,7 +39,7 @@ export default function Header() {
         window.addEventListener('scroll', handleScroll);
         // I-trigger agad on mount para ma-set ang initial active section
         handleScroll();
-        
+
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
@@ -61,29 +61,33 @@ export default function Header() {
     return (
         <header className={`fixed top-0 left-0 z-50 w-full transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5 lg:py-6'}`}>
             <div className="max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-12">
-                
+
                 {/* Brand / Logo */}
                 <div className="flex items-center gap-3 shrink-0">
-                    <div className="w-10 h-10 sm:w-11 sm:h-11 bg-white rounded-full flex items-center justify-center border-2 border-yellow-400 shadow-sm overflow-hidden">
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 bg-white rounded-full flex items-center justify-center shadow-sm overflow-hidden">
                         <img src="/images/cedlogo.png" alt="CED Logo" className="w-full h-full object-cover" />
                     </div>
-                    <span className="font-black text-slate-900 text-lg sm:text-xl tracking-tight whitespace-nowrap">
-                        CED E-Services
-                    </span>
+                    <div className="flex flex-col leading-tight">
+                        <span className="font-black text-slate-900 text-lg sm:text-xl tracking-tight whitespace-nowrap">
+                            CED <span className="text-yellow-500">E-Services</span>
+                        </span>
+                        <span className="text-[11px] sm:text-xs font-semibold text-slate-500 whitespace-nowrap">
+                            Central Luzon State University
+                        </span>
+                    </div>
                 </div>
 
                 {/* Desktop Navigation (Floating Pill style with Active State) */}
-                <nav className="hidden lg:flex items-center gap-2 xl:gap-6 bg-white/80 backdrop-blur-md px-6 py-2.5 rounded-full border border-slate-200/60 shadow-sm">
+                <nav className="hidden lg:flex items-center gap-2 xl:gap-6 backdrop-blur-md px-6 py-2.5">
                     {navLinks.map((l) => (
-                        <a 
-                            key={l.href} 
-                            href={l.href} 
-                            onClick={(e) => handleNavClick(e, l.href)} 
-                            className={`px-3 py-1.5 text-sm font-bold rounded-full transition-colors whitespace-nowrap ${
-                                activeSection === l.href 
-                                    ? 'text-yellow-600 bg-yellow-50' 
-                                    : 'text-slate-600 hover:text-yellow-600 hover:bg-yellow-50'
-                            }`}
+                        <a
+                            key={l.href}
+                            href={l.href}
+                            onClick={(e) => handleNavClick(e, l.href)}
+                            className={`px-3 py-1.5 text-sm font-bold rounded-full transition-colors whitespace-nowrap ${activeSection === l.href
+                                ? 'text-yellow-600 bg-yellow-50'
+                                : 'text-slate-600 hover:text-yellow-600 hover:bg-yellow-50'
+                                }`}
                         >
                             {l.label}
                         </a>
@@ -97,7 +101,7 @@ export default function Header() {
                 </div>
 
                 {/* Mobile Hamburger Button */}
-                <button 
+                <button
                     onClick={() => setIsOpen(!isOpen)}
                     className={`lg:hidden relative z-50 w-11 h-11 flex items-center justify-center rounded-full transition-all duration-300 shadow-sm outline-none ${isOpen ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}
                     aria-label="Toggle Menu"
@@ -117,28 +121,27 @@ export default function Header() {
                 <>
                     {/* Blurred Backdrop */}
                     <div className="lg:hidden fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-40" onClick={() => setIsOpen(false)} />
-                    
+
                     {/* Floating Glassmorphic Mobile Menu Card */}
                     <div className="lg:hidden absolute top-[75px] left-4 right-4 bg-white/95 backdrop-blur-xl shadow-2xl rounded-3xl flex flex-col p-6 z-50 border border-slate-100 animate-in slide-in-from-top-4 fade-in duration-200">
                         <div className="flex flex-col gap-1.5">
                             {navLinks.map((l) => (
-                                <a 
-                                    key={l.href} 
-                                    href={l.href} 
-                                    onClick={(e) => handleNavClick(e, l.href)} 
-                                    className={`px-4 py-3 text-sm font-bold rounded-2xl transition-all ${
-                                        activeSection === l.href 
-                                            ? 'text-yellow-600 bg-yellow-50' 
-                                            : 'text-slate-700 hover:text-yellow-600 hover:bg-yellow-50'
-                                    }`}
+                                <a
+                                    key={l.href}
+                                    href={l.href}
+                                    onClick={(e) => handleNavClick(e, l.href)}
+                                    className={`px-4 py-3 text-sm font-bold rounded-2xl transition-all ${activeSection === l.href
+                                        ? 'text-yellow-600 bg-yellow-50'
+                                        : 'text-slate-700 hover:text-yellow-600 hover:bg-yellow-50'
+                                        }`}
                                 >
                                     {l.label}
                                 </a>
                             ))}
                         </div>
-                        
+
                         <div className="h-px bg-slate-100 my-4" />
-                        
+
                         <div className="flex flex-col gap-3">
                             <Link href={route('login')} onClick={() => setIsOpen(false)} className="w-full text-center px-6 py-3.5 bg-slate-50 text-slate-800 font-bold rounded-2xl hover:bg-slate-100 transition-colors border border-slate-200 text-sm">
                                 Login to Portal

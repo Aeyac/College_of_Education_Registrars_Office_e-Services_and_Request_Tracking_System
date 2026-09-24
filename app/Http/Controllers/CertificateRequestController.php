@@ -13,29 +13,47 @@ use Inertia\Response;
 
 class CertificateRequestController extends Controller
 {
+    private const LOCKED_STATUSES = ['cancelled', 'released', 'ready_for_release', 'rejected'];
+
     public function markReceived(CertificateRequest $certificateRequest)
     {
         abort_unless($certificateRequest->user_id === auth()->id(), 403);
 
         if (!$certificateRequest->received_at) {
             $certificateRequest->update(['received_at' => now()]);
+
+            if ($certificateRequest->status?->code === 'ready_for_release') {
+                $releasedStatus = RequestStatus::where('code', 'released')->firstOrFail();
+
+                $certificateRequest->transitionTo(
+                    $releasedStatus,
+                    auth()->user(),
+                    'Receipt confirmed by student.'
+                );
+            } else {
+                $certificateRequest->statusHistory()->create([
+                    'from_status_id' => $certificateRequest->status_id,
+                    'to_status_id' => $certificateRequest->status_id,
+                    'changed_by' => auth()->id(),
+                    'note' => 'Receipt confirmed by student.',
+                ]);
+            }
         }
 
-        return back();
+        return back()->with('success', 'Receipt confirmed.');
     }
 
-    private const LOCKED_STATUSES = ['cancelled_returned', 'released', 'ready_for_release'];
 
     public function archive(CertificateRequest $certificateRequest)
     {
         abort_unless($certificateRequest->user_id === auth()->id(), 403);
         abort_unless(
-            in_array($certificateRequest->status->code, self::LOCKED_STATUSES),
+            in_array($certificateRequest->status?->code, self::LOCKED_STATUSES),
             422,
             'Only resolved requests (released, ready for release, or cancelled/returned) can be archived.'
         );
 
-        $certificateRequest->update(['archived_at' => now()]);
+        $certificateRequest->update(['archived_at_user' => now()]);
 
         return back()->with('success', 'Request archived.');
     }
@@ -44,7 +62,7 @@ class CertificateRequestController extends Controller
     {
         abort_unless($certificateRequest->user_id === auth()->id(), 403);
 
-        $certificateRequest->update(['archived_at' => null]);
+        $certificateRequest->update(['archived_at_user' => null]);
 
         return back()->with('success', 'Request restored.');
     }
