@@ -85,6 +85,16 @@ const faqSections = [
             { q: "49. Can the College Registrar change my grade?", a: "No. The College Registrar does not independently change grades. Grade changes or corrections must follow official university procedures and must originate from or be supported by the authorized faculty member and approving authorities." },
             { q: "50. What should I do if I believe my grade was encoded incorrectly?", a: "Contact your instructor or department first. Any correction must follow the official grade correction process." }
         ]
+    },
+    {
+        section: "H. LEAVE OF ABSENCE, READMISSION, AND REACTIVATION",
+        items: [
+            { q: "51. What is a Leave of Absence (LOA)?", a: "A Leave of Absence is an officially approved temporary interruption of a student's studies subject to university policies and procedures." },
+            { q: "52. Can I simply stop attending classes without filing a Leave of Absence?", a: "No. Students who need to temporarily discontinue their studies should follow the official university procedure to avoid academic and enrollment complications." },
+            { q: "53. I previously went on Leave of Absence. How can I return?", a: "Students returning from LOA should follow the university's readmission or reactivation procedure and coordinate with the appropriate offices before enrollment." },
+            { q: "54. Can I process an INC while on LOA?", a: "This depends on the status of the INC, the applicable completion period, and existing university policies. The student should have the record evaluated before proceeding." },
+            { q: "55. What is readmission?", a: "Readmission refers to the formal process required for a student who has stopped studying or whose enrollment status requires approval before returning to the university." }
+        ]
     }
 ]; //[cite: 1]
 
