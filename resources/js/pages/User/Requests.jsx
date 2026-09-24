@@ -6,7 +6,7 @@ import RequestDocumentModal from '@/Components/RequestDocumentModal';
 import Swal from 'sweetalert2';
 import SoftCopyViewerModal from '@/Components/SoftCopyViewerModal';
 
-const LOCKED_STATUSES = new Set(['cancelled_returned', 'cancelled', 'released']);
+const LOCKED_STATUSES = new Set(['cancelled_returned', 'cancelled', 'released', 'rejected']);
 
 const STATUS_FILTER_OPTIONS = [
     { value: 'submitted', label: 'Submitted' },
@@ -294,7 +294,7 @@ export default function MyRequests({
                 <div className="space-y-4">
                     {filteredRequestList.length ? filteredRequestList.map(req => {
                         const status = (req.status_code || req.status || '').toLowerCase();
-                        const isCompleted = status.includes('released');
+                        const isCompleted = ['ready_for_release', 'released'].includes(status);
                         const hasFeedback = req.has_feedback || Boolean(req.feedback);
                         const isReceived = Boolean(req.received_at);
 
@@ -330,7 +330,7 @@ export default function MyRequests({
                                         </span>
                                     )}
 
-                                  
+
 
                                     <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
                                         {isCompleted && (

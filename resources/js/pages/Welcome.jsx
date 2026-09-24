@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/Components/Header';
 import Footer from '@/Components/Footer';
 import Chatbox from '@/Components/Chatbox';
@@ -8,9 +8,22 @@ export default function Welcome({ auth, announcements = [] }) {
     // State for accordions
     const [openFaq, setOpenFaq] = useState(null);
     const [openCourse, setOpenCourse] = useState(null);
-    
+
     // State for Announcement Modal
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+
+    // Close modal on Escape key press
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                setSelectedAnnouncement(null);
+            }
+        };
+        if (selectedAnnouncement) {
+            window.addEventListener('keydown', handleKeyDown);
+        }
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedAnnouncement]);
 
     // Services based strictly on the CED Registrar's Office functions
     const services = [
@@ -18,7 +31,7 @@ export default function Welcome({ auth, announcements = [] }) {
             title: "Request for Internship Certificate",
             desc: "Initiate your request for an official internship certificate through our streamlined digital portal.",
             icon: (
-                <svg className="w-7 h-7 stroke-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
             )
@@ -27,7 +40,7 @@ export default function Welcome({ auth, announcements = [] }) {
             title: "Submission of Requirements",
             desc: "Upload and submit all necessary supporting documents for your internship certificate securely.",
             icon: (
-                <svg className="w-7 h-7 stroke-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
             )
@@ -36,7 +49,7 @@ export default function Welcome({ auth, announcements = [] }) {
             title: "Status Tracking",
             desc: "Monitor the real-time processing status of your internship certificate request.",
             icon: (
-                <svg className="w-7 h-7 stroke-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
             )
@@ -45,7 +58,7 @@ export default function Welcome({ auth, announcements = [] }) {
             title: "Registrar Inquiries",
             desc: "Send direct inquiries regarding internship certificates to the CED Registrar's Office.",
             icon: (
-                <svg className="w-7 h-7 stroke-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
             )
@@ -54,7 +67,7 @@ export default function Welcome({ auth, announcements = [] }) {
             title: "Claiming Schedule",
             desc: "View availability and set your schedule for claiming or releasing approved documents.",
             icon: (
-                <svg className="w-7 h-7 stroke-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
             )
@@ -126,9 +139,25 @@ export default function Welcome({ auth, announcements = [] }) {
 
             <main className="flex-grow pt-20">
                 {/* Hero Section */}
-                <section id="home" className="relative pt-12 md:pt-16 pb-20 px-6 md:px-12 w-full overflow-hidden bg-gradient-to-br from-amber-50/60 via-white to-yellow-50/40 border-b border-slate-100 scroll-mt-24">
-                    <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12 relative z-10">
-                        <div className="w-full md:w-1/2 flex flex-col gap-6 items-start">
+                <section id="home" className="relative pt-12 md:pt-16 pb-24 md:pb-32 px-6 md:px-12 w-full overflow-hidden border-b border-slate-100 scroll-mt-24 min-h-[85vh] flex items-center">
+                    {/* Full-bleed background image */}
+                    <div className="absolute inset-0 z-0">
+                        <img
+                            src="/images/cedbuilding.jpg"
+                            alt="College of Education Building"
+                            className="w-full h-full object-cover"
+                        />
+                        {/* Light gradient wash so text stays readable */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/85 to-white/40"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-white/60 via-transparent to-white/30"></div>
+                    </div>
+
+                    <div className="max-w-7xl mx-auto relative z-10 w-full">
+                        <div className="w-full md:w-3/5 lg:w-1/2 flex flex-col gap-6 items-start">
+                            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-yellow-100/80 text-yellow-700 text-xs font-bold rounded-full border border-yellow-200/60">
+                                Official College Registrar Portal
+                            </span>
+
                             <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tight text-slate-900 leading-none md:leading-tight">
                                 WELCOME TO <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-400 block mt-2 md:inline">
@@ -138,27 +167,20 @@ export default function Welcome({ auth, announcements = [] }) {
                             <p className="text-slate-600 text-lg md:text-xl max-w-md font-normal leading-relaxed">
                                 Your digital hub for online appointments, official document requests, and college academic resources.
                             </p>
-                            <Link
-                                href={route('register')}
-                                className="mt-2 px-12 py-3.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold rounded-full transition-colors shadow-md shadow-yellow-500/20"
-                            >
-                                GET STARTED
-                            </Link>
-                        </div>
+                            <div className="flex flex-wrap items-center gap-4 mt-2">
+                                <Link
+                                    href={route('register')}
+                                    className="px-12 py-3.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold rounded-full transition-colors shadow-md shadow-yellow-500/20 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                                >
+                                    GET STARTED
+                                </Link>
 
-                        <div className="w-full md:w-1/2 relative flex justify-center mt-6 md:mt-0">
-                            <div className="absolute -inset-1 bg-gradient-to-tr from-yellow-300 to-amber-200 rounded-2xl blur-xl opacity-30"></div>
-                            <div className="relative w-full max-w-lg aspect-video bg-white p-2 rounded-2xl border border-slate-200/80 shadow-xl">
-                                <div className="relative w-full h-full rounded-xl overflow-hidden">
-                                    <img
-                                        src="/images/cedbuilding.jpg"
-                                        alt="College of Education Building"
-                                        className="w-full h-full object-cover"
-                                    />
-                                    <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-lg border border-white/20 font-medium">
-                                        College of Education
-                                    </div>
-                                </div>
+                                <a
+                                    href="#about"
+                                    className="px-10 py-3.5 bg-white hover:bg-slate-50 text-slate-800 font-bold rounded-full transition-colors border border-slate-200 shadow-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                                >
+                                    Learn More
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -168,57 +190,72 @@ export default function Welcome({ auth, announcements = [] }) {
                 <section id="about" className="py-20 px-6 md:px-12 bg-white border-b border-slate-200/60 scroll-mt-20">
                     <div className="max-w-7xl mx-auto">
                         <div className="flex items-center gap-3 mb-12 justify-center">
-                            <div className="w-2 h-7 bg-green-700 rounded-full"></div>
-                            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight text-center">About College of Education</h2>
                             <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
+                            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight text-center">About College of Education</h2>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200/80 shadow-sm">
-                                <h3 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                    Mission
-                                </h3>
-                                <p className="text-slate-600 text-sm leading-relaxed">
-                                    CLSU shall develop globally competitive, work-ready, socially-responsible and empowered human resources who value life-long learning; and to generate, disseminate, and apply knowledge and technologies for poverty alleviation, environmental protection, and sustainable development.
-                                </p>
+                        {/* Top Tier: Institution Level (MV&P) */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between transition-shadow duration-200 hover:shadow-md">
+                                <div>
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
+                                        <svg className="w-6 h-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        </svg>
+                                        Mission
+                                    </h3>
+                                    <p className="text-slate-600 text-sm leading-relaxed">
+                                        CLSU shall develop globally competitive, work-ready, socially-responsible and empowered human resources who value life-long learning; and to generate, disseminate, and apply knowledge and technologies for poverty alleviation, environmental protection, and sustainable development.
+                                    </p>
+                                </div>
                             </div>
-                            <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200/80 shadow-sm">
-                                <h3 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    Vision
-                                </h3>
-                                <p className="text-slate-600 text-sm leading-relaxed">
-                                    CLSU as a world-class National Research University for science and technology in agriculture and allied fields.
-                                </p>
+
+                            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between transition-shadow duration-200 hover:shadow-md">
+                                <div>
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
+                                        <svg className="w-6 h-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        Vision
+                                    </h3>
+                                    <p className="text-slate-600 text-sm leading-relaxed">
+                                        CLSU as a world-class National Research University for science and technology in agriculture and allied fields.
+                                    </p>
+                                </div>
                             </div>
-                            <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200/80 shadow-sm">
-                                <h3 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                    </svg>
-                                    Philosophy
-                                </h3>
-                                <p className="text-slate-600 text-sm leading-relaxed">
-                                    The ultimate measure of the effectiveness of Central Luzon State University as an institution of higher learning is its contribution to and impact on the educational, economic, social, cultural, political and moral well-being and environmental consciousness of the peoples it serves.
-                                </p>
+
+                            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between transition-shadow duration-200 hover:shadow-md">
+                                <div>
+                                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
+                                        <svg className="w-6 h-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                        </svg>
+                                        Philosophy
+                                    </h3>
+                                    <p className="text-slate-600 text-sm leading-relaxed">
+                                        The ultimate measure of the effectiveness of Central Luzon State University as an institution of higher learning is its contribution to and impact on the educational, economic, social, cultural, political and moral well-being and environmental consciousness of the peoples it serves.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                            <div className="bg-green-50/50 p-8 rounded-2xl border border-green-100 shadow-sm">
-                                <h3 className="text-lg font-bold text-slate-900 mb-2">Mission of Elementary Education</h3>
+                        {/* Bottom Tier: Departmental Missions */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="bg-slate-50/60 p-8 rounded-2xl border border-slate-200/80">
+                                <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                    Mission of Elementary Education
+                                </h3>
                                 <p className="text-slate-600 text-sm leading-relaxed">
                                     To equip future elementary teachers with foundational pedagogical skills, deep subject matter knowledge, and the empathy needed to lay strong educational groundwork for children.
                                 </p>
                             </div>
-                            <div className="bg-yellow-50/50 p-8 rounded-2xl border border-yellow-100 shadow-sm">
-                                <h3 className="text-lg font-bold text-slate-900 mb-2">Mission of Secondary Education</h3>
+                            <div className="bg-slate-50/60 p-8 rounded-2xl border border-slate-200/80">
+                                <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                    Mission of Secondary Education
+                                </h3>
                                 <p className="text-slate-600 text-sm leading-relaxed">
                                     To prepare secondary educators who master their disciplines, integrating innovative teaching strategies to guide adolescents towards academic achievement and personal growth.
                                 </p>
@@ -233,7 +270,6 @@ export default function Welcome({ auth, announcements = [] }) {
                         <div className="flex items-center gap-3">
                             <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
                             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">E-Services & Requests</h2>
-                            <div className="w-2 h-7 bg-green-700 rounded-full"></div>
                         </div>
                         <p className="text-slate-500 mt-3 text-center max-w-2xl">
                             The CED Registrar's Office provides an automated request and tracking system strictly dedicated to internship certificates and related requirements.
@@ -243,14 +279,14 @@ export default function Welcome({ auth, announcements = [] }) {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-center">
                         {services.map((service, index) => (
                             <div key={index} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col items-start transition-shadow hover:shadow-md hover:border-yellow-300">
-                                <div className="w-14 h-14 bg-green-50 rounded-xl flex items-center justify-center mb-6">
+                                <div className="w-14 h-14 bg-yellow-50 rounded-xl flex items-center justify-center mb-6 text-yellow-600">
                                     {service.icon}
                                 </div>
                                 <h3 className="font-bold text-slate-900 text-lg mb-2 leading-snug">{service.title}</h3>
                                 <p className="text-sm text-slate-600 mb-6 leading-relaxed flex-grow">{service.desc}</p>
                                 <Link
                                     href={route('login')}
-                                    className="px-5 py-2.5 bg-slate-100 text-slate-800 text-sm font-semibold rounded-lg text-center hover:bg-yellow-400 hover:text-slate-950 transition-colors w-full mt-auto"
+                                    className="px-5 py-2.5 bg-slate-100 text-slate-800 text-sm font-semibold rounded-lg text-center hover:bg-yellow-400 hover:text-slate-950 transition-colors w-full mt-auto focus:ring-2 focus:ring-amber-500 focus:outline-none"
                                 >
                                     Access Service
                                 </Link>
@@ -262,8 +298,13 @@ export default function Welcome({ auth, announcements = [] }) {
                 {/* Courses Offered Section */}
                 <section id="courses" className="py-20 px-6 md:px-12 bg-white max-w-4xl mx-auto scroll-mt-20">
                     <div className="flex flex-col items-center mb-10">
-                        <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-3">Courses Offered</h2>
-                        <p className="text-slate-500 text-center text-sm">Explore the undergraduate degree programs available at the College of Education.</p>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
+                            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Courses Offered</h2>
+                        </div>
+                        <p className="text-slate-500 text-center text-sm">
+                            Explore the undergraduate degree programs available at the College of Education.
+                        </p>
                     </div>
 
                     <div className="space-y-4">
@@ -275,7 +316,8 @@ export default function Welcome({ auth, announcements = [] }) {
                                 <div key={index} className="border border-slate-200 rounded-xl overflow-hidden">
                                     {hasMajors ? (
                                         <button
-                                            className="w-full px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors focus:outline-none"
+                                            aria-expanded={isOpen}
+                                            className="w-full px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
                                             onClick={() => setOpenCourse(isOpen ? null : index)}
                                         >
                                             <span className="font-semibold text-slate-800 text-left">{course.title}</span>
@@ -295,18 +337,22 @@ export default function Welcome({ auth, announcements = [] }) {
                                     )}
 
                                     {hasMajors && (
-                                        <div className={`px-6 overflow-hidden transition-all duration-300 ease-in-out bg-white ${isOpen ? 'max-h-96 py-5 opacity-100' : 'max-h-0 py-0 opacity-0'}`}>
-                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Majors</span>
-                                            <ul className="space-y-3 ml-2">
-                                                {course.majors.map((major, i) => (
-                                                    <li key={i} className="text-sm text-slate-600 flex items-center gap-3">
-                                                        <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                                                        </svg>
-                                                        {major}
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                        <div className={`grid transition-all duration-300 ease-in-out bg-white ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                                            <div className="overflow-hidden">
+                                                <div className="px-6 py-5">
+                                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Majors</span>
+                                                    <ul className="space-y-3 ml-2">
+                                                        {course.majors.map((major, i) => (
+                                                            <li key={i} className="text-sm text-slate-600 flex items-center gap-3">
+                                                                <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                                                </svg>
+                                                                {major}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -331,11 +377,11 @@ export default function Welcome({ auth, announcements = [] }) {
                                         <span className="text-xs font-bold text-slate-400 tracking-wider uppercase block mb-2">{announcement.date}</span>
                                         <h3 className="font-bold text-slate-900 text-lg mb-3 leading-snug">{announcement.title}</h3>
                                         <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap line-clamp-3 mb-4">{announcement.content}</p>
-                                        
+
                                         <div className="mt-auto pt-2 border-t border-slate-50">
-                                            <button 
+                                            <button
                                                 onClick={() => setSelectedAnnouncement(announcement)}
-                                                className="text-sm font-bold text-yellow-600 hover:text-yellow-700 transition-colors flex items-center gap-1"
+                                                className="text-sm font-bold text-yellow-600 hover:text-yellow-700 transition-colors flex items-center gap-1 focus:ring-2 focus:ring-amber-500 focus:outline-none rounded"
                                             >
                                                 Read Full Announcement
                                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
@@ -369,7 +415,8 @@ export default function Welcome({ auth, announcements = [] }) {
                         {faqs.map((faq, index) => (
                             <div key={index} className="border border-slate-200 rounded-xl overflow-hidden">
                                 <button
-                                    className="w-full px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors focus:outline-none"
+                                    aria-expanded={openFaq === index}
+                                    className="w-full px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
                                     onClick={() => setOpenFaq(openFaq === index ? null : index)}
                                 >
                                     <span className="font-semibold text-slate-800 text-left">{faq.q}</span>
@@ -382,8 +429,10 @@ export default function Welcome({ auth, announcements = [] }) {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </button>
-                                <div className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${openFaq === index ? 'max-h-40 py-4 opacity-100' : 'max-h-0 py-0 opacity-0'}`}>
-                                    <p className="text-slate-600 text-sm leading-relaxed">{faq.a}</p>
+                                <div className={`grid transition-all duration-300 ease-in-out ${openFaq === index ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                                    <div className="overflow-hidden">
+                                        <p className="px-6 py-4 text-slate-600 text-sm leading-relaxed">{faq.a}</p>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -398,8 +447,17 @@ export default function Welcome({ auth, announcements = [] }) {
 
             {/* ANNOUNCEMENT MODAL */}
             {selectedAnnouncement && (
-                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 sm:p-6">
-                    <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="announcement-title"
+                    className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 sm:p-6"
+                    onClick={() => setSelectedAnnouncement(null)}
+                >
+                    <div
+                        className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 bg-slate-50 shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-xl flex items-center justify-center shrink-0">
@@ -412,22 +470,26 @@ export default function Welcome({ auth, announcements = [] }) {
                                     <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-0.5">{selectedAnnouncement.date}</p>
                                 </div>
                             </div>
-                            <button onClick={() => setSelectedAnnouncement(null)} className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-800 shadow-sm border border-slate-100 transition-colors">
+                            <button
+                                onClick={() => setSelectedAnnouncement(null)}
+                                className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-800 shadow-sm border border-slate-100 transition-colors focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                                aria-label="Close modal"
+                            >
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        
+
                         <div className="overflow-y-auto p-6 sm:p-8 space-y-4 text-sm text-slate-600 custom-scrollbar flex-1 bg-white">
-                            <h4 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug">{selectedAnnouncement.title}</h4>
+                            <h4 id="announcement-title" className="text-xl sm:text-2xl font-black text-slate-900 leading-snug">{selectedAnnouncement.title}</h4>
                             <div className="leading-relaxed whitespace-pre-wrap text-slate-700 text-base">
                                 {selectedAnnouncement.content}
                             </div>
                         </div>
 
                         <div className="p-6 border-t border-slate-100 bg-slate-50 shrink-0">
-                            <button 
-                                onClick={() => setSelectedAnnouncement(null)} 
-                                className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-colors shadow-md text-sm"
+                            <button
+                                onClick={() => setSelectedAnnouncement(null)}
+                                className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-colors shadow-md text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
                             >
                                 Close
                             </button>

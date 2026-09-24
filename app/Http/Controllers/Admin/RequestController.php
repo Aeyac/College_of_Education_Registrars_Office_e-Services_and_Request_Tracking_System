@@ -14,7 +14,7 @@ use Inertia\Inertia;
 class RequestController extends Controller
 {
 
-    private const NOT_ALLOWED_TO_UPDATE = ['cancelled_returned', 'released', 'rejected'];
+    private const NOT_ALLOWED_TO_UPDATE = ['cancelled', 'cancelled_returned', 'released', 'rejected'];
 
     public function loadRequest(Request $request)
     {
@@ -27,7 +27,7 @@ class RequestController extends Controller
             'statusHistory.changedBy',
             'statusHistory.toStatus'
         ])
-            ->when($showArchived, fn($q) => $q->archived(), fn($q) => $q->notArchived())
+            ->when($showArchived, fn($q) => $q->archivedFor('admin'), fn($q) => $q->notArchivedFor('admin'))
             ->latest()
             ->get()
             ->map(fn($r) => [
@@ -38,8 +38,8 @@ class RequestController extends Controller
                 'status' => $r->status ? $r->status->label : 'Pending',
                 'status_code' => $r->status ? $r->status->code : 'submitted',
                 'created_at' => $r->created_at->timezone('Asia/Manila')->format('M d, Y h:i A'),
-                'is_archived' => $r->isArchived(),
-                'archived_at' => $r->archived_at?->timezone('Asia/Manila')->format('M d, Y h:i A'),
+                'is_archived' => $r->isArchived('admin'),
+                'archived_at' => $r->archived_at_admin?->timezone('Asia/Manila')->format('M d, Y h:i A'),
                 'status_history' => $r->statusHistory->map(fn($h) => [
                     'status' => $h->toStatus?->label,
                     'changed_by' => $h->changedBy ? $h->changedBy->first_name . ' ' . $h->changedBy->last_name : 'System',
@@ -67,7 +67,7 @@ class RequestController extends Controller
 
         $currentStatus = RequestStatus::findOrFail($certRequest->status_id);
         abort_if(in_array($currentStatus->code, self::NOT_ALLOWED_TO_UPDATE), 403);
-        abort_if($certRequest->isArchived(), 403, 'Cannot update an archived request.');
+        abort_if($certRequest->isArchived("admin"), 403, 'Cannot update an archived request.');
 
         $statusCode = (string) $request->input('status_code');
 
@@ -120,7 +120,7 @@ class RequestController extends Controller
         $currentStatus = RequestStatus::findOrFail($certRequest->status_id);
         abort_unless(in_array($currentStatus->code, self::NOT_ALLOWED_TO_UPDATE), 422, 'Only resolved requests (released, rejected, or cancelled/returned) can be archived.');
 
-        $certRequest->update(['archived_at' => now()]);
+        $certRequest->update(['archived_at_admin' => now()]);
 
         return back()->with('success', 'Request archived.');
     }
@@ -129,7 +129,7 @@ class RequestController extends Controller
     {
         $certRequest = CertificateRequest::findOrFail($id);
 
-        $certRequest->update(['archived_at' => null]);
+        $certRequest->update(['archived_at_admin' => null]);
 
         return back()->with('success', 'Request restored.');
     }

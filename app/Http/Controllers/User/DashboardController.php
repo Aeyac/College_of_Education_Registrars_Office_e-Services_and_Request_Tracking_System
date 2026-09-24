@@ -48,7 +48,7 @@ class DashboardController extends Controller
         $showArchived = $request->boolean('archived');
 
         $paginatedRequests = $this->userRequests()
-            ->when($showArchived, fn($q) => $q->archived(), fn($q) => $q->notArchived())
+            ->when($showArchived, fn($q) => $q->archivedFor('user'), fn($q) => $q->notArchivedFor('user'))
             ->latest()
             ->paginate(10)
             ->withQueryString();

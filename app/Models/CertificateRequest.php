@@ -28,7 +28,8 @@ class CertificateRequest extends Model
         'delivery_mode', // soft_copy | hard_copy
         'purpose',
         'preferred_claiming_date',
-        'archived_at',
+        'archived_at_user',
+        'archived_at_admin',
         'received_at',
     ];
 
@@ -36,24 +37,34 @@ class CertificateRequest extends Model
     {
         return [
             'preferred_claiming_date' => 'date',
-            'archived_at' => 'datetime',
+            'archived_at_user' => 'datetime',
+            'archived_at_admin' => 'datetime',
             'received_at' => 'datetime',
         ];
     }
 
-    public function scopeNotArchived($query)
+    public function scopeNotArchivedFor($query, string $viewer)
     {
-        return $query->whereNull('archived_at');
+        return $query->whereNull($this->archivedColumn($viewer));
     }
 
-    public function scopeArchived($query)
+    public function scopeArchivedFor($query, string $viewer)
     {
-        return $query->whereNotNull('archived_at');
+        return $query->whereNotNull($this->archivedColumn($viewer));
     }
 
-    public function isArchived(): bool
+    public function isArchived(string $viewer): bool
     {
-        return !is_null($this->archived_at);
+        return !is_null($this->{$this->archivedColumn($viewer)});
+    }
+
+    protected function archivedColumn(string $viewer): string
+    {
+        return match ($viewer) {
+            'admin' => 'archived_at_admin',
+            'user' => 'archived_at_user',
+            default => throw new \InvalidArgumentException("Unknown viewer: {$viewer}"),
+        };
     }
 
     public function getActivitylogOptions(): LogOptions
