@@ -123,6 +123,16 @@ const faqSections = [
             { q: "67. Can I submit another student's request using my account?", a: "No. Users should only submit requests using their own account unless they are formally authorized to act on behalf of another person." },
             { q: "68. What should I do if my personal information in the system is incorrect?", a: "Report the error immediately. Changes involving official university records may require supporting documents and processing through the office authorized to maintain the official record." }
         ]
+    },
+    {
+        section: "L. REFERRALS TO OTHER OFFICES",
+        items: [
+            { q: "69. What if my concern is not handled by the CED Registrar's Office?", a: "The office will provide guidance and, when appropriate, refer you to the university office responsible for the transaction." },
+            { q: "70. Where should I request my TOR, Diploma, Certificate of Enrollment, or other official academic records?", a: "These should be coordinated with the Office of Admissions or the appropriate university office responsible for official student records." },
+            { q: "71. Where should I inquire about payments, assessment, or refunds?", a: "The CED Registrar's Office does not process payments. Financial concerns should be directed to the appropriate university accounting, cashier, or finance office." },
+            { q: "72. Can the CED Registrar's Office fill out external verification forms from foreign institutions or credential evaluators?", a: "The office may provide a standard certification for information it is authorized and able to verify. External forms requiring official university records may need to be processed by the Office of Admissions or another authorized university office." },
+            { q: "73. What should I do if I am unsure which office handles my concern?", a: "You may submit an inquiry through the CED Registrar system. The office can identify whether the concern falls within its authority or direct you to the appropriate university office." }
+        ]
     }
 ]; //[cite: 1]
 
