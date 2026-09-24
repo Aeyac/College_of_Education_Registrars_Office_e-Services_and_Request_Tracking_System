@@ -75,7 +75,7 @@ export default function FAQSection() {
     const [openFaq, setOpenFaq] = useState(null);
 
     return (
-        <section id="faq" className="py-20 px-6 md:px-12 bg-slate-50 max-w-4xl mx-auto scroll-mt-20 mb-14 rounded-3xl">
+        <section id="faq" className="pt-10 pb-20 px-6 md:px-12 bg-slate-50 max-w-4xl mx-auto scroll-mt-20 mb-14 rounded-3xl">
             <div className="flex flex-col items-center mb-10">
                 <div className="flex items-center gap-3 mb-3">
                     <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
@@ -95,10 +95,10 @@ export default function FAQSection() {
                                 className="w-full px-6 py-5 flex justify-between items-center bg-white hover:bg-slate-50 transition-colors focus:outline-none"
                                 onClick={() => setOpenSection(isSectionOpen ? null : sIndex)}
                             >
-                                <span className="font-extrabold text-green-800 text-left text-base sm:text-lg pr-4">
+                                <span className="font-extrabold text-left text-base sm:text-lg pr-4">
                                     {section.section}
                                 </span>
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${isSectionOpen ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-500'}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${isSectionOpen ? 'bg-yellow-100 text-yellow-600' : 'bg-slate-100 text-slate-500'}`}>
                                     <svg
                                         className={`w-5 h-5 transform transition-transform duration-300 ${isSectionOpen ? 'rotate-180' : ''}`}
                                         fill="none"
