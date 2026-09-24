@@ -74,6 +74,17 @@ const faqSections = [
             { q: "43. Can a graduating student automatically take an overload?", a: "A graduating student may be permitted to carry an extra load of not more than nine (9) units, subject to the University's prescribed overload procedure and applicable academic policies." },
             { q: "44. What should I do if two required subjects have conflicting schedules?", a: "Immediately consult your academic adviser, department, and/or the CED Registrar's Office. Students should not independently choose arrangements that are inconsistent with official schedules and enrollment policies." }
         ]
+    },
+    {
+        section: "G. INC, COMPLETION, AND GRADES",
+        items: [
+            { q: "45. What does INC mean?", a: "INC means Incomplete and may be given under circumstances allowed by university academic policies when a student has not completed certain course requirements." },
+            { q: "46. How do I complete an INC?", a: "The student must comply with the required academic work and follow the university's official completion procedure within the period prescribed by university policy." },
+            { q: "47. Can I complete an INC anytime?", a: "No. An INC must be completed within the period allowed by university rules. Students are encouraged to process completion requirements as early as possible." },
+            { q: "48. What happens if my INC has already lapsed?", a: "Once the prescribed completion period has expired, the case will be handled according to the applicable university policy. The CED Registrar's Office may assist in verifying the academic situation, but the student must comply with official university procedures." },
+            { q: "49. Can the College Registrar change my grade?", a: "No. The College Registrar does not independently change grades. Grade changes or corrections must follow official university procedures and must originate from or be supported by the authorized faculty member and approving authorities." },
+            { q: "50. What should I do if I believe my grade was encoded incorrectly?", a: "Contact your instructor or department first. Any correction must follow the official grade correction process." }
+        ]
     }
 ]; //[cite: 1]
 
