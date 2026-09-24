@@ -65,6 +65,15 @@ const faqSections = [
             { q: "39. Can students request the opening of a petitioned class?", a: "Students may submit a request subject to university policies, minimum requirements, availability of faculty, facilities, academic scheduling, and approval by the proper authorities." },
             { q: "40. Does submitting a petition guarantee that the class will be opened?", a: "No. A petition is a request and remains subject to evaluation and approval." }
         ]
+    },
+    {
+        section: "F. ACADEMIC LOAD, OVERLOAD, AND COURSE SCHEDULING",
+        items: [
+            { q: "41. How many units may I enroll in?", a: "During a regular semester, students should follow the academic load prescribed in their approved curriculum or study program. During the mid-term, a student may enroll in a maximum of nine (9) units. A graduating student may be allowed a higher mid-term load, but it must not exceed twelve (12) units." },
+            { q: "42. Can I request an overload?", a: "Yes, subject to University rules and approval. A student may be allowed an overload of not more than six (6) units provided that the student has a GPA of not lower than 2.25 in all courses taken. A senior student may be allowed an extra load of not more than six (6) units of courses specified in the degree program, regardless of GPA. University and college scholars may likewise carry an extra load of not more than six (6) units. Students who are scholastically delinquent are not allowed to carry an overload. Requests for overload must be made using the prescribed form issued by the Office of Admissions." },
+            { q: "43. Can a graduating student automatically take an overload?", a: "A graduating student may be permitted to carry an extra load of not more than nine (9) units, subject to the University's prescribed overload procedure and applicable academic policies." },
+            { q: "44. What should I do if two required subjects have conflicting schedules?", a: "Immediately consult your academic adviser, department, and/or the CED Registrar's Office. Students should not independently choose arrangements that are inconsistent with official schedules and enrollment policies." }
+        ]
     }
 ]; //[cite: 1]
 
