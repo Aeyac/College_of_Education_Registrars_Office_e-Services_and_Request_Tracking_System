@@ -56,6 +56,15 @@ const faqSections = [
             { q: "35. If I shift to another college but do not secure a slot, can I automatically return to my previous program?", a: "Returning to the previous program is not necessarily automatic. The student should coordinate with the concerned colleges and the proper university offices regarding admission, availability of slots, and applicable policies." },
             { q: "36. Who evaluates the subjects of a shifting student?", a: "Evaluation normally involves the receiving academic unit and the appropriate registrar/admission offices based on the approved curriculum and university policies." }
         ]
+    },
+    {
+        section: "E. CROSS-ENROLLMENT AND PETITIONED COURSES",
+        items: [
+            { q: "37. Can I cross-enroll a subject in another institution?", a: "Cross-enrollment may be allowed only under conditions established by the university and with prior approval from the proper authorities." },
+            { q: "38. Can I cross-enroll first and ask for approval afterward?", a: "Students should secure the required approval before cross-enrolling. Subjects taken without proper authorization may encounter problems in crediting." },
+            { q: "39. Can students request the opening of a petitioned class?", a: "Students may submit a request subject to university policies, minimum requirements, availability of faculty, facilities, academic scheduling, and approval by the proper authorities." },
+            { q: "40. Does submitting a petition guarantee that the class will be opened?", a: "No. A petition is a request and remains subject to evaluation and approval." }
+        ]
     }
 ]; //[cite: 1]
 
