@@ -47,6 +47,15 @@ const faqSections = [
             { q: "31. Can one course substitute for another course in my curriculum?", a: "Course substitution is not automatic. It requires proper evaluation and approval in accordance with university policies." },
             { q: "32. Can I take two courses at the same time if one is a prerequisite of the other?", a: "Normally, a prerequisite should be completed first. Concurrent enrollment is allowed only when specifically permitted by the approved curriculum or applicable university policy." }
         ]
+    },
+    {
+        section: "D. SHIFTING, TRANSFERRING, AND CHANGE OF PROGRAM",
+        items: [
+            { q: "33. I want to shift to another program. What should I do?", a: "Students should follow the university's official shifting procedures and obtain the required evaluations and approvals from the concerned college, department, and other authorized offices." },
+            { q: "34. If I shift to another program, will all my subjects be credited?", a: "Not necessarily. Crediting depends on the curriculum of the new program, equivalency of courses, grades obtained, and applicable university policies." },
+            { q: "35. If I shift to another college but do not secure a slot, can I automatically return to my previous program?", a: "Returning to the previous program is not necessarily automatic. The student should coordinate with the concerned colleges and the proper university offices regarding admission, availability of slots, and applicable policies." },
+            { q: "36. Who evaluates the subjects of a shifting student?", a: "Evaluation normally involves the receiving academic unit and the appropriate registrar/admission offices based on the approved curriculum and university policies." }
+        ]
     }
 ]; //[cite: 1]
 
