@@ -66,6 +66,10 @@ class ChatbotController extends Controller
                 'answer' => "**Our Mission:** To develop highly competent, morally upright educators.\n**Our Vision:** A premier center of excellence in teacher education.\n**Philosophy:** Education is a lifelong process of holistic development."
             ],
             [
+                'tags' => ['head', 'dean', 'registrar', 'department', 'chairperson', 'depp', 'decee', 'dlcaed', 'dsed', 'dtllsed', 'dsped', 'leader'],
+                'answer' => "Here are the key officials and Department Heads of the College of Education (CED):\n\n- **Dean:** Dr. Florante P. Ibarra\n- **Registrar:** Dr. Abegail V. Dela Fuente\n\n**Department Heads:**\n- **DEPP** (Education Policy & Practice): Dr. Jennifer V. Fajanela\n- **DECEE** (Early Childhood & Elementary): Dr. Verjun J. Dilla\n- **DLCAED** (Language, Culture & Arts): Dr. Myla L. Santos\n- **DSED** (Science Education): Dr. Edwin D. Ibañez\n- **DTLLSED** (Tech, Livelihood & Life Skills): Dr. Ma. Catalina D. Cadiz\n- **DSPED** (Sports & Physical Education): Dr. Jennifer T. De Jesus"
+            ],
+            [
                 'tags' => ['service', 'feature', 'system', 'portal', 'what can i do'],
                 'answer' => "Our system allows you to:\n1. Request documents (Internship Cert, COBC, etc.)\n2. Track request status in real-time\n3. View Faculty Consultation Hours\n4. Verify Alumni status\n5. Communicate directly with the office via Inquiry Threads\n6. Download the Academic Calendar."
             ],

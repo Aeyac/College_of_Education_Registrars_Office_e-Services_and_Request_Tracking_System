@@ -294,16 +294,45 @@ export default function Welcome({ auth, announcements = [] }) {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                            <div className="bg-green-50/50 p-8 rounded-2xl border border-green-100 shadow-sm">
-                                <h3 className="text-lg font-bold text-slate-900 mb-4">Academic Departments</h3>
-                                <ul className="space-y-2 text-slate-600 text-xs sm:text-sm">
-                                    <li><strong>DEPP</strong> - Dept. of Education Policy and Practice</li>
-                                    <li><strong>DECEE</strong> - Dept. of Early Childhood and Elementary Education</li>
-                                    <li><strong>DLCAED</strong> - Dept. of Language, Culture and Arts Education</li>
-                                    <li><strong>DSED</strong> - Dept. of Science Education</li>
-                                    <li><strong>DTLLSED</strong> - Dept. of Technology, Livelihood, and Life Skills Ed.</li>
-                                    <li><strong>DSPED</strong> - Dept. of Sports and Physical Education</li>
-                                </ul>
+                            <div className="bg-green-50/50 p-8 rounded-2xl border border-green-100 shadow-sm col-span-1 md:col-span-2 lg:col-span-1">
+                                <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                                    <svg className="w-5 h-5 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    </svg>
+                                    Academic Departments & Heads
+                                </h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-green-100">
+                                        <span className="text-xs font-black text-green-700 tracking-wider">DEPP</span>
+                                        <p className="text-[11px] text-slate-500 font-medium mb-2 uppercase leading-tight">Education Policy & Practice</p>
+                                        <p className="text-sm font-bold text-slate-800">Dr. Jennifer V. Fajanela</p>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-green-100">
+                                        <span className="text-xs font-black text-green-700 tracking-wider">DECEE</span>
+                                        <p className="text-[11px] text-slate-500 font-medium mb-2 uppercase leading-tight">Early Childhood & Elem.</p>
+                                        <p className="text-sm font-bold text-slate-800">Dr. Verjun J. Dilla</p>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-green-100">
+                                        <span className="text-xs font-black text-green-700 tracking-wider">DLCAED</span>
+                                        <p className="text-[11px] text-slate-500 font-medium mb-2 uppercase leading-tight">Language, Culture & Arts</p>
+                                        <p className="text-sm font-bold text-slate-800">Dr. Myla L. Santos</p>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-green-100">
+                                        <span className="text-xs font-black text-green-700 tracking-wider">DSED</span>
+                                        <p className="text-[11px] text-slate-500 font-medium mb-2 uppercase leading-tight">Science Education</p>
+                                        <p className="text-sm font-bold text-slate-800">Dr. Edwin D. Ibañez</p>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-green-100">
+                                        <span className="text-xs font-black text-green-700 tracking-wider">DTLLSED</span>
+                                        <p className="text-[11px] text-slate-500 font-medium mb-2 uppercase leading-tight">Tech, Livelihood & Life Skills</p>
+                                        <p className="text-sm font-bold text-slate-800">Dr. Ma. Catalina D. Cadiz</p>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-green-100">
+                                        <span className="text-xs font-black text-green-700 tracking-wider">DSPED</span>
+                                        <p className="text-[11px] text-slate-500 font-medium mb-2 uppercase leading-tight">Sports & Physical Ed.</p>
+                                        <p className="text-sm font-bold text-slate-800">Dr. Jennifer T. De Jesus</p>
+                                    </div>
+                                </div>
                             </div>
                             <div className="bg-yellow-50/50 p-8 rounded-2xl border border-yellow-100 shadow-sm flex flex-col justify-center">
                                 <h3 className="text-lg font-bold text-slate-900 mb-2">CLSU Laboratory for Teaching and Learning (CLTL)</h3>
