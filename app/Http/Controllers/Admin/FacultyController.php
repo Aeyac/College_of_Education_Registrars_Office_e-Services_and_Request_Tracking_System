@@ -3,11 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\AlumniVerification;
-use App\Models\CertificateRequest;
-use App\Models\Course;
 use App\Models\Faculty;
-use App\Models\User;
+use App\Services\ScheduleExtractorService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -16,29 +13,37 @@ class FacultyController extends Controller
     public function loadFaculty()
     {
         $faculty = Faculty::orderBy('name', 'asc')->get()->map(function ($prof) {
-            $startStr = $prof->consultation_time_start;
-            $endStr = $prof->consultation_time_end;
-
-            $startObj = $startStr instanceof \Carbon\Carbon ? $startStr : ($startStr ? \Carbon\Carbon::parse($startStr) : null);
-            $endObj = $endStr instanceof \Carbon\Carbon ? $endStr : ($endStr ? \Carbon\Carbon::parse($endStr) : null);
-
-            $hours = trim($prof->consultation_days . ' ' . ($startObj ? $startObj->format('g:i A') : '') . ($startObj && $endObj ? ' - ' : '') . ($endObj ? $endObj->format('g:i A') : ''));
-
             return [
                 'id' => $prof->id,
                 'name' => $prof->name,
                 'department_or_program' => $prof->department_or_program,
                 'room_or_location' => $prof->room_or_location,
                 'consultation_days' => $prof->consultation_days,
-                'consultation_time_start' => $startObj ? $startObj->format('H:i') : '',
-                'consultation_time_end' => $endObj ? $endObj->format('H:i') : '',
+                'consultation_time_start' => $prof->consultation_time_start ? \Carbon\Carbon::parse($prof->consultation_time_start)->format('H:i') : '',
+                'consultation_time_end' => $prof->consultation_time_end ? \Carbon\Carbon::parse($prof->consultation_time_end)->format('H:i') : '',
+                'weekly_schedule' => $prof->weekly_schedule,
+                'current_status' => $prof->current_status,
                 'role' => $prof->department_or_program,
                 'room' => $prof->room_or_location,
-                'hours' => $hours ?: 'No schedule set',
+                'hours' => $prof->formattedConsultationHours(),
             ];
         });
 
         return Inertia::render('Admin/Faculty', ['faculty' => $faculty]);
+    }
+
+    public function extractSchedule(Request $request, ScheduleExtractorService $extractor)
+    {
+        $request->validate([
+            'schedule_file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+        ]);
+
+        try {
+            $extractedData = $extractor->extract($request->file('schedule_file'));
+            return response()->json(['success' => true, 'data' => $extractedData]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Extraction failed: ' . $e->getMessage()], 500);
+        }
     }
 
     public function storeFaculty(Request $request)
@@ -47,10 +52,12 @@ class FacultyController extends Controller
             'name' => 'required|string|max:255',
             'department_or_program' => 'required|string|max:255',
             'room_or_location' => 'required|string|max:255',
-            'consultation_days' => 'required|string|max:255',
-            'consultation_time_start' => 'required',
-            'consultation_time_end' => 'required',
+            'consultation_days' => 'nullable|string|max:255',
+            'consultation_time_start' => 'nullable',
+            'consultation_time_end' => 'nullable',
+            'weekly_schedule' => 'nullable|array',
         ]));
+
         return back()->with('success', 'Faculty added.');
     }
 
@@ -60,10 +67,12 @@ class FacultyController extends Controller
             'name' => 'required|string|max:255',
             'department_or_program' => 'required|string|max:255',
             'room_or_location' => 'required|string|max:255',
-            'consultation_days' => 'required|string|max:255',
-            'consultation_time_start' => 'required',
-            'consultation_time_end' => 'required',
+            'consultation_days' => 'nullable|string|max:255',
+            'consultation_time_start' => 'nullable',
+            'consultation_time_end' => 'nullable',
+            'weekly_schedule' => 'nullable|array',
         ]));
+
         return back()->with('success', 'Faculty updated.');
     }
 

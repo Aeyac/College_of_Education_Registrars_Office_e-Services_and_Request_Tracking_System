@@ -109,10 +109,14 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::get('/alumni', [AlumniController::class, 'loadAlumni'])->name('alumni');
         Route::put('/alumni/{id}', [AlumniController::class, 'updateAlumni'])->name('alumni.update');
         Route::get('/alumni/{id}/proof', [AlumniController::class, 'viewProof'])->name('alumni.proof');
+        
+        // Faculty Routes
         Route::get('/faculty', [FacultyController::class, 'loadFaculty'])->name('faculty');
+        Route::post('/faculty/extract', [FacultyController::class, 'extractSchedule'])->name('faculty.extract'); // Inserted extract route here
         Route::post('/faculty', [FacultyController::class, 'storeFaculty'])->name('faculty.store');
         Route::put('/faculty/{id}', [FacultyController::class, 'updateFaculty'])->name('faculty.update');
         Route::delete('/faculty/{id}', [FacultyController::class, 'destroyFaculty'])->name('faculty.destroy');
+        
         Route::get('/announcements', [AnnouncementController::class, 'loadAnnouncements'])->name('announcements');
         Route::post('/announcements', [AnnouncementController::class, 'storeAnnouncement'])->name('announcements.store');
         Route::put('/announcements/{id}', [AnnouncementController::class, 'updateAnnouncement'])->name('announcements.update');
