@@ -142,55 +142,70 @@ export default function Welcome({ auth, announcements = [] }) {
                             <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200/80 shadow-sm">
-                                <h3 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                    Mission
-                                </h3>
-                                <p className="text-slate-600 text-sm leading-relaxed">
-                                    CLSU shall develop globally competitive, work-ready, socially-responsible and empowered human resources who value life-long learning; and to generate, disseminate, and apply knowledge and technologies for poverty alleviation, environmental protection, and sustainable development.
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-center">
+                                <h3 className="text-2xl font-black text-green-800 mb-4">A Center of Excellence</h3>
+                                <p className="text-slate-600 text-sm leading-relaxed mb-4">
+                                    Since 1950, the College of Education (CED) has been a leading institution in training highly qualified educators and professionals. Officially established in 1964, it has since expanded its programs to meet the evolving needs of the Philippine education system.
                                 </p>
+                                <p className="text-slate-600 text-sm leading-relaxed">
+                                    Today, CED is proudly recognized as a <strong>Center of Excellence (COE)</strong> in Teacher Education, continuing to uphold academic excellence, research, and community engagement.
+                                </p>
+                                <div className="mt-6 pt-6 border-t border-slate-200/60">
+                                    <p className="text-sm text-slate-700"><strong>Dean:</strong> Dr. Florante P. Ibarra</p>
+                                    <p className="text-sm text-slate-700 mt-1"><strong>Registrar:</strong> Dr. Abegail V. Dela Fuente</p>
+                                </div>
                             </div>
+                            
                             <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200/80 shadow-sm">
                                 <h3 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
                                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    Vision
+                                    Goals of the College
                                 </h3>
-                                <p className="text-slate-600 text-sm leading-relaxed">
-                                    CLSU as a world-class National Research University for science and technology in agriculture and allied fields.
-                                </p>
-                            </div>
-                            <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200/80 shadow-sm">
-                                <h3 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2">
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                    </svg>
-                                    Philosophy
-                                </h3>
-                                <p className="text-slate-600 text-sm leading-relaxed">
-                                    The ultimate measure of the effectiveness of Central Luzon State University as an institution of higher learning is its contribution to and impact on the educational, economic, social, cultural, political and moral well-being and environmental consciousness of the peoples it serves.
-                                </p>
+                                <ul className="space-y-3 text-slate-600 text-sm">
+                                    <li className="flex gap-3">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 mt-2 shrink-0"></div>
+                                        <span>Train future educators across all levels of education.</span>
+                                    </li>
+                                    <li className="flex gap-3">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 mt-2 shrink-0"></div>
+                                        <span>Provide quality teacher education responsive to national needs.</span>
+                                    </li>
+                                    <li className="flex gap-3">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 mt-2 shrink-0"></div>
+                                        <span>Promote research, instruction, and development.</span>
+                                    </li>
+                                    <li className="flex gap-3">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 mt-2 shrink-0"></div>
+                                        <span>Disseminate knowledge through extension and networking.</span>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
                             <div className="bg-green-50/50 p-8 rounded-2xl border border-green-100 shadow-sm">
-                                <h3 className="text-lg font-bold text-slate-900 mb-2">Mission of Elementary Education</h3>
-                                <p className="text-slate-600 text-sm leading-relaxed">
-                                    To equip future elementary teachers with foundational pedagogical skills, deep subject matter knowledge, and the empathy needed to lay strong educational groundwork for children.
-                                </p>
+                                <h3 className="text-lg font-bold text-slate-900 mb-4">Academic Departments</h3>
+                                <ul className="space-y-2 text-slate-600 text-xs sm:text-sm">
+                                    <li><strong>DEPP</strong> - Dept. of Education Policy and Practice</li>
+                                    <li><strong>DECEE</strong> - Dept. of Early Childhood and Elementary Education</li>
+                                    <li><strong>DLCAED</strong> - Dept. of Language, Culture and Arts Education</li>
+                                    <li><strong>DSED</strong> - Dept. of Science Education</li>
+                                    <li><strong>DTLLSED</strong> - Dept. of Technology, Livelihood, and Life Skills Ed.</li>
+                                    <li><strong>DSPED</strong> - Dept. of Sports and Physical Education</li>
+                                </ul>
                             </div>
-                            <div className="bg-yellow-50/50 p-8 rounded-2xl border border-yellow-100 shadow-sm">
-                                <h3 className="text-lg font-bold text-slate-900 mb-2">Mission of Secondary Education</h3>
-                                <p className="text-slate-600 text-sm leading-relaxed">
-                                    To prepare secondary educators who master their disciplines, integrating innovative teaching strategies to guide adolescents towards academic achievement and personal growth.
+                            <div className="bg-yellow-50/50 p-8 rounded-2xl border border-yellow-100 shadow-sm flex flex-col justify-center">
+                                <h3 className="text-lg font-bold text-slate-900 mb-2">CLSU Laboratory for Teaching and Learning (CLTL)</h3>
+                                <p className="text-slate-600 text-sm leading-relaxed mb-4">
+                                    CED houses the CLTL which serves as the premier venue for teaching practice, research, and innovation in education. It includes:
                                 </p>
+                                <ul className="space-y-2 text-slate-600 text-sm font-medium">
+                                    <li>• Agricultural Science and Technology School (CLTL-ASTS)</li>
+                                    <li>• University Science High School (CLTL-USHS)</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
