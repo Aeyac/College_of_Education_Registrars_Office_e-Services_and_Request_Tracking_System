@@ -1,3 +1,4 @@
+<?php
 
 namespace App\Providers;
 
@@ -7,8 +8,8 @@ use Illuminate\Support\Facades\URL;
 use App\Models\Course;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Auth\Notifications\ResetPassword; // Add this
-use Illuminate\Notifications\Messages\MailMessage; // Add this
+use Illuminate\Auth\Notifications\ResetPassword; 
+use Illuminate\Notifications\Messages\MailMessage;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -43,10 +44,6 @@ class AppServiceProvider extends ServiceProvider
             }
         }
             */
-        /* 
-           ... Keep your existing Vite and Schema logic here ...
-        */
-
         // Override the default Reset Password Email Template
         ResetPassword::toMailUsing(function (object $notifiable, string $token) {
             // Generate the frontend URL for your React reset password page
