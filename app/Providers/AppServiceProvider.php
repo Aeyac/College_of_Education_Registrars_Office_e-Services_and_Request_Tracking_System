@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\URL;
 use App\Models\Course;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Auth\Notifications\ResetPassword; 
+use Illuminate\Notifications\Messages\MailMessage;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -42,5 +44,17 @@ class AppServiceProvider extends ServiceProvider
             }
         }
             */
+        // Override the default Reset Password Email Template
+        ResetPassword::toMailUsing(function (object $notifiable, string $token) {
+            // Generate the frontend URL for your React reset password page
+            $url = url(route('password.reset', [
+                'token' => $token,
+                'email' => $notifiable->getEmailForPasswordReset(),
+            ], false));
+
+            return (new MailMessage)
+                ->subject('Reset Your Password - CED E-Services')
+                ->view('emails.custom-reset-password', ['url' => $url]);
+        });
     }
 }
