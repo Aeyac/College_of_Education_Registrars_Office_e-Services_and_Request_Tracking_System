@@ -8,7 +8,7 @@ import FAQSection from '@/pages/FAQSection';
 export default function Welcome({ auth, announcements = [] }) {
     // State for accordions
     const [openCourse, setOpenCourse] = useState(null);
-    
+
     // State for Announcement Modal
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
 
@@ -184,7 +184,7 @@ export default function Welcome({ auth, announcements = [] }) {
                                 Our Foundation
                             </div>
                             <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight text-center">Central Luzon State University</h2>
-                            <p className="text-slate-500 text-center mt-4 text-lg font-medium italic tracking-wide">"Excellentia, Virtus, et Ministerium"</p>
+                            <p className="text-slate-500 text-center mt-4 text-lg font-medium italic tracking-wide">"Excellent service to humanity is our commitment."</p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-slate-800">
@@ -246,7 +246,7 @@ export default function Welcome({ auth, announcements = [] }) {
                 {/* About Section */}
                 <section id="about" className="relative py-24 px-6 md:px-12 bg-white scroll-mt-20 overflow-hidden">
                     <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-yellow-100/50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 -translate-y-1/3 -translate-x-1/4 -z-10"></div>
-                    
+
                     <div className="max-w-7xl mx-auto relative z-10">
                         <div className="flex flex-col items-center mb-16">
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 border border-green-200 text-green-800 text-xs font-black uppercase tracking-widest mb-4 shadow-sm">
@@ -259,7 +259,7 @@ export default function Welcome({ auth, announcements = [] }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                             <div className="bg-gradient-to-br from-green-50 to-emerald-50/20 p-10 rounded-[2rem] border border-green-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-center relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform duration-700">
-                                    <svg className="w-48 h-48 text-green-700" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>
+                                    <svg className="w-48 h-48 text-green-700" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z" /></svg>
                                 </div>
                                 <h3 className="text-3xl font-black text-green-800 mb-6 flex items-center gap-3">
                                     <div className="w-12 h-12 rounded-2xl bg-green-100 text-green-700 flex items-center justify-center shrink-0">
@@ -273,7 +273,7 @@ export default function Welcome({ auth, announcements = [] }) {
                                 <p className="text-slate-600 text-base leading-relaxed font-medium relative z-10">
                                     Today, CED is proudly recognized as a <strong className="text-green-700 bg-green-100/50 px-1 rounded">Center of Excellence (COE)</strong> in Teacher Education, continuing to uphold academic excellence, research, and community engagement.
                                 </p>
-                                
+
                                 <div className="mt-8 pt-8 border-t border-green-200/60 flex flex-col sm:flex-row gap-6 relative z-10">
                                     <div className="flex items-center gap-4 bg-white/60 p-4 rounded-xl border border-green-50 shadow-sm flex-1">
                                         <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
@@ -295,7 +295,7 @@ export default function Welcome({ auth, announcements = [] }) {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="bg-white p-10 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-center relative overflow-hidden group">
                                 <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-yellow-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-700"></div>
                                 <h3 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-4 relative z-10">
@@ -379,7 +379,7 @@ export default function Welcome({ auth, announcements = [] }) {
                             </div>
                             <div className="bg-white p-8 sm:p-10 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-center relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 p-8 opacity-5 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform duration-700">
-                                    <svg className="w-40 h-40 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18s-.41-.06-.57-.18l-7.9-4.44A.991.991 0 013 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18s.41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L5.46 7.82l6.54 3.67 6.54-3.67L12 4.15zM5 14.91l6 3.38v-4.98l-6-3.37v4.97zm14 0v-4.97l-6 3.37v4.98l6-3.38z"/></svg>
+                                    <svg className="w-40 h-40 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18s-.41-.06-.57-.18l-7.9-4.44A.991.991 0 013 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18s.41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L5.46 7.82l6.54 3.67 6.54-3.67L12 4.15zM5 14.91l6 3.38v-4.98l-6-3.37v4.97zm14 0v-4.97l-6 3.37v4.98l6-3.38z" /></svg>
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-4 relative z-10">
                                     <div className="w-12 h-12 bg-amber-50 rounded-2xl border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
@@ -412,7 +412,7 @@ export default function Welcome({ auth, announcements = [] }) {
                 {/* E-Services Section */}
                 <section id="services" className="relative py-24 px-6 md:px-12 bg-white scroll-mt-20 overflow-hidden">
                     <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-green-50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 -translate-y-1/2 translate-x-1/3 -z-10"></div>
-                    
+
                     <div className="max-w-7xl mx-auto relative z-10">
                         <div className="flex flex-col items-center mb-16">
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 border border-green-100 text-green-700 text-xs font-bold uppercase tracking-widest mb-4">
@@ -483,7 +483,7 @@ export default function Welcome({ auth, announcements = [] }) {
                                         <div className={`px-8 overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[500px] pb-8 opacity-100' : 'max-h-0 pb-0 opacity-0'}`}>
                                             <div className="pt-6 border-t border-slate-100">
                                                 <p className="text-base text-slate-600 leading-relaxed mb-6 font-medium">{course.desc}</p>
-                                                
+
                                                 {hasMajors && (
                                                     <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100/50 shadow-inner">
                                                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -536,9 +536,9 @@ export default function Welcome({ auth, announcements = [] }) {
                                                 <div dangerouslySetInnerHTML={{ __html: announcement.content || '' }} />
                                                 <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-white to-transparent"></div>
                                             </div>
-                                            
+
                                             <div className="mt-auto pt-4 border-t border-slate-100">
-                                                <button 
+                                                <button
                                                     onClick={() => setSelectedAnnouncement(announcement)}
                                                     className="w-full text-center py-3 rounded-xl bg-slate-50 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-yellow-400 transition-all duration-300 flex items-center justify-center gap-2 group/btn"
                                                 >
@@ -591,15 +591,15 @@ export default function Welcome({ auth, announcements = [] }) {
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        
+
                         <div className="overflow-y-auto p-6 sm:p-8 space-y-4 text-sm text-slate-600 custom-scrollbar flex-1 bg-white">
                             <h4 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug">{selectedAnnouncement.title}</h4>
                             <div className="leading-relaxed text-slate-700 text-base quill-content overflow-hidden" dangerouslySetInnerHTML={{ __html: selectedAnnouncement.content || '' }} />
                         </div>
 
                         <div className="p-6 border-t border-slate-100 bg-slate-50 shrink-0">
-                            <button 
-                                onClick={() => setSelectedAnnouncement(null)} 
+                            <button
+                                onClick={() => setSelectedAnnouncement(null)}
                                 className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-colors shadow-md text-sm"
                             >
                                 Close

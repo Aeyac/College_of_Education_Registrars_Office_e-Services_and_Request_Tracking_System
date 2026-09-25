@@ -59,8 +59,12 @@ export default function Header() {
     };
 
     return (
-        <header className={`fixed top-0 left-0 z-50 w-full transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5 lg:py-6'}`}>
-            <div className="max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-12">
+        <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 flex justify-center px-4 sm:px-6 lg:px-12 ${scrolled ? 'pt-4' : 'pt-6'}`}>
+            <div className={`mx-auto flex justify-between items-center transition-all duration-500 w-full max-w-7xl rounded-[2rem] ${
+                scrolled 
+                ? 'bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.08)] px-4 sm:px-6 py-3' 
+                : 'bg-transparent px-0 py-0'
+            }`}>
 
                 {/* Brand / Logo */}
                 <div className="flex items-center gap-3 shrink-0">
@@ -77,16 +81,16 @@ export default function Header() {
                     </div>
                 </div>
 
-                {/* Desktop Navigation (Floating Pill style with Active State) */}
-                <nav className="hidden lg:flex items-center gap-2 xl:gap-6 backdrop-blur-md px-6 py-2.5">
+                {/* Desktop Navigation */}
+                <nav className={`hidden lg:flex items-center gap-1 xl:gap-2 px-2 py-1.5 rounded-2xl transition-all duration-500 ${!scrolled && 'bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.03)]'}`}>
                     {navLinks.map((l) => (
                         <a
                             key={l.href}
                             href={l.href}
                             onClick={(e) => handleNavClick(e, l.href)}
-                            className={`px-3 py-1.5 text-sm font-bold rounded-full transition-colors whitespace-nowrap ${activeSection === l.href
-                                ? 'text-yellow-600 bg-yellow-50'
-                                : 'text-slate-600 hover:text-yellow-600 hover:bg-yellow-50'
+                            className={`px-4 py-2 text-sm font-bold rounded-xl transition-all duration-300 whitespace-nowrap ${activeSection === l.href
+                                ? 'text-yellow-700 bg-white/40 shadow-sm border border-white/50'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-white/30 border border-transparent'
                                 }`}
                         >
                             {l.label}
@@ -96,7 +100,7 @@ export default function Header() {
 
                 {/* Desktop Buttons */}
                 <div className="hidden lg:flex items-center gap-3 shrink-0">
-                    <Link href={route('login')} className="px-5 py-2.5 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-full hover:bg-slate-50 transition-colors shadow-sm">Login</Link>
+                    <Link href={route('login')} className="px-5 py-2.5 text-sm font-bold text-slate-700 bg-white/80 backdrop-blur-sm border border-slate-200/80 rounded-full hover:bg-white transition-all shadow-sm">Login</Link>
                     <Link href={route('register')} className="px-5 py-2.5 text-sm font-bold bg-yellow-400 text-slate-900 rounded-full hover:bg-yellow-500 transition-all shadow-md">Register</Link>
                 </div>
 
