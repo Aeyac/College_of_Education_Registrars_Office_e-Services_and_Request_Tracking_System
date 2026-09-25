@@ -441,24 +441,6 @@ export default function ManageRequests({ requests = [], showingArchived = false 
                                     </button>
                                 </div>
                             )}
-
-                            {selectedRequest.status_history && selectedRequest.status_history.length > 0 && (
-                                <div className="border-t border-slate-100 pt-4">
-                                    <h4 className="text-sm font-bold text-slate-900 mb-3">Audit Trail / Activity Log</h4>
-                                    <div className="space-y-3">
-                                        {selectedRequest.status_history.map((log, idx) => (
-                                            <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
-                                                <div className="flex justify-between items-start mb-1 gap-2">
-                                                    <span className="font-bold text-slate-800">{log.status}</span>
-                                                    <span className="text-slate-400 font-medium text-[10px] shrink-0">{log.date}</span>
-                                                </div>
-                                                <p className="text-slate-600 mb-1">Updated by: <span className="font-semibold">{log.changed_by}</span></p>
-                                                {log.note && <p className="text-slate-500 italic mt-1 leading-relaxed">"{log.note}"</p>}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
