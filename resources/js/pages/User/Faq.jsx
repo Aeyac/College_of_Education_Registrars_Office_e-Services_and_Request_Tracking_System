@@ -1,19 +1,33 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import UserLayout from '@/Layouts/UserLayout';
 
-export default function Faq({ userRole }) {
+export default function Faq({ userRole, faqs = [], search = '' }) {
     const [openFaq, setOpenFaq] = useState(null);
     const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+    const [searchValue, setSearchValue] = useState(search);
+    const isFirstRun = useRef(true);
 
-    const faqs = [
-        { q: "How do I request a document?", a: "Navigate to the 'My Requests' tab and click '+ Submit New Request'. Select your document type, format, and provide a valid reason." },
-        { q: "How long does it take to process my request?", a: "Standard processing takes 3-5 working days. You can track the status in your dashboard." },
-        { q: "Where can I view the status of my request?", a: "Your active requests are pinned to your Dashboard, and the full history is available under 'My Requests'." },
-        { q: "How do I upload my Alumni verification?", a: "Click the 'Upload' button on the yellow banner in your Dashboard to submit your Diploma or TOR." },
-        { q: "How can I schedule an appointment?", a: "You can schedule an appointment by submitting an inquiry. Go to 'My Inquiries', start a new thread, and provide your preferred date, time, and purpose." },
-        { q: "Can I update my profile picture and details?", a: "Yes, you can navigate to 'Profile Settings' from the sidebar to update your email, password, profile picture, and contact information." },
-    ];
+    useEffect(() => {
+        if (isFirstRun.current) {
+            isFirstRun.current = false;
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            router.get(route('user.faq'), { search: searchValue }, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            });
+        }, 400);
+
+        return () => clearTimeout(timeout);
+    }, [searchValue]);
+
+    const handleSearch = (event) => {
+        setSearchValue(event.target.value);
+    };
 
     const quickActions = [
         { 
@@ -49,7 +63,13 @@ export default function Faq({ userRole }) {
 
             <div className="p-6 sm:p-8">
                 <div className="relative mb-8">
-                    <input type="text" placeholder="Search for help..." className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-12 pr-4 text-sm focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-colors shadow-sm" />
+                    <input
+                        type="text"
+                        value={searchValue}
+                        onChange={handleSearch}
+                        placeholder="Search for help..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-12 pr-4 text-sm focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-colors shadow-sm"
+                    />
                     <svg className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
 
@@ -73,22 +93,28 @@ export default function Faq({ userRole }) {
                 <h3 id="faq-list" className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 scroll-mt-32">Frequently Asked Questions</h3>
                 
                 <div className="space-y-3">
-                    {faqs.map((faq, index) => (
-                        <div key={index} className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm">
-                            <button className="w-full px-5 py-4 flex justify-between items-center hover:bg-slate-50 transition-colors outline-none" onClick={() => setOpenFaq(openFaq === index ? null : index)}>
-                                <span className="font-bold text-sm text-slate-800 text-left flex items-center gap-3">
-                                    <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500 shrink-0 font-black">{index + 1}</span>
-                                    {faq.q}
-                                </span>
-                                <svg className={`w-4 h-4 text-slate-400 transform transition-transform ${openFaq === index ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                            </button>
-                            {openFaq === index && (
-                                <div className="px-5 pb-4 pl-14 text-sm text-slate-600 leading-relaxed bg-slate-50/50 pt-2 border-t border-slate-100">
-                                    {faq.a}
-                                </div>
-                            )}
+                    {faqs.length > 0 ? (
+                        faqs.map((faq, index) => (
+                            <div key={faq.id ?? index} className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm">
+                                <button className="w-full px-5 py-4 flex justify-between items-center hover:bg-slate-50 transition-colors outline-none" onClick={() => setOpenFaq(openFaq === index ? null : index)}>
+                                    <span className="font-bold text-sm text-slate-800 text-left flex items-center gap-3">
+                                        <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500 shrink-0 font-black">{index + 1}</span>
+                                        {faq.question}
+                                    </span>
+                                    <svg className={`w-4 h-4 text-slate-400 transform transition-transform ${openFaq === index ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+                                {openFaq === index && (
+                                    <div className="px-5 pb-4 pl-14 text-sm text-slate-600 leading-relaxed bg-slate-50/50 pt-2 border-t border-slate-100">
+                                        {faq.answer}
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    ) : (
+                        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-sm text-slate-500">
+                            No FAQs match your search.
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
 

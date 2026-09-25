@@ -3,14 +3,32 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Faq;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class StaticPageController extends Controller
 {
-    public function faq(): Response
+    public function faq(Request $request): Response
     {
-        return Inertia::render('User/Faq');
+        $search = trim((string) $request->string('search'));
+
+        $faqs = Faq::query()
+            ->when($search !== '', fn ($query) => $query->search($search))
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get([
+                'id',
+                'question',
+                'answer',
+                'sort_order',
+            ]);
+
+        return Inertia::render('User/Faq', [
+            'faqs' => $faqs,
+            'search' => $search,
+        ]);
     }
 
     public function about(): Response
