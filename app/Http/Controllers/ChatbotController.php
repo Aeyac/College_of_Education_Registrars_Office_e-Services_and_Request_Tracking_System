@@ -163,8 +163,47 @@ class ChatbotController extends Controller
         }
 
         // =========================================================
-        // 4. ABSOLUTE FALLBACK
+        // 4. ABSOLUTE FALLBACK - GEMINI AI INTEGRATION
         // =========================================================
+        try {
+            $apiKey = env('GEMINI_API_KEY');
+            if (!empty($apiKey)) {
+                $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}";
+                
+                $systemPrompt = "You are the official AI Assistant for the College of Education (CED) E-Services and Registrar's Office at Central Luzon State University (CLSU). 
+Your personality: Helpful, polite, highly professional, and concise. 
+Your scope: Answer questions related to school, university life, academics, education, documents, faculty, and general registrar services. 
+Rule: If the user asks something completely unrelated to school or education, politely decline and steer them back to how you can help with CED E-Services.";
+
+                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                    'Content-Type' => 'application/json',
+                ])->timeout(15)->post($url, [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                ['text' => $systemPrompt . "\n\nUser Question: " . $term]
+                            ]
+                        ]
+                    ],
+                    'generationConfig' => [
+                        'temperature' => 0.7,
+                    ]
+                ]);
+
+                if ($response->successful()) {
+                    $aiContent = $response->json('candidates.0.content.parts.0.text');
+                    if (!empty($aiContent)) {
+                        return response()->json([
+                            'reply' => trim($aiContent)
+                        ]);
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Silently fallback if the AI request fails
+        }
+
+        // 5. FINAL SAFETY FALLBACK
         return response()->json([
             'reply' => "I'm sorry, I couldn't completely understand your question. \n\nHowever, you can easily submit a direct message to our staff via the **My Inquiries** tab on your dashboard, and they will personally assist you!"
         ]);

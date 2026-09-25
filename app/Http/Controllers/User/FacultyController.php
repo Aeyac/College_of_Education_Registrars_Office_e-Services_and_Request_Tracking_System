@@ -19,6 +19,13 @@ class FacultyController extends Controller
             ->map(fn (Faculty $prof) => [
                 'id' => $prof->id,
                 'name' => $prof->name,
+                'department_or_program' => $prof->department_or_program,
+                'room_or_location' => $prof->room_or_location,
+                'consultation_days' => $prof->consultation_days,
+                'consultation_time_start' => $prof->consultation_time_start,
+                'consultation_time_end' => $prof->consultation_time_end,
+                'weekly_schedule' => $prof->weekly_schedule,
+                'current_status' => $prof->current_status,
                 'role' => $prof->department_or_program,
                 'room' => $prof->room_or_location,
                 'hours' => $prof->formattedConsultationHours(),

@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AlumniVerification;
+use App\Models\CertificateRequest;
+use App\Models\Course;
 use App\Models\Faculty;
+use App\Models\User;
 use App\Services\ScheduleExtractorService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

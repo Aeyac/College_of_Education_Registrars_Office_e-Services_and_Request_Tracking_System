@@ -29,8 +29,7 @@ export default function FacultySchedules({ faculty = [] }) {
             title: 'text-slate-900 font-extrabold text-2xl pt-4',
             htmlContainer: 'text-slate-500 text-sm font-medium',
             confirmButton: 'bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold rounded-xl px-8 py-3.5 mx-2 shadow-md transition-colors outline-none',
-            cancelButton: 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl px-8 py-3.5 mx-2 transition-colors outline-none',
-            icon: 'border-0 scale-125 mt-6'
+            cancelButton: 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl px-8 py-3.5 mx-2 transition-colors outline-none'
         },
         buttonsStyling: false
     });
@@ -78,9 +77,9 @@ export default function FacultySchedules({ faculty = [] }) {
                 });
                 setIsModalOpen(true);
                 MySwal.fire({ 
-                    title: 'Extracted by Gemini AI!', 
+                    title: 'Extracted successfully!', 
                     text: 'Please review and edit the schedule below before saving.', 
-                    iconHtml: '✨', 
+                    icon: 'success',
                     timer: 2500, 
                     showConfirmButton: false 
                 });
@@ -90,7 +89,7 @@ export default function FacultySchedules({ faculty = [] }) {
             MySwal.fire({ 
                 title: 'Extraction Failed', 
                 text: errorMessage, 
-                iconHtml: '❌',
+                icon: 'error',
                 showConfirmButton: true
             });
         } finally {
@@ -129,7 +128,7 @@ export default function FacultySchedules({ faculty = [] }) {
                 MySwal.fire({
                     title: isEditing ? 'Updated!' : 'Added!',
                     text: isEditing ? 'The schedule has been successfully updated.' : 'A new faculty schedule has been created.',
-                    iconHtml: '🎉',
+                    icon: 'success',
                     timer: 2000,
                     showConfirmButton: false
                 });
@@ -138,7 +137,7 @@ export default function FacultySchedules({ faculty = [] }) {
                 MySwal.fire({
                     title: 'Validation Error',
                     text: 'Please make sure all required fields are filled out correctly.',
-                    iconHtml: '⚠️',
+                    icon: 'warning',
                     showConfirmButton: true
                 });
             }
@@ -155,7 +154,7 @@ export default function FacultySchedules({ faculty = [] }) {
         MySwal.fire({
             title: 'Delete Schedule?',
             text: "You won't be able to revert this! The schedule will be permanently removed.",
-            iconHtml: '🗑️',
+            icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Yes, Delete it',
             cancelButtonText: 'Cancel',
@@ -168,7 +167,7 @@ export default function FacultySchedules({ faculty = [] }) {
                         MySwal.fire({
                             title: 'Deleted!',
                             text: 'The faculty schedule has been removed.',
-                            iconHtml: '✅',
+                            icon: 'success',
                             timer: 2000,
                             showConfirmButton: false
                         });
@@ -192,7 +191,7 @@ export default function FacultySchedules({ faculty = [] }) {
                         type="file" 
                         ref={fileInputRef} 
                         className="hidden" 
-                        accept=".png,.jpg,.jpeg,.pdf,.xlsx"
+                        accept=".png,.jpg,.jpeg,.pdf"
                         onChange={handleFileUpload}
                     />
                     <button 
