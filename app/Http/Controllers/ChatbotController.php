@@ -125,7 +125,6 @@ class ChatbotController extends Controller
         // =========================================================
         // 3. DATABASE FAQ FALLBACK
         // =========================================================
-        // Kung walang hardcoded system knowledge na tumugma, hahanapin niya sa FAQs table
         $cleanTerm = preg_replace('/[^a-z0-9\s]/', '', $term);
         $stopWords = ['how', 'the', 'what', 'when', 'where', 'why', 'who', 'and', 'for', 'you', 'can', 'are', 'is', 'do', 'does', 'to', 'a', 'in', 'of', 'i', 'my', 'me'];
         

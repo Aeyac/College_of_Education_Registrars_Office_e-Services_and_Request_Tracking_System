@@ -431,7 +431,7 @@ export default function Welcome({ auth, announcements = [] }) {
                                         <div className="absolute top-0 left-0 w-1 h-full bg-green-600 group-hover:bg-yellow-400 transition-colors"></div>
                                         <span className="text-xs font-bold text-slate-400 tracking-wider uppercase block mb-2">{announcement.date}</span>
                                         <h3 className="font-bold text-slate-900 text-lg mb-3 leading-snug">{announcement.title}</h3>
-                                        <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap line-clamp-3 mb-4">{announcement.content}</p>
+                                        <div className="text-sm text-slate-600 leading-relaxed line-clamp-3 mb-4 quill-content overflow-hidden" dangerouslySetInnerHTML={{ __html: announcement.content || '' }} />
                                         
                                         <div className="mt-auto pt-2 border-t border-slate-50">
                                             <button 
@@ -488,9 +488,7 @@ export default function Welcome({ auth, announcements = [] }) {
                         
                         <div className="overflow-y-auto p-6 sm:p-8 space-y-4 text-sm text-slate-600 custom-scrollbar flex-1 bg-white">
                             <h4 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug">{selectedAnnouncement.title}</h4>
-                            <div className="leading-relaxed whitespace-pre-wrap text-slate-700 text-base">
-                                {selectedAnnouncement.content}
-                            </div>
+                            <div className="leading-relaxed text-slate-700 text-base quill-content overflow-hidden" dangerouslySetInnerHTML={{ __html: selectedAnnouncement.content || '' }} />
                         </div>
 
                         <div className="p-6 border-t border-slate-100 bg-slate-50 shrink-0">

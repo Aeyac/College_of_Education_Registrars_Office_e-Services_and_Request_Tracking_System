@@ -21,7 +21,7 @@ export default function Announcements({ announcements = [], userRole }) {
                                 <h4 className="font-bold text-lg text-slate-900 leading-snug">{ann.title}</h4>
                                 <span className="text-[10px] font-bold text-yellow-700 bg-yellow-50 px-3 py-1.5 rounded-md border border-yellow-200 whitespace-nowrap">{ann.date}</span>
                             </div>
-                            <p className="text-sm text-slate-600 leading-relaxed pl-2 whitespace-pre-wrap">{ann.content}</p>
+                            <div className="text-sm text-slate-600 leading-relaxed pl-2 quill-content overflow-hidden" dangerouslySetInnerHTML={{ __html: ann.content || '' }} />
                         </div>
                     )) : (
                         <div className="text-center py-16 bg-slate-50 rounded-2xl border border-slate-100">

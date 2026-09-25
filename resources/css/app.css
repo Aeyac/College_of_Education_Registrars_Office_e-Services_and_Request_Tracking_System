@@ -76,3 +76,31 @@ html, body, div, main, aside {
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
+/* ==========================================================================
+   QUILL RICH TEXT CONTENT STYLES
+   ========================================================================== */
+.quill-content h1 { font-size: 2em; font-weight: bold; margin-bottom: 0.5em; }
+.quill-content h2 { font-size: 1.5em; font-weight: bold; margin-bottom: 0.5em; }
+.quill-content h3 { font-size: 1.17em; font-weight: bold; margin-bottom: 0.5em; }
+.quill-content p { margin-bottom: 1em; }
+.quill-content ul { list-style-type: disc; padding-left: 2em; margin-bottom: 1em; }
+.quill-content ol { list-style-type: decimal; padding-left: 2em; margin-bottom: 1em; }
+.quill-content strong { font-weight: bold; }
+.quill-content em { font-style: italic; }
+.quill-content a { color: #eab308; text-decoration: underline; }
+.quill-content img { max-width: 100%; height: auto; display: block; margin: 1em 0; border-radius: 0.5rem; }
+.quill-content blockquote { border-left: 4px solid #eab308; padding-left: 1em; margin-left: 0; margin-bottom: 1em; color: #475569; }
+
+/* Customizing the Quill Editor appearance for Admin */
+.ql-toolbar.ql-snow {
+    border: none !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    background-color: #f8fafc;
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
+}
+.ql-container.ql-snow {
+    border: none !important;
+    min-height: 200px;
+}

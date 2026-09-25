@@ -1,6 +1,9 @@
 import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+import Swal from 'sweetalert2';
 
 export default function ManageAnnouncements({ announcements = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -10,17 +13,49 @@ export default function ManageAnnouncements({ announcements = [] }) {
     
     const { data, setData, post, put, processing, reset } = useForm({ id: null, title: '', content: '' });
 
+    const quillModules = {
+        toolbar: [
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+            [{ 'size': ['small', false, 'large', 'huge'] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'align': [] }],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['link', 'image', 'video'],
+            ['clean']
+        ],
+    };
+
     const handleSave = (e) => {
         e.preventDefault();
-        if (data.id) put(`/admin/announcements/${data.id}`, { onSuccess: () => setIsModalOpen(false), preserveScroll: true });
-        else post('/admin/announcements', { onSuccess: () => setIsModalOpen(false), preserveScroll: true });
+        
+        const onSuccessAction = () => {
+            setIsModalOpen(false);
+            Swal.fire({
+                title: 'Success!',
+                text: 'Announcement has been saved successfully.',
+                icon: 'success',
+                confirmButtonColor: '#eab308'
+            });
+        };
+
+        if (data.id) put(`/admin/announcements/${data.id}`, { onSuccess: onSuccessAction, preserveScroll: true });
+        else post('/admin/announcements', { onSuccess: onSuccessAction, preserveScroll: true });
     };
 
     const executeArchive = () => {
         if (confirmArchive.id) {
             router.delete(`/admin/announcements/${confirmArchive.id}`, { 
                 preserveScroll: true,
-                onSuccess: () => setConfirmArchive({ show: false, id: null })
+                onSuccess: () => {
+                    setConfirmArchive({ show: false, id: null });
+                    Swal.fire({
+                        title: 'Archived!',
+                        text: 'The announcement has been archived.',
+                        icon: 'success',
+                        confirmButtonColor: '#eab308'
+                    });
+                }
             });
         }
     };
@@ -40,7 +75,7 @@ export default function ManageAnnouncements({ announcements = [] }) {
                             <h4 className="font-bold text-lg text-slate-900 leading-snug">{ann.title}</h4>
                             <span className="text-[10px] font-bold text-yellow-700 bg-yellow-50 px-3 py-1.5 rounded-md border border-yellow-200 whitespace-nowrap">{ann.date}</span>
                         </div>
-                        <p className="text-sm text-slate-600 mb-6 leading-relaxed whitespace-pre-wrap">{ann.content}</p>
+                        <div className="text-sm text-slate-600 mb-6 leading-relaxed quill-content overflow-hidden" dangerouslySetInnerHTML={{ __html: ann.content || '' }} />
                         <div className="flex gap-3">
                             <button onClick={() => { setData(ann); setIsModalOpen(true); }} className="px-5 py-2 text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 transition-colors">Edit Post</button>
                             <button onClick={() => setConfirmArchive({ show: true, id: ann.id })} className="px-5 py-2 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-colors">Archive</button>
@@ -77,7 +112,16 @@ export default function ManageAnnouncements({ announcements = [] }) {
                         <h3 className="font-bold text-lg mb-4">{data.id ? 'Edit' : 'New'} Announcement</h3>
                         <form onSubmit={handleSave} className="space-y-4">
                             <input type="text" value={data.title} onChange={e => setData('title', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500 outline-none" placeholder="Title" required/>
-                            <textarea rows="5" value={data.content} onChange={e => setData('content', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm resize-none focus:ring-yellow-500 outline-none" placeholder="Message" required></textarea>
+                            <div className="bg-white rounded-xl overflow-hidden border border-slate-300 focus-within:border-yellow-500 focus-within:ring-1 focus-within:ring-yellow-500">
+                                <ReactQuill 
+                                    theme="snow" 
+                                    modules={quillModules}
+                                    value={data.content || ''} 
+                                    onChange={(content) => setData('content', content)} 
+                                    placeholder="Write your announcement here..."
+                                    className="border-none"
+                                />
+                            </div>
                             <div className="pt-2 flex gap-3">
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 bg-slate-100 font-bold rounded-xl text-sm">Cancel</button>
                                 <button type="submit" disabled={processing} className="flex-1 py-3 bg-yellow-400 font-bold rounded-xl text-sm shadow-md">Post</button>
