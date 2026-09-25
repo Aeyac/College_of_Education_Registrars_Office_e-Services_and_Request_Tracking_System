@@ -179,7 +179,13 @@ ABOUT CED:
 - Established 1964. Since 1950, leading institution in training educators.
 - Recognized as a Center of Excellence (COE) in Teacher Education.
 - Dean: Dr. Florante P. Ibarra. Registrar: Dr. Abegail V. Dela Fuente.
-- Departments: DEPP, DECEE, DLCAED, DSED, DTLLSED, DSPED.
+- Departments and Heads: 
+  * Dept. of Education Policy and Practice (DEPP) - Dr. Jennifer V. Fajanela
+  * Dept. of Early Childhood and Elementary Education (DECEE) - Dr. Verjun J. Dilla
+  * Dept. of Language, Culture and Arts Education (DLCAED) - Dr. Myla L. Santos
+  * Dept. of Science Education (DSED) - Dr. Edwin D. Ibañez
+  * Dept. of Technology, Livelihood, and Life Skills Education (DTLLSED) - Dr. Ma. Catalina D. Cadiz
+  * Dept. of Sports and Physical Education (DSPED) - Dr. Jennifer T. De Jesus
 - Programs: BEEd, BSEd, BCAEd, BPEd, BTLEd, BECEd.
 - Has CLTL (ASTS and USHS) for teaching practice.
 

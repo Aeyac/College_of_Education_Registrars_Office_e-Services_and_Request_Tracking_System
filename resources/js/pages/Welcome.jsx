@@ -64,26 +64,69 @@ export default function Welcome({ auth, announcements = [] }) {
     const courses = [
         {
             title: "Bachelor of Culture and Arts Education",
+            acronym: "BCAEd",
+            desc: "Prepares educators who are equipped to teach culture and arts, preserving cultural heritage and fostering artistic expression.",
+            icon: (
+                <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                </svg>
+            ),
             majors: []
         },
         {
             title: "Bachelor of Early Childhood Education",
+            acronym: "BECEd",
+            desc: "Designed to prepare educators with the foundational knowledge and skills for teaching young children, focusing on developmental and pedagogical principles.",
+            icon: (
+                <svg className="w-8 h-8 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            ),
             majors: []
         },
         {
             title: "Bachelor of Elementary Education",
+            acronym: "BEEd",
+            desc: "Equips future elementary teachers with foundational pedagogical skills, deep subject matter knowledge, and the empathy needed to lay strong educational groundwork for children.",
+            icon: (
+                <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+            ),
             majors: []
         },
         {
             title: "Bachelor of Physical Education",
+            acronym: "BPEd",
+            desc: "Prepares educators to teach physical education, promoting physical fitness, wellness, and healthy lifestyles through movement and sports.",
+            icon: (
+                <svg className="w-8 h-8 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                </svg>
+            ),
             majors: []
         },
         {
             title: "Bachelor of Secondary Education",
+            acronym: "BSEd",
+            desc: "Prepares secondary educators who master their disciplines, integrating innovative teaching strategies to guide adolescents towards academic achievement and personal growth.",
+            icon: (
+                <svg className="w-8 h-8 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                </svg>
+            ),
             majors: ["English", "Filipino", "Mathematics", "Science", "Social Studies", "Values Education"]
         },
         {
             title: "Bachelor of Technology and Livelihood Education",
+            acronym: "BTLEd",
+            desc: "Focuses on equipping educators with skills in technical-vocational tracks, preparing students for practical life skills and technical careers.",
+            icon: (
+                <svg className="w-8 h-8 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            ),
             majors: ["Agri-Fisheries and Arts", "Home Economics", "Industrial Arts"]
         }
     ];
@@ -128,6 +171,71 @@ export default function Welcome({ auth, announcements = [] }) {
                                         College of Education
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* About CLSU Section */}
+                <section id="about-clsu" className="py-20 px-6 md:px-12 bg-slate-50 border-b border-slate-200/60 scroll-mt-20">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="flex flex-col items-center mb-16">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
+                                <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight text-center">Central Luzon State University</h2>
+                                <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
+                            </div>
+                            <p className="text-slate-500 text-center mt-3 text-sm md:text-base">Excellentia, Virtus, et Ministerium</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-slate-800">
+                            {/* Mission */}
+                            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 hover:border-yellow-300 hover:shadow-lg hover:shadow-yellow-400/5 transition-all duration-300 shadow-sm group">
+                                <div className="w-14 h-14 bg-amber-50 group-hover:bg-yellow-100 rounded-xl flex items-center justify-center mb-6 border border-amber-100 group-hover:border-yellow-300 transition-colors">
+                                    <svg className="w-7 h-7 text-amber-500 group-hover:text-yellow-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    </svg>
+                                </div>
+                                <h3 className="font-black text-slate-900 mb-4 uppercase tracking-widest text-sm flex items-center gap-2">
+                                    <span className="w-4 h-1 bg-yellow-400 rounded-full"></span>
+                                    Mission
+                                </h3>
+                                <p className="text-slate-600 text-sm leading-relaxed font-medium">
+                                    CLSU shall develop globally competitive, work-ready, socially-responsible and empowered human resources who value life-long learning; and to generate, disseminate, and apply knowledge and technologies for poverty alleviation, environmental protection, and sustainable development.
+                                </p>
+                            </div>
+
+                            {/* Vision */}
+                            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 hover:border-yellow-300 hover:shadow-lg hover:shadow-yellow-400/5 transition-all duration-300 shadow-sm md:-translate-y-4 group">
+                                <div className="w-14 h-14 bg-amber-50 group-hover:bg-yellow-100 rounded-xl flex items-center justify-center mb-6 border border-amber-100 group-hover:border-yellow-300 transition-colors">
+                                    <svg className="w-7 h-7 text-amber-500 group-hover:text-yellow-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </div>
+                                <h3 className="font-black text-slate-900 mb-4 uppercase tracking-widest text-sm flex items-center gap-2">
+                                    <span className="w-4 h-1 bg-yellow-400 rounded-full"></span>
+                                    Vision
+                                </h3>
+                                <p className="text-slate-600 text-sm leading-relaxed font-medium">
+                                    CLSU as a world-class National Research University for science and technology in agriculture and allied fields.
+                                </p>
+                            </div>
+
+                            {/* Philosophy */}
+                            <div className="bg-white p-8 rounded-2xl border border-slate-200/80 hover:border-yellow-300 hover:shadow-lg hover:shadow-yellow-400/5 transition-all duration-300 shadow-sm group">
+                                <div className="w-14 h-14 bg-amber-50 group-hover:bg-yellow-100 rounded-xl flex items-center justify-center mb-6 border border-amber-100 group-hover:border-yellow-300 transition-colors">
+                                    <svg className="w-7 h-7 text-amber-500 group-hover:text-yellow-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                </div>
+                                <h3 className="font-black text-slate-900 mb-4 uppercase tracking-widest text-sm flex items-center gap-2">
+                                    <span className="w-4 h-1 bg-yellow-400 rounded-full"></span>
+                                    Philosophy
+                                </h3>
+                                <p className="text-slate-600 text-sm leading-relaxed font-medium">
+                                    The ultimate measure of the effectiveness of Central Luzon State University as an institution of higher learning is its contribution to and impact on the educational, economic, social, cultural, political and moral well-being and environmental consciousness of the peoples it serves.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -244,58 +352,67 @@ export default function Welcome({ auth, announcements = [] }) {
                 </section>
 
                 {/* Courses Offered Section */}
-                <section id="courses" className="py-20 px-6 md:px-12 bg-white max-w-4xl mx-auto scroll-mt-20">
-                    <div className="flex flex-col items-center mb-10">
-                        <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-3">Courses Offered</h2>
-                        <p className="text-slate-500 text-center text-sm">Explore the undergraduate degree programs available at the College of Education.</p>
-                    </div>
+                <section id="courses" className="py-20 px-6 md:px-12 bg-slate-50 border-t border-slate-200/60 scroll-mt-20">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="flex flex-col items-center mb-12">
+                            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-4 text-center">Academic Programs</h2>
+                            <p className="text-slate-500 text-center text-sm md:text-base max-w-2xl">Discover our comprehensive degree programs designed to mold the next generation of educators, leaders, and innovators.</p>
+                        </div>
 
-                    <div className="space-y-4">
-                        {courses.map((course, index) => {
-                            const hasMajors = course.majors.length > 0;
-                            const isOpen = openCourse === index;
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+                            {courses.map((course, index) => {
+                                const hasMajors = course.majors.length > 0;
+                                const isOpen = openCourse === index;
 
-                            return (
-                                <div key={index} className="border border-slate-200 rounded-xl overflow-hidden">
-                                    {hasMajors ? (
+                                return (
+                                    <div key={index} className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden ${isOpen ? 'border-yellow-400 shadow-lg ring-4 ring-yellow-400/10' : 'border-slate-200 shadow-sm hover:border-yellow-300 hover:shadow-md'}`}>
                                         <button
-                                            className="w-full px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors focus:outline-none"
+                                            className="w-full p-6 flex items-start gap-4 text-left focus:outline-none group"
                                             onClick={() => setOpenCourse(isOpen ? null : index)}
                                         >
-                                            <span className="font-semibold text-slate-800 text-left">{course.title}</span>
-                                            <svg
-                                                className={`w-5 h-5 text-slate-500 transform transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
+                                            <div className={`p-3 rounded-xl shrink-0 transition-colors ${isOpen ? 'bg-yellow-100' : 'bg-slate-50 group-hover:bg-yellow-50'}`}>
+                                                {course.icon}
+                                            </div>
+                                            <div className="flex-grow pt-1">
+                                                <div className="flex items-center justify-between gap-2 mb-1">
+                                                    <span className="text-xs font-bold text-yellow-600 tracking-widest uppercase">{course.acronym}</span>
+                                                    <svg
+                                                        className={`w-5 h-5 text-slate-400 transform transition-transform duration-300 ${isOpen ? 'rotate-180 text-yellow-600' : 'group-hover:text-yellow-500'}`}
+                                                        fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                                    >
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </div>
+                                                <h3 className="font-bold text-slate-900 leading-snug">{course.title}</h3>
+                                            </div>
                                         </button>
-                                    ) : (
-                                        <div className="w-full px-6 py-4 flex justify-between items-center bg-slate-50">
-                                            <span className="font-semibold text-slate-800 text-left">{course.title}</span>
-                                        </div>
-                                    )}
 
-                                    {hasMajors && (
-                                        <div className={`px-6 overflow-hidden transition-all duration-300 ease-in-out bg-white ${isOpen ? 'max-h-96 py-5 opacity-100' : 'max-h-0 py-0 opacity-0'}`}>
-                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Majors</span>
-                                            <ul className="space-y-3 ml-2">
-                                                {course.majors.map((major, i) => (
-                                                    <li key={i} className="text-sm text-slate-600 flex items-center gap-3">
-                                                        <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                                                        </svg>
-                                                        {major}
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                        <div className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[500px] pb-6 opacity-100' : 'max-h-0 pb-0 opacity-0'}`}>
+                                            <div className="pt-4 border-t border-slate-100">
+                                                <p className="text-sm text-slate-600 leading-relaxed mb-4">{course.desc}</p>
+                                                
+                                                {hasMajors && (
+                                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                                                            Available Majors
+                                                        </span>
+                                                        <ul className="space-y-2">
+                                                            {course.majors.map((major, i) => (
+                                                                <li key={i} className="text-sm text-slate-700 flex items-center gap-2 font-medium">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0"></div>
+                                                                    {major}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </section>
 
