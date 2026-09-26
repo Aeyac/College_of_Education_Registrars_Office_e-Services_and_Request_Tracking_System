@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import {
@@ -8,13 +9,37 @@ import {
 export default function DashboardOverview({ stats, monthlyProcessed = [], statusDistribution = [] }) {
     const totalRequests = statusDistribution.reduce((acc, curr) => acc + curr.value, 0);
 
+    // Auto-hide Recharts tooltips natively so they remain clickable
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            const wrappers = document.querySelectorAll('.recharts-wrapper');
+            const clickedInside = e.target.closest('.recharts-wrapper');
+            
+            if (!clickedInside) {
+                // Clicked completely outside: hide all tooltips
+                wrappers.forEach(wrapper => {
+                    wrapper.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+                });
+            } else {
+                // Clicked inside one chart: hide the OTHERS
+                wrappers.forEach(wrapper => {
+                    if (wrapper !== clickedInside) {
+                        wrapper.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+                    }
+                });
+            }
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
+
     const StatCard = ({ href, title, value, icon, colorClass, bgClass, borderClass }) => (
         <Link href={href} className={`bg-white p-5 rounded-3xl border border-slate-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] flex flex-col justify-between hover:shadow-lg transition-all cursor-pointer hover:border-slate-200 relative overflow-hidden group h-[140px]`}>
             <div className={`absolute -right-4 -top-4 w-28 h-28 rounded-full ${bgClass} opacity-40 group-hover:scale-110 transition-transform duration-500`} />
             <p className="text-xs font-bold text-slate-500 uppercase tracking-widest relative z-10">{title}</p>
             <div className="flex justify-between items-end relative z-10 mt-auto">
-                <h3 className="text-4xl font-black text-slate-800">{value || 0}</h3>
-                <div className={`w-12 h-12 ${bgClass} ${borderClass} border rounded-2xl flex items-center justify-center transform group-hover:-translate-y-1 transition-transform duration-300`}>
+                <h3 className="text-4xl font-black text-slate-800 truncate" title={value || 0}>{value || 0}</h3>
+                <div className={`w-12 h-12 shrink-0 ${bgClass} ${borderClass} border rounded-2xl flex items-center justify-center transform group-hover:-translate-y-1 transition-transform duration-300`}>
                     {icon}
                 </div>
             </div>
@@ -40,14 +65,15 @@ export default function DashboardOverview({ stats, monthlyProcessed = [], status
                         <h3 className="text-sm font-bold text-slate-800 mb-4 sm:mb-8 uppercase tracking-widest">Monthly Released Certificates</h3>
                         <div className="flex-1 w-full h-full relative">
                             {monthlyProcessed.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={monthlyProcessed} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                                <ResponsiveContainer width="100%" height="100%" className="focus:outline-none">
+                                    <BarChart data={monthlyProcessed} margin={{ top: 10, right: 10, left: -15, bottom: 0 }} className="focus:outline-none" style={{ outline: 'none' }}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                         <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} dy={15} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} />
                                         <RechartsTooltip 
-                                            cursor={{ fill: '#f8fafc' }}
-                                            contentStyle={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #f1f5f9', boxShadow: '0 10px 30px -5px rgb(0 0 0 / 0.1)', padding: '14px 20px' }}
+                                            trigger="click"
+                                            cursor={{ stroke: 'none', fill: 'transparent', strokeWidth: 0, opacity: 0 }}
+                                            contentStyle={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #f1f5f9', boxShadow: '0 10px 30px -5px rgb(0 0 0 / 0.1)', padding: '14px 20px', outline: 'none' }}
                                             itemStyle={{ fontWeight: 800, color: '#0f172a', fontSize: '16px' }}
                                             labelStyle={{ color: '#64748b', fontWeight: 700, marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase' }}
                                         />
@@ -74,18 +100,20 @@ export default function DashboardOverview({ stats, monthlyProcessed = [], status
                         <div className="flex-1 w-full h-full relative flex items-center justify-center">
                             {statusDistribution.length > 0 ? (
                                 <>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
+                                    <ResponsiveContainer width="100%" height="100%" className="focus:outline-none">
+                                        <PieChart className="focus:outline-none" style={{ outline: 'none' }}>
                                             <Pie
                                                 data={statusDistribution}
                                                 cx="50%" cy="45%" outerRadius="75%" paddingAngle={2} dataKey="value" stroke="none"
+                                                style={{ outline: 'none' }}
                                             >
                                                 {statusDistribution.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.color} style={{ filter: `drop-shadow(0px 4px 6px ${entry.color}40)` }} />
+                                                    <Cell key={`cell-${index}`} fill={entry.color} style={{ filter: `drop-shadow(0px 4px 6px ${entry.color}40)`, outline: 'none' }} />
                                                 ))}
                                             </Pie>
                                             <RechartsTooltip 
-                                                contentStyle={{ backgroundColor: '#ffffff', borderRadius: '14px', border: 'none', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)', padding: '10px 16px' }} 
+                                                trigger="click"
+                                                contentStyle={{ backgroundColor: '#ffffff', borderRadius: '14px', border: 'none', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)', padding: '10px 16px', outline: 'none' }} 
                                                 itemStyle={{ fontWeight: 800, fontSize: '15px' }} 
                                                 labelStyle={{ display: 'none' }} 
                                             />
@@ -106,7 +134,7 @@ export default function DashboardOverview({ stats, monthlyProcessed = [], status
                 {/* Section 2: Request Metrics (Below Charts) */}
                 <div>
                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5 ml-1">Document Pipeline</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         <StatCard
                             href="/admin/requests?status=submitted" title="New Requests" value={stats?.new_requests}
                             bgClass="bg-sky-50" borderClass="border-sky-100"
