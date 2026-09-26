@@ -1,12 +1,14 @@
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import UserLayout from '@/Layouts/UserLayout';
+import NewInquiryModal from '@/Components/NewInquiryModal';
 
 export default function Faq({ userRole, faqs = [], search = '' }) {
     const [openFaq, setOpenFaq] = useState(null);
     const [isTutorialOpen, setIsTutorialOpen] = useState(false);
     const [searchValue, setSearchValue] = useState(search);
     const isFirstRun = useRef(true);
+    const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
 
     useEffect(() => {
         if (isFirstRun.current) {
@@ -30,23 +32,18 @@ export default function Faq({ userRole, faqs = [], search = '' }) {
     };
 
     const quickActions = [
-        { 
-            title: 'Browse FAQs', 
+        {
+            title: 'Browse FAQs',
             icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
             action: () => document.getElementById('faq-list')?.scrollIntoView({ behavior: 'smooth' })
         },
-        { 
-            title: 'Submit Inquiry', 
+        {
+            title: 'Submit Inquiry',
             icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
-            action: () => router.visit('/user/inquiries')
+            action: () => setIsInquiryModalOpen(true)
         },
-        { 
-            title: 'Appointments', 
-            icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
-            action: () => router.visit('/user/inquiries')
-        },
-        { 
-            title: 'Guides & Tutorials', 
+        {
+            title: 'Guides & Tutorials',
             icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
             action: () => setIsTutorialOpen(true)
         }
@@ -55,7 +52,7 @@ export default function Faq({ userRole, faqs = [], search = '' }) {
     return (
         <UserLayout userRole={userRole}>
             <Head title="FAQ / Help Center" />
-            
+
             <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl">
                 <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">FAQ / Help Center</h2>
                 <p className="text-xs text-slate-500 mt-1">Find answers, guides, and support resources.</p>
@@ -75,14 +72,14 @@ export default function Faq({ userRole, faqs = [], search = '' }) {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
                     {quickActions.map((item, i) => (
-                        <button 
-                            key={i} 
+                        <button
+                            key={i}
                             onClick={item.action}
                             className="flex flex-col items-center justify-center p-4 bg-white border border-slate-100 rounded-2xl hover:border-yellow-400 hover:bg-yellow-50 hover:shadow-md transition-all group outline-none"
                         >
                             <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-white group-hover:border-yellow-200 transition-colors">
                                 <svg className="w-5 h-5 text-slate-500 group-hover:text-yellow-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon}/>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
                                 </svg>
                             </div>
                             <span className="text-[10px] font-bold text-slate-700 text-center">{item.title}</span>
@@ -91,7 +88,7 @@ export default function Faq({ userRole, faqs = [], search = '' }) {
                 </div>
 
                 <h3 id="faq-list" className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 scroll-mt-32">Frequently Asked Questions</h3>
-                
+
                 <div className="space-y-3">
                     {faqs.length > 0 ? (
                         faqs.map((faq, index) => (
@@ -112,7 +109,13 @@ export default function Faq({ userRole, faqs = [], search = '' }) {
                         ))
                     ) : (
                         <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-sm text-slate-500">
-                            No FAQs match your search.
+                            <p>No FAQs match your search.</p>
+                            <button
+                                onClick={() => setIsInquiryModalOpen(true)}
+                                className="mt-3 inline-flex items-center gap-1.5 text-yellow-600 hover:text-yellow-700 font-bold text-sm underline underline-offset-2 transition-colors"
+                            >
+                                Submit an Inquiry instead
+                            </button>
                         </div>
                     )}
                 </div>
@@ -135,16 +138,16 @@ export default function Faq({ userRole, faqs = [], search = '' }) {
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        
+
                         <div className="flex-1 overflow-y-auto bg-slate-950 p-2 sm:p-4 custom-scrollbar">
                             <div className="w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-inner border border-slate-800">
                                 {   /* Video Tutorial */}
-                                <iframe 
-                                    className="w-full h-full" 
+                                <iframe
+                                    className="w-full h-full"
                                     src="https://www.youtube.com/embed/dxUkqWHF9g0?list=RDdxUkqWHF9g0"
-                                    title="CED E-Services Tutorial" 
-                                    frameBorder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                    title="CED E-Services Tutorial"
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                     allowFullScreen
                                 ></iframe>
                             </div>
@@ -155,8 +158,8 @@ export default function Faq({ userRole, faqs = [], search = '' }) {
                             <p className="text-sm text-slate-500 mb-5 leading-relaxed">
                                 Watch this quick guide to learn how to properly register your account, modify your profile settings, submit an inquiry for an appointment, and track your requested documents.
                             </p>
-                            <button 
-                                onClick={() => setIsTutorialOpen(false)} 
+                            <button
+                                onClick={() => setIsTutorialOpen(false)}
                                 className="w-full py-4 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold rounded-xl transition-all shadow-md shadow-yellow-500/20 text-sm"
                             >
                                 Got it, Close Tutorial
@@ -165,6 +168,12 @@ export default function Faq({ userRole, faqs = [], search = '' }) {
                     </div>
                 </div>
             )}
+
+            <NewInquiryModal
+                isOpen={isInquiryModalOpen}
+                onClose={() => setIsInquiryModalOpen(false)}
+            />
+
         </UserLayout>
     );
 }
