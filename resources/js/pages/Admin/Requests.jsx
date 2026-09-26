@@ -39,11 +39,15 @@ const Badge = ({ children, className }) => (
     </span>
 );
 
-export default function ManageRequests({ requests = [], showingArchived = false }) {
+export default function ManageRequests({ requests = [], showingArchived = false, initialStatus = 'all' }) {
 
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState(initialStatus);
+
+    useEffect(() => {
+        setStatusFilter(initialStatus);
+    }, [initialStatus]);
     const [docTypeFilter, setDocTypeFilter] = useState('all');
     const [exporting, setExporting] = useState(null);
     const [archiving, setArchiving] = useState(null); // holds the id currently being archived/restored

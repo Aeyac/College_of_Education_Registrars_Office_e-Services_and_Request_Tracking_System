@@ -15,18 +15,11 @@ class ChatbotController extends Controller
         // =========================================================
         // 0. PROFANITY & INAPPROPRIATE LANGUAGE FILTER
         // =========================================================
-        $badWords = [
-            'fuck', 'shit', 'bitch', 'asshole', 'dick', 'pussy', 'cunt', 'motherfucker', 
-            'putangina', 'tangina', 'gago', 'bobo', 'tanga', 'inutil', 'ulol', 
-            'punyeta', 'hayop', 'gaga', 'kupal', 'tarantado', 'stupid', 'idiot', 'pakyu'
-        ];
-        
-        foreach ($badWords as $word) {
-            if (str_contains($term, $word)) {
-                return response()->json([
-                    'reply' => "I detected inappropriate language in your message. Please maintain a polite and professional tone. How else can I assist you with CED E-Services?"
-                ]);
-            }
+        $profanityFilter = app(\App\Services\ProfanityFilter::class);
+        if ($profanityFilter->containsProfanity($term)) {
+            return response()->json([
+                'reply' => "I detected inappropriate language in your message. Please maintain a polite and professional tone. How else can I assist you with CED E-Services?"
+            ]);
         }
 
         // =========================================================
@@ -71,11 +64,11 @@ class ChatbotController extends Controller
             ],
             [
                 'tags' => ['service', 'feature', 'system', 'portal', 'what can i do'],
-                'answer' => "Our system allows you to:\n1. Request documents (Internship Cert, COBC, etc.)\n2. Track request status in real-time\n3. View Faculty Consultation Hours\n4. Verify Alumni status\n5. Communicate directly with the office via Inquiry Threads\n6. Download the Academic Calendar."
+                'answer' => "Our system allows you to:\n1. Request documents (Internship Cert, COPC, etc.)\n2. Track request status in real-time\n3. View Faculty Consultation Hours\n4. Verify Alumni status\n5. Communicate directly with the office via Inquiry Threads\n6. Download the Academic Calendar."
             ],
             [
-                'tags' => ['document', 'internship certificate', 'cobc', 'course description', 'golden grain', 'yearbook', 'soft copy', 'hard copy', 'format', 'request'],
-                'answer' => "You can request the following documents via the portal:\n- Internship Certificate\n- Copy of COBC\n- Course Description\n- Golden Grain (Yearbook)\n\nYou can choose between **Hard Copy** or **Soft Copy** delivery modes."
+                'tags' => ['document', 'internship certificate', 'copc', 'course description', 'golden grain', 'yearbook', 'soft copy', 'hard copy', 'format', 'request'],
+                'answer' => "You can request the following documents via the portal:\n- Internship Certificate\n- Copy of COPC\n- Course Description\n- Golden Grain (Yearbook)\n\nYou can choose between **Hard Copy** or **Soft Copy** delivery modes."
             ],
             [
                 'tags' => ['contact', 'phone', 'email', 'call', 'reach', 'location', 'where', 'address'],

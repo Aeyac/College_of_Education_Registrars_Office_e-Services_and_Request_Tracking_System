@@ -13,6 +13,7 @@ use App\Models\RequestStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use App\Models\Inquiry;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,6 +30,7 @@ class DashboardController extends Controller
         $stats = [
             'pending' => (clone $query)->whereHas('status', fn($q) => $q->whereIn('code', self::PENDING_STATUS_CODES))->count(),
             'completed' => (clone $query)->whereHas('status', fn($q) => $q->whereIn('code', self::COMPLETED_STATUS_CODES))->count(),
+            'inquiries' => Inquiry::where('user_id', auth()->id())->where('status', 'open')->count(),
         ];
 
         $recentRequests = $query->latest()->take(3)->get();
@@ -46,9 +48,12 @@ class DashboardController extends Controller
     public function requests(\Illuminate\Http\Request $request): Response
     {
         $showArchived = $request->boolean('archived');
+        $statusFilter = $request->query('status');
 
         $paginatedRequests = $this->userRequests()
             ->when($showArchived, fn($q) => $q->archivedFor('user'), fn($q) => $q->notArchivedFor('user'))
+            ->when($statusFilter === 'pending', fn($q) => $q->whereHas('status', fn($sq) => $sq->whereIn('code', self::PENDING_STATUS_CODES)))
+            ->when($statusFilter === 'completed', fn($q) => $q->whereHas('status', fn($sq) => $sq->whereIn('code', self::COMPLETED_STATUS_CODES)))
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -59,6 +64,7 @@ class DashboardController extends Controller
             'requests' => CertificateRequestResource::collection($paginatedRequests),
             'services' => $this->activeServices(),
             'showingArchived' => $showArchived,
+            'statusFilter' => $statusFilter,
         ]);
     }
 

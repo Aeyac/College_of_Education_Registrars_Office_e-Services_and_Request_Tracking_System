@@ -105,6 +105,7 @@ export default function MyRequests({
     auth,
     isAlumniVerified,
     showingArchived = false,
+    statusFilter: initialStatusFilter = 'all',
 }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [trackingRequest, setTrackingRequest] = useState(null);
@@ -113,7 +114,7 @@ export default function MyRequests({
     const [archiving, setArchiving] = useState(null);
     const [cancellingId, setCancellingId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState(initialStatusFilter || 'all');
     const [docTypeFilter, setDocTypeFilter] = useState('all');
     const [softCopyRequest, setSoftCopyRequest] = useState(null);
 
@@ -129,15 +130,26 @@ export default function MyRequests({
 
     const filteredRequestList = useMemo(() => {
         const term = searchTerm.toLowerCase();
+        
+        const PENDING_CODES = ['submitted', 'for_review', 'processing', 'for_compliance'];
+        const COMPLETED_CODES = ['ready_for_release', 'released'];
 
         return requestList.filter(req => {
             const matchesTerm =
                 String(req.id).includes(term) ||
                 (req.document_type || '').toLowerCase().includes(term);
 
+            let matchesStatus = false;
+            const code = req.status_code || '';
+            
+            if (statusFilter === 'all') matchesStatus = true;
+            else if (statusFilter === 'pending') matchesStatus = PENDING_CODES.includes(code);
+            else if (statusFilter === 'completed') matchesStatus = COMPLETED_CODES.includes(code);
+            else matchesStatus = code === statusFilter;
+
             return (
                 matchesTerm &&
-                (statusFilter === 'all' || (req.status_code || '') === statusFilter) &&
+                matchesStatus &&
                 (docTypeFilter === 'all' || req.document_type === docTypeFilter)
             );
         });
@@ -279,11 +291,22 @@ export default function MyRequests({
 
                     <select
                         value={statusFilter}
-                        onChange={e => setStatusFilter(e.target.value)}
+                        onChange={e => {
+                            setStatusFilter(e.target.value);
+                            // Also update the URL so the backend returns all records if we clear it
+                            router.get(window.location.pathname, {
+                                archived: showingArchived ? 1 : undefined,
+                                status: e.target.value === 'all' ? undefined : e.target.value,
+                            }, { preserveState: true, preserveScroll: true, replace: true });
+                        }}
                         className="w-full min-w-0 bg-slate-50 border border-slate-200 rounded-2xl py-3 px-3 sm:px-4 text-sm shadow-sm outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
                     >
                         <option value="all">All Statuses</option>
-                        {STATUS_FILTER_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        <option value="pending">All Pending</option>
+                        <option value="completed">All Completed</option>
+                        <optgroup label="Specific Statuses">
+                            {STATUS_FILTER_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </optgroup>
                     </select>
                 </div>
 

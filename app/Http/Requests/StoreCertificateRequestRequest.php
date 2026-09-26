@@ -18,7 +18,7 @@ class StoreCertificateRequestRequest extends FormRequest
     {
         return [
             'service_id' => ['required', 'exists:request_services,id'],
-            'purpose' => ['required', 'string', 'max:2000'],
+            'purpose' => ['required', 'string', 'max:2000', new \App\Rules\NotProfane],
             'preferred_claiming_date' => [
                 'required',
                 'date',

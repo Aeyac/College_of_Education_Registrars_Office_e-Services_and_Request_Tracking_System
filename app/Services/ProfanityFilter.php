@@ -17,6 +17,47 @@ class ProfanityFilter
             return false;
         }
 
+        // 1. AI-BASED MODERATION (Gemini API)
+        // This handles multiple languages (Tagalog, Bisaya, Ilocano, etc.) and complex context like harassment/nudity
+        try {
+            $apiKey = env('GEMINI_API_KEY');
+            if (!empty($apiKey)) {
+                $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}";
+                
+                $prompt = "You are a strict content moderator. Analyze the following text and determine if it contains ANY of the following: profanity, harassment, cruelty, nudity/sexual content, hate speech, or inappropriate/offensive language. The text can be in any language including English, Tagalog, Bisaya, Ilocano, etc. (e.g., 'malalaswa', 'kabastusan', 'gago', 'putangina', etc.). \n\nRespond with ONLY 'UNSAFE' if it contains any of these, or 'SAFE' if it is completely clean and appropriate.\n\nText to analyze: \"{$text}\"";
+
+                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                    'Content-Type' => 'application/json',
+                ])->timeout(10)->post($url, [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                ['text' => $prompt]
+                            ]
+                        ]
+                    ],
+                    'generationConfig' => [
+                        'temperature' => 0.1,
+                        'maxOutputTokens' => 10,
+                    ]
+                ]);
+
+                if ($response->successful()) {
+                    $aiResponse = trim($response->json('candidates.0.content.parts.0.text', ''));
+                    if (str_contains(strtoupper($aiResponse), 'UNSAFE')) {
+                        return true;
+                    }
+                    if (str_contains(strtoupper($aiResponse), 'SAFE')) {
+                        // AI classified it as SAFE. We can confidently return false.
+                        return false;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Silently fallback to local dictionary if API fails
+        }
+
+        // 2. LOCAL DICTIONARY FALLBACK
         $normalizedText = $this->normalize($text);
 
         foreach ($this->words() as $word) {
