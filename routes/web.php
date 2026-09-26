@@ -128,6 +128,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::delete('/users/{id}', [UserController::class, 'destroyUser'])->name('users.destroy');
 
         Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
+        Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markNotificationAsRead'])->name('notifications.read.single');
 
         Route::get('/export/excel', [ExportController::class, 'exportExcel'])->name('export.excel');
         Route::get('/export/pdf', [ExportController::class, 'exportPdf'])->name('export.pdf');

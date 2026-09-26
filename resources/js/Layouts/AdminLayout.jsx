@@ -58,6 +58,26 @@ export default function AdminLayout({ children }) {
         router.post('/admin/notifications/mark-as-read', {}, { preserveScroll: true, preserveState: true, onSuccess: () => setIsNotifOpen(false) });
     };
 
+    const markSingleAsRead = (notif) => {
+        if (!notif.read_at) {
+            router.post(`/admin/notifications/${notif.id}/mark-as-read`, {}, { 
+                preserveScroll: true, 
+                preserveState: true,
+                onSuccess: () => {
+                    if (notif.data.link) {
+                        router.visit(notif.data.link);
+                    }
+                    setIsNotifOpen(false);
+                }
+            });
+        } else {
+            if (notif.data.link) {
+                router.visit(notif.data.link);
+            }
+            setIsNotifOpen(false);
+        }
+    };
+
     const adminName = auth?.user?.first_name ? `${auth.user.first_name} ${auth.user.last_name}` : 'Registrar Admin';
 
     const userAvatar = auth?.user?.profile_picture
@@ -160,8 +180,11 @@ export default function AdminLayout({ children }) {
                                     </div>
                                     <div className="max-h-[350px] overflow-y-auto">
                                         {notifications.length > 0 ? notifications.map((notif) => (
-                                            <div key={notif.id} className="px-6 py-5 border-b border-slate-50 text-xs text-slate-700">
-                                                <p className="font-bold mb-1">{notif.data.message}</p>
+                                            <div key={notif.id} onClick={() => markSingleAsRead(notif)} className={`px-6 py-5 border-b border-slate-50 text-xs text-slate-700 cursor-pointer transition-colors ${!notif.read_at ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-slate-50'}`}>
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <p className={`font-bold ${!notif.read_at ? 'text-amber-900' : ''}`}>{notif.data.message}</p>
+                                                    {!notif.read_at && <span className="w-2 h-2 rounded-full bg-amber-500 mt-1 shrink-0"></span>}
+                                                </div>
                                                 <span className="text-[10px] text-slate-400">{timeAgo(notif.created_at)}</span>
                                             </div>
                                         )) : <div className="p-8 text-center text-slate-500 text-sm">No new alerts.</div>}

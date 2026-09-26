@@ -49,7 +49,8 @@ class InquiryController extends Controller
             $path = $request->file('attachment')->store('inquiries', 'private');
         }
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($data, $path) {
+        $inquiry = null;
+        \Illuminate\Support\Facades\DB::transaction(function () use ($data, $path, &$inquiry) {
             $inquiry = Inquiry::create([
                 'user_id' => auth()->id(),
                 'subject' => $data['subject'],
@@ -64,6 +65,9 @@ class InquiryController extends Controller
                 'attachment_path' => $path,
             ]);
         });
+
+        $admins = \App\Models\User::where('user_type', 'admin')->get();
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\UserRepliedToInquiry($inquiry));
 
         return redirect()->route('user.inquiries')->with('success', 'Inquiry thread started successfully.');
     }
@@ -93,6 +97,9 @@ class InquiryController extends Controller
             'is_read_by_user' => true,
             'is_read_by_admin' => false,
         ]);
+
+        $admins = \App\Models\User::where('user_type', 'admin')->get();
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\UserRepliedToInquiry($inquiry));
 
         return back()->with('success', 'Reply sent.');
     }

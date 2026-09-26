@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AlumniVerification;
 use App\Models\CertificateRequest;
 use App\Models\User;
+use App\Models\Inquiry;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -18,6 +19,7 @@ class DashboardController extends Controller
                 'pending' => CertificateRequest::whereHas('status', fn($q) => $q->whereIn('code', ['submitted', 'for_review', 'processing', 'for_compliance']))->count(),
                 'alumni' => AlumniVerification::where('status', 'pending')->count(),
                 'users' => User::whereIn('user_type', ['student', 'alumni', 'admin'])->count(),
+                'inquiries' => Inquiry::where('status', 'open')->count(),
             ]
         ]);
 
