@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { router } from '@inertiajs/react';
+import { router, Head } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 const eventColors = {
@@ -93,8 +93,9 @@ export default function AuditTrail({ logs, filters, logNames, events, certificat
 
     return (
         <AdminLayout>
+            <Head title="Audit Trail" />
             <div className="p-6 lg:p-10 border-b border-slate-100">
-                <h1 className="text-2xl font-extrabold text-slate-900">Audit Trail and Activity Log</h1>
+                <h1 className="text-2xl font-extrabold text-slate-900">Audit Trail</h1>
                 <p className="text-sm text-slate-500 mt-1">A record of system activity — who did what, and when.</p>
             </div>
 
