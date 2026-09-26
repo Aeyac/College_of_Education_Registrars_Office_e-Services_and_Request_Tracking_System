@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
+use App\Models\Faq;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
@@ -12,8 +13,8 @@ class HomeController extends Controller
     {
         // Session Control: Redirect if already logged in
         if (auth()->check()) {
-            return auth()->user()->isAdmin() 
-                ? redirect()->route('admin.dashboard') 
+            return auth()->user()->isAdmin()
+                ? redirect()->route('admin.dashboard')
                 : redirect()->route('user.dashboard');
         }
 
@@ -30,6 +31,8 @@ class HomeController extends Controller
 
         return Inertia::render('Welcome', [
             'announcements' => $announcements,
+            'faqs' => Faq::orderBy('sort_order')->get(),
+
         ]);
     }
 }

@@ -5,10 +5,11 @@ import Footer from '@/Components/Footer';
 import Chatbox from '@/Components/Chatbox';
 import FAQSection from '@/pages/FAQSection';
 
-export default function Welcome({ auth, announcements = [] }) {
+export default function Welcome({ auth, announcements = [], faqs = [] }) {
     // State for accordions
     const [openCourse, setOpenCourse] = useState(null);
 
+    console.log(faqs)
     // State for Announcement Modal
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
 
@@ -563,7 +564,7 @@ export default function Welcome({ auth, announcements = [] }) {
                 </section>
 
                 {/* FAQ Section */}
-                <FAQSection />
+                <FAQSection faqs={faqs} />
             </main>
 
             <Footer />

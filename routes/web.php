@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FacultyController;
 use App\Http\Controllers\Admin\FilteredWordController;
 use App\Http\Controllers\Admin\InquiryController as AdminInquiryController;
+use App\Http\Controllers\FaqController;
 use App\Http\Controllers\SoftCopyController;
 use App\Http\Controllers\User\InquiryController as UserInquiryController;
 use App\Http\Controllers\Admin\RequestController;
@@ -19,7 +20,7 @@ use App\Http\Controllers\User\AlumniVerificationController;
 use App\Http\Controllers\User\FeedbackController;
 use App\Http\Controllers\User\StaticPageController;
 use App\Http\Controllers\HomeController;
-use App\Models\Feedback;
+use App\Models\Faq;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\ProfileCompletionController;
 use App\Http\Controllers\Auth\OtpVerificationController;
@@ -109,14 +110,14 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::get('/alumni', [AlumniController::class, 'loadAlumni'])->name('alumni');
         Route::put('/alumni/{id}', [AlumniController::class, 'updateAlumni'])->name('alumni.update');
         Route::get('/alumni/{id}/proof', [AlumniController::class, 'viewProof'])->name('alumni.proof');
-        
+
         // Faculty Routes
         Route::get('/faculty', [FacultyController::class, 'loadFaculty'])->name('faculty');
         Route::post('/faculty/extract', [FacultyController::class, 'extractSchedule'])->name('faculty.extract'); // Inserted extract route here
         Route::post('/faculty', [FacultyController::class, 'storeFaculty'])->name('faculty.store');
         Route::put('/faculty/{id}', [FacultyController::class, 'updateFaculty'])->name('faculty.update');
         Route::delete('/faculty/{id}', [FacultyController::class, 'destroyFaculty'])->name('faculty.destroy');
-        
+
         Route::get('/announcements', [AnnouncementController::class, 'loadAnnouncements'])->name('announcements');
         Route::post('/announcements', [AnnouncementController::class, 'storeAnnouncement'])->name('announcements.store');
         Route::put('/announcements/{id}', [AnnouncementController::class, 'updateAnnouncement'])->name('announcements.update');
@@ -150,6 +151,11 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::patch('/requests/{id}/unarchive', [RequestController::class, 'unarchiveRequest'])->name('requests.unarchive');
 
         Route::get('/audit-trail', [AuditTrailController::class, 'index'])->name('admin.audit-trail');
+
+        Route::get('/faqs', [FaqController::class, 'index'])->name('faqs');
+        Route::post('/faqs', [FaqController::class, 'store'])->name('faqs.store');
+        Route::put('/faqs/{id}', [FaqController::class, 'update'])->name('faqs.update');
+        Route::delete('/faqs/{id}', [FaqController::class, 'destroy'])->name('faqs.destroy');
     });
 });
 

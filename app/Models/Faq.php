@@ -17,7 +17,7 @@ class Faq extends Model
     }
 
     /**
-     * Basic keyword search used both by the FAQ page and as the retrieval
+     * Basic keyword search used both by the FAQ page and as the retrieval  
      * step feeding the AI inquiry assistant (see project docs §7).
      */
     public function scopeSearch($query, ?string $term)
