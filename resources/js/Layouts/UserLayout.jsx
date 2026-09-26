@@ -74,7 +74,7 @@ export default function UserLayout({ children, userRole }) {
     };
 
     const userName = auth?.user?.first_name ? `${auth.user.first_name} ${auth.user.last_name}` : (auth?.user?.name || 'Juan Dela Cruz');
-    const displayRole = userRole || (auth?.user?.user_type === 'alumni' ? 'Alumni' : 'Student');
+    const displayRole = userRole || (auth?.user?.user_type === 'alumni' ? `Alumni Batch ${auth?.user?.batch_year || ''}`.trim() : 'Student');
     
     const userAvatar = auth?.user?.profile_picture 
         ? <img src={`/storage/${auth.user.profile_picture}`} alt="Profile" className="w-full h-full object-cover rounded-full" />
@@ -87,7 +87,7 @@ export default function UserLayout({ children, userRole }) {
         { name: 'Announcements', link: '/user/announcements', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /> },
         { name: 'My Inquiries', link: '/user/inquiries', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /> },
         { divider: true },
-        { name: 'FAQ / Help Center', link: '/user/faq', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /> },
+        { name: 'Help Center', link: '/user/faq', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /> },
         { name: 'Profile Settings', link: '/profile', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /> },
         { divider: true },
         { name: 'About CED E-Services', link: '/user/about', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /> },
@@ -159,7 +159,7 @@ export default function UserLayout({ children, userRole }) {
             {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden"></div>}
 
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                <header className="py-4 px-6 lg:px-10 flex justify-between items-center shrink-0 border-b-2">
+                <header className="py-4 px-6 lg:px-10 flex justify-between items-center shrink-0 border-b-2 relative z-50 bg-white">
                     <div className="flex items-center gap-4 relative z-10 w-full justify-between lg:justify-end">
                         <div className="flex items-center gap-4 lg:hidden">
                             <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-slate-600 hover:text-slate-900">

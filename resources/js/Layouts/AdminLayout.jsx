@@ -159,7 +159,7 @@ export default function AdminLayout({ children }) {
             </div>
 
             <div className="flex-1 flex flex-col h-screen overflow-y-auto">
-                <header className="py-4 px-6 lg:px-10 flex justify-between items-center shrink-0 border-b-2 bg-white sticky top-0 z-30">
+                <header className="py-4 px-6 lg:px-10 flex justify-between items-center shrink-0 border-b-2 bg-white sticky top-0 z-50">
                     <div className="flex items-center gap-4 relative z-10 w-full justify-between lg:justify-end">
                         <div className="flex items-center gap-4 lg:hidden">
                             <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-slate-600 hover:text-slate-900">
