@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import UserLayout from '@/Layouts/UserLayout';
 import FeedbackModal from './FeedbackModal';
 import RequestDocumentModal from '@/Components/RequestDocumentModal';
+import ComplianceModal from '@/Components/ComplianceModal';
 import Swal from 'sweetalert2';
 import SoftCopyViewerModal from '@/Components/SoftCopyViewerModal';
 
@@ -111,6 +112,7 @@ export default function MyRequests({
     const [trackingRequest, setTrackingRequest] = useState(null);
     const [feedbackTarget, setFeedbackTarget] = useState(null);
     const [receivingId, setReceivingId] = useState(null);
+    const [complyingRequest, setComplyingRequest] = useState(null);
     const [archiving, setArchiving] = useState(null);
     const [cancellingId, setCancellingId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -185,6 +187,10 @@ export default function MyRequests({
             preserveScroll: true,
             onFinish: () => setCancellingId(null),
         });
+    };
+
+    const handleComply = req => {
+        setComplyingRequest(req);
     };
 
     const handleUnarchive = id => {
@@ -406,6 +412,18 @@ export default function MyRequests({
                                             </button>
                                         )}
 
+                                        {status === 'for_compliance' && !req.is_archived && (
+                                            <button
+                                                onClick={() => handleComply(req)}
+                                                className="inline-flex items-center justify-center gap-1.5 min-h-[42px] text-purple-700 font-bold px-3 py-2.5 bg-purple-50 border border-purple-200 rounded-xl text-[10px] uppercase tracking-wider hover:bg-purple-100 transition-colors shadow-sm"
+                                            >
+                                                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d={ICONS.check} />
+                                                </svg>
+                                                Mark as Complied
+                                            </button>
+                                        )}
+
                                         {req.soft_copy_available && (
                                             <button
                                                 onClick={() => setSoftCopyRequest(req)}
@@ -505,6 +523,10 @@ export default function MyRequests({
 
             {softCopyRequest && (
                 <SoftCopyViewerModal request={softCopyRequest} onClose={() => setSoftCopyRequest(null)} />
+            )}
+            
+            {complyingRequest && (
+                <ComplianceModal request={complyingRequest} onClose={() => setComplyingRequest(null)} />
             )}
         </UserLayout>
     );

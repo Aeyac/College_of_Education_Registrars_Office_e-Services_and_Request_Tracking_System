@@ -26,10 +26,9 @@ class DatabaseSeeder extends Seeder
         User::where('user_type', 'admin')->get()->each(fn(User $user) => $user->assignRole('admin'));
 
         // 1. Updated Service Catalog
-        RequestService::firstOrCreate(['code' => 'internship_certificate'], ['label' => 'Internship Certificate / PT Certificate', 'is_active' => true, 'sort_order' => 1]);
-        RequestService::firstOrCreate(['code' => 'copy_of_copc'], ['label' => 'Request for Copy of COPC', 'is_active' => true, 'sort_order' => 2]);
-        RequestService::firstOrCreate(['code' => 'course_description'], ['label' => 'Course Description', 'is_active' => true, 'sort_order' => 3]);
-        RequestService::firstOrCreate(['code' => 'golden_grain'], ['label' => 'Golden Grain (Yearbook)', 'is_active' => true, 'sort_order' => 4]);
+        RequestService::firstOrCreate(['code' => 'internship_certificate'], ['label' => 'Internship/Practicum Certificate', 'is_active' => true, 'sort_order' => 1]);
+        RequestService::firstOrCreate(['code' => 'copc'], ['label' => 'COPC', 'is_active' => true, 'sort_order' => 2]);
+        RequestService::firstOrCreate(['code' => 'golden_grain'], ['label' => 'Golden Grain', 'is_active' => true, 'sort_order' => 3]);
 
         // 2. REQUIRED: Request Statuses (Fixes the 404 Error)
         $statuses = [

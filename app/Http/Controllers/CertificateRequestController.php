@@ -82,6 +82,44 @@ class CertificateRequestController extends Controller
         return back()->with('success', 'Request cancelled.');
     }
 
+    public function comply(CertificateRequest $certificateRequest, \Illuminate\Http\Request $request)
+    {
+        abort_unless($certificateRequest->user_id === auth()->id(), 403);
+        
+        if ($certificateRequest->status?->code !== 'for_compliance') {
+            return back()->with('error', 'This request does not require compliance.');
+        }
+
+        $request->validate([
+            'compliance_files' => ['nullable', 'array', 'max:5'],
+            'compliance_files.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+        ]);
+
+        if ($request->hasFile('compliance_files')) {
+            foreach ($request->file('compliance_files') as $file) {
+                $path = $file->store('requirements', 'private');
+                $certificateRequest->documents()->create([
+                    'type' => 'requirement',
+                    'path' => $path,
+                    'uploaded_by' => $request->user()->id,
+                ]);
+            }
+        }
+
+        $forReviewStatus = RequestStatus::where('code', 'for_review')->firstOrFail();
+
+        $certificateRequest->transitionTo(
+            $forReviewStatus,
+            auth()->user(),
+            'Requester submitted compliance.'
+        );
+
+        $certificateRequest->load(['service', 'status']);
+        $certificateRequest->user->notify(new \App\Notifications\RequestStatusChanged($certificateRequest, 'Requester submitted compliance.'));
+
+        return back()->with('success', 'Compliance submitted. Your request is now under review.');
+    }
+
     // public function index(): Response
     // {
     //     $user = auth()->user();

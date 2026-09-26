@@ -29,6 +29,13 @@ class ExportController extends Controller
         $filename = 'CED_Requests_Report_' . date('Y-m-d') . '.csv';
         $requests = $this->scopedRequests($request);
 
+        if (auth()->check()) {
+            activity()
+                ->causedBy(auth()->user())
+                ->event('export')
+                ->log('Exported certificate requests to CSV');
+        }
+
         $headers = [
             "Content-type" => "text/csv",
             "Content-Disposition" => "attachment; filename=$filename",
@@ -61,6 +68,13 @@ class ExportController extends Controller
     {
         $requests = $this->scopedRequests($request);
         $isFiltered = $request->filled('ids');
+
+        if (auth()->check()) {
+            activity()
+                ->causedBy(auth()->user())
+                ->event('export')
+                ->log('Exported certificate requests to PDF');
+        }
 
         // Server-side export timestamp in Asia/Manila timezone
         $exportTimestamp = now()->timezone('Asia/Manila')->format('F j, Y - h:i A');

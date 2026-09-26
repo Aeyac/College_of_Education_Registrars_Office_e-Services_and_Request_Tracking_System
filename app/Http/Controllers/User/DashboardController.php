@@ -102,13 +102,15 @@ class DashboardController extends Controller
                 ]);
             }
 
-            if ($request->hasFile('requirement_file')) {
-                $path = $request->file('requirement_file')->store('requirements', 'private');
-                $certificateRequest->documents()->create([
-                    'type' => 'requirement',
-                    'path' => $path,
-                    'uploaded_by' => $request->user()->id,
-                ]);
+            if ($request->hasFile('requirement_files')) {
+                foreach ($request->file('requirement_files') as $file) {
+                    $path = $file->store('requirements', 'private');
+                    $certificateRequest->documents()->create([
+                        'type' => 'requirement',
+                        'path' => $path,
+                        'uploaded_by' => $request->user()->id,
+                    ]);
+                }
             }
 
             $certificateRequest->load(['service', 'status', 'user']);

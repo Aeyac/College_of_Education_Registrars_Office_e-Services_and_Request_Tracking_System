@@ -24,7 +24,8 @@ class StoreCertificateRequestRequest extends FormRequest
                 'date',
                 'after_or_equal:' . now()->addDays(3)->toDateString(),
             ],
-            'requirement_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'requirement_files' => ['nullable', 'array', 'max:5'],
+            'requirement_files.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
 
             // Internship-specific fields (Conditionally Required)
             'internship_school_or_agency' => [

@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\InquiryController as AdminInquiryController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\SoftCopyController;
 use App\Http\Controllers\User\InquiryController as UserInquiryController;
+use App\Http\Controllers\Admin\FeedbackController as AdminFeedbackController;
 use App\Http\Controllers\Admin\RequestController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\CertificateRequestController;
@@ -73,6 +74,8 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
             ->name('requests.unarchive');
         Route::patch('/requests/{certificateRequest}/cancel', [CertificateRequestController::class, 'cancel'])
             ->name('requests.cancel');
+        Route::post('/requests/{certificateRequest}/comply', [CertificateRequestController::class, 'comply'])
+            ->name('requests.comply');
 
         // Everything else requires verified alumni
         Route::middleware('verified.alumni')->group(function () {
@@ -143,6 +146,9 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::put('/inquiries/{id}/unread', [AdminInquiryController::class, 'markInquiryUnread'])->name('inquiries.unread');
         Route::delete('/inquiries/{id}', [AdminInquiryController::class, 'deleteInquiry'])->name('inquiries.destroy');
 
+        Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback');
+        Route::get('/feedback/export/excel', [AdminFeedbackController::class, 'exportExcel'])->name('feedback.export.excel');
+        Route::get('/feedback/export/pdf', [AdminFeedbackController::class, 'exportPdf'])->name('feedback.export.pdf');
 
         Route::get('/filtered-words', [FilteredWordController::class, 'index'])->name('filtered-words');
         Route::post('/filtered-words', [FilteredWordController::class, 'store'])->name('filtered-words.store');
