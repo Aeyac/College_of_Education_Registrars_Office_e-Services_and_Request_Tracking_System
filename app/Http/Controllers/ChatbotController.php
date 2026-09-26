@@ -67,8 +67,8 @@ class ChatbotController extends Controller
                 'answer' => "Our system allows you to:\n1. Request documents (Internship Cert, COPC, etc.)\n2. Track request status in real-time\n3. View Faculty Consultation Hours\n4. Verify Alumni status\n5. Communicate directly with the office via Inquiry Threads\n6. Download the Academic Calendar."
             ],
             [
-                'tags' => ['document', 'internship certificate', 'copc', 'course description', 'golden grain', 'yearbook', 'soft copy', 'hard copy', 'format', 'request'],
-                'answer' => "You can request the following documents via the portal:\n- Internship Certificate\n- Copy of COPC\n- Course Description\n- Golden Grain (Yearbook)\n\nYou can choose between **Hard Copy** or **Soft Copy** delivery modes."
+                'tags' => ['document', 'internship certificate', 'copc', 'course description', 'golden grain', 'yearbook', 'soft copy', 'hard copy', 'format', 'request', 'how to request', 'process', 'step by step', 'guide'],
+                'answer' => "Here is the step-by-step document requesting process:\n\n1. **Submit Request:** Go to 'New Request' in your dashboard, select the document, and upload compliance files (e.g. Valid ID).\n2. **Evaluation:** The Registrar verifies your requirements. If complete, it moves to 'Processing'.\n3. **Ready:** You will receive an email and notification once it is signed and ready for pickup.\n4. **Claiming:** Visit the CED Registrar with your Valid ID. If claiming via proxy, they need an Authorization Letter, a copy of your ID, and their own ID."
             ],
             [
                 'tags' => ['contact', 'phone', 'email', 'call', 'reach', 'location', 'where', 'address'],
@@ -189,7 +189,17 @@ REGISTRAR RULES (FAQ):
 - CED Registrar handles college-level records and Internship Certificates.
 - TOR, Diploma, Cert of Enrollment, Cert of Grades, and Authentication MUST be requested from the Office of Admissions, not CED Registrar.
 - CED Registrar accepts NO payments.
-- Internship Certificates require complete name, student number, degree, major, semester, cooperating school. Statuses: Submitted, For Review, For Compliance (missing/wrong info), Processing, Ready for Release, Released, Returned, Cancelled.
+- DOCUMENT REQUESTING PROCESS (Step-by-Step):
+  1. Submit Your Request: Navigate to 'New Request' in dashboard. Select document type and upload compliance files (e.g., clearance, valid ID).
+  2. Evaluation & Processing: Registrar verifies documents. If missing, it is returned for compliance. Otherwise, processing starts.
+  3. Ready for Release: User receives email and notification when document is printed, signed, and ready for pickup.
+  4. Claiming: Visit CED Registrar. If claiming personally, present Valid ID. If authorized proxy, present Authorization Letter, copy of requester's ID, and proxy's ID.
+- HOW TO USE THE SYSTEM (General):
+  * Requests: Go to 'New Request' to apply for documents. Monitor status (Pending, Processing, Ready, Released).
+  * Inquiries: Use 'My Inquiries' to chat directly with Admin for questions or scheduling consultations.
+  * Help Center: Contains system tutorial videos and quick guides.
+  * Faculty Schedules: Check professor availability.
+- Internship Certificates require complete name, student number, degree, major, semester, cooperating school.
 - Prerequisites must be satisfied before taking a succeeding course. Co-requisites must be taken together. Cannot be waived without approved policy.
 - Overloads (max 9 units mid-term, up to 12 for graduating) and Shifting require official procedures.
 - INC (Incomplete) must be completed within the prescribed period.
