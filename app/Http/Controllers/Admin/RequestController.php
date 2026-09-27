@@ -57,6 +57,7 @@ class RequestController extends Controller
         return Inertia::render('Admin/Requests', [
             'requests' => $requests,
             'showingArchived' => $showArchived,
+            'initialStatus' => $request->query('status', 'all'),
         ]);
     }
 

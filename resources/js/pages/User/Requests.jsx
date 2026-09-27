@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import UserLayout from '@/Layouts/UserLayout';
 import FeedbackModal from './FeedbackModal';
 import RequestDocumentModal from '@/Components/RequestDocumentModal';
+import ComplianceModal from '@/Components/ComplianceModal';
 import Swal from 'sweetalert2';
 import SoftCopyViewerModal from '@/Components/SoftCopyViewerModal';
 
@@ -105,15 +106,17 @@ export default function MyRequests({
     auth,
     isAlumniVerified,
     showingArchived = false,
+    statusFilter: initialStatusFilter = 'all',
 }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [trackingRequest, setTrackingRequest] = useState(null);
     const [feedbackTarget, setFeedbackTarget] = useState(null);
     const [receivingId, setReceivingId] = useState(null);
+    const [complyingRequest, setComplyingRequest] = useState(null);
     const [archiving, setArchiving] = useState(null);
     const [cancellingId, setCancellingId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState(initialStatusFilter || 'all');
     const [docTypeFilter, setDocTypeFilter] = useState('all');
     const [softCopyRequest, setSoftCopyRequest] = useState(null);
 
@@ -129,15 +132,26 @@ export default function MyRequests({
 
     const filteredRequestList = useMemo(() => {
         const term = searchTerm.toLowerCase();
+        
+        const PENDING_CODES = ['submitted', 'for_review', 'processing', 'for_compliance'];
+        const COMPLETED_CODES = ['ready_for_release', 'released'];
 
         return requestList.filter(req => {
             const matchesTerm =
                 String(req.id).includes(term) ||
                 (req.document_type || '').toLowerCase().includes(term);
 
+            let matchesStatus = false;
+            const code = req.status_code || '';
+            
+            if (statusFilter === 'all') matchesStatus = true;
+            else if (statusFilter === 'pending') matchesStatus = PENDING_CODES.includes(code);
+            else if (statusFilter === 'completed') matchesStatus = COMPLETED_CODES.includes(code);
+            else matchesStatus = code === statusFilter;
+
             return (
                 matchesTerm &&
-                (statusFilter === 'all' || (req.status_code || '') === statusFilter) &&
+                matchesStatus &&
                 (docTypeFilter === 'all' || req.document_type === docTypeFilter)
             );
         });
@@ -173,6 +187,10 @@ export default function MyRequests({
             preserveScroll: true,
             onFinish: () => setCancellingId(null),
         });
+    };
+
+    const handleComply = req => {
+        setComplyingRequest(req);
     };
 
     const handleUnarchive = id => {
@@ -279,11 +297,22 @@ export default function MyRequests({
 
                     <select
                         value={statusFilter}
-                        onChange={e => setStatusFilter(e.target.value)}
+                        onChange={e => {
+                            setStatusFilter(e.target.value);
+                            // Also update the URL so the backend returns all records if we clear it
+                            router.get(window.location.pathname, {
+                                archived: showingArchived ? 1 : undefined,
+                                status: e.target.value === 'all' ? undefined : e.target.value,
+                            }, { preserveState: true, preserveScroll: true, replace: true });
+                        }}
                         className="w-full min-w-0 bg-slate-50 border border-slate-200 rounded-2xl py-3 px-3 sm:px-4 text-sm shadow-sm outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
                     >
                         <option value="all">All Statuses</option>
-                        {STATUS_FILTER_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        <option value="pending">All Pending</option>
+                        <option value="completed">All Completed</option>
+                        <optgroup label="Specific Statuses">
+                            {STATUS_FILTER_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </optgroup>
                     </select>
                 </div>
 
@@ -380,6 +409,18 @@ export default function MyRequests({
                                                     <path strokeLinecap="round" strokeLinejoin="round" d={ICONS.close} />
                                                 </svg>
                                                 {cancellingId === req.id ? 'Cancelling...' : 'Cancel'}
+                                            </button>
+                                        )}
+
+                                        {status === 'for_compliance' && !req.is_archived && (
+                                            <button
+                                                onClick={() => handleComply(req)}
+                                                className="inline-flex items-center justify-center gap-1.5 min-h-[42px] text-purple-700 font-bold px-3 py-2.5 bg-purple-50 border border-purple-200 rounded-xl text-[10px] uppercase tracking-wider hover:bg-purple-100 transition-colors shadow-sm"
+                                            >
+                                                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d={ICONS.check} />
+                                                </svg>
+                                                Mark as Complied
                                             </button>
                                         )}
 
@@ -482,6 +523,10 @@ export default function MyRequests({
 
             {softCopyRequest && (
                 <SoftCopyViewerModal request={softCopyRequest} onClose={() => setSoftCopyRequest(null)} />
+            )}
+            
+            {complyingRequest && (
+                <ComplianceModal request={complyingRequest} onClose={() => setComplyingRequest(null)} />
             )}
         </UserLayout>
     );

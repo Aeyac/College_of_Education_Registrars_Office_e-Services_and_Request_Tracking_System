@@ -50,9 +50,10 @@ function Modal({ title, onClose, maxWidth = 'max-w-md', children }) {
     );
 }
 
-function StatCard({ iconPath, iconBg, iconColor, value, label }) {
+function StatCard({ iconPath, iconBg, iconColor, value, label, href }) {
+    const Component = href ? Link : 'div';
     return (
-        <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col items-center justify-center hover:border-yellow-200 transition-colors">
+        <Component href={href} className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col items-center justify-center hover:border-yellow-300 hover:shadow-md transition-all cursor-pointer">
             <div className={`w-8 h-8 rounded-full ${iconBg} flex items-center justify-center mb-3`}>
                 <svg className={`w-4 h-4 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
@@ -60,7 +61,7 @@ function StatCard({ iconPath, iconBg, iconColor, value, label }) {
             </div>
             <h3 className="text-2xl font-black text-slate-900">{value || 0}</h3>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">{label}</p>
-        </div>
+        </Component>
     );
 }
 
@@ -107,7 +108,7 @@ function RequestRow({ request, onTrack }) {
     );
 }
 
-export default function UserDashboard({ auth, requests = [], stats, userRole, services = [] }) {
+export default function UserDashboard({ auth, requests = [], stats, userRole, services = [], announcements = [] }) {
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
     const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
     const [trackingRequest, setTrackingRequest] = useState(null);
@@ -129,9 +130,10 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, se
             </div>
 
             <div className="p-6 sm:p-8">
-                <div className="grid grid-cols-2 gap-4 sm:gap-6 mb-10">
-                    <StatCard iconPath={ICON_PATHS.clock} iconBg="bg-yellow-50" iconColor="text-yellow-600" value={stats?.pending} label="Pending" />
-                    <StatCard iconPath={ICON_PATHS.check} iconBg="bg-emerald-50" iconColor="text-emerald-600" value={stats?.completed} label="Completed" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-10">
+                    <StatCard href="/user/requests?status=pending" iconPath={ICON_PATHS.clock} iconBg="bg-yellow-50" iconColor="text-yellow-600" value={stats?.pending} label="Pending Requests" />
+                    <StatCard href="/user/requests?status=completed" iconPath={ICON_PATHS.check} iconBg="bg-emerald-50" iconColor="text-emerald-600" value={stats?.completed} label="Completed Requests" />
+                    <StatCard href="/user/inquiries" iconPath={ICON_PATHS.inquiry} iconBg="bg-purple-50" iconColor="text-purple-600" value={stats?.inquiries} label="Open Inquiries" />
                 </div>
 
                 <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Quick Actions</h2>
@@ -141,24 +143,67 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, se
                     ))}
                 </div>
 
-                <div className="flex justify-between items-end mb-4">
-                    <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">My Recent Requests</h2>
-                    {requests.length > 0 && (
-                        <Link href="/user/requests" className="text-[11px] font-bold text-yellow-600 hover:text-yellow-700 transition-colors">
-                            View All
-                        </Link>
-                    )}
-                </div>
-
-                <div className="space-y-3">
-                    {requests.length > 0 ? (
-                        requests.map((req) => <RequestRow key={req.id} request={req} onTrack={setTrackingRequest} />)
-                    ) : (
-                        <div className="text-center py-10 bg-slate-50 border border-slate-100 rounded-2xl">
-                            <p className="text-sm font-bold text-slate-700">No requests yet.</p>
-                            <p className="text-xs text-slate-500 mt-1">Submit a new request to get started.</p>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2">
+                        <div className="flex justify-between items-end mb-4">
+                            <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">My Recent Requests</h2>
+                            {requests.length > 0 && (
+                                <Link href="/user/requests" className="text-[11px] font-bold text-yellow-600 hover:text-yellow-700 transition-colors">
+                                    View All
+                                </Link>
+                            )}
                         </div>
-                    )}
+                        <div className="space-y-3">
+                            {requests.length > 0 ? (
+                                requests.map((req) => <RequestRow key={req.id} request={req} onTrack={setTrackingRequest} />)
+                            ) : (
+                                <div className="text-center py-10 bg-slate-50 border border-slate-100 rounded-2xl">
+                                    <p className="text-sm font-bold text-slate-700">No requests yet.</p>
+                                    <p className="text-xs text-slate-500 mt-1">Submit a new request to get started.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="space-y-8">
+                        <div>
+                            <div className="flex justify-between items-end mb-4">
+                                <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Announcements</h2>
+                                <Link href="/user/announcements" className="text-[11px] font-bold text-yellow-600 hover:text-yellow-700 transition-colors">View All</Link>
+                            </div>
+                            <div className="space-y-3">
+                                {announcements && announcements.length > 0 ? announcements.map(ann => (
+                                    <div key={ann.id} className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col gap-1 hover:border-yellow-300 hover:shadow-md transition-all cursor-pointer" onClick={() => router.visit(`/user/announcements`)}>
+                                        <h3 className="font-bold text-sm text-slate-900 line-clamp-1">{ann.title}</h3>
+                                        <p className="text-xs text-slate-500 line-clamp-2">{ann.content}</p>
+                                        <span className="text-[10px] font-medium text-slate-400 mt-1">{ann.date}</span>
+                                    </div>
+                                )) : (
+                                    <div className="text-center py-6 bg-slate-50 border border-slate-100 rounded-2xl">
+                                        <p className="text-xs text-slate-500">No recent announcements.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="flex justify-between items-end mb-4">
+                                <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Latest Notifications</h2>
+                            </div>
+                            <div className="space-y-3">
+                                {auth?.notifications && auth.notifications.length > 0 ? auth.notifications.slice(0, 3).map(notif => (
+                                    <div key={notif.id} className={`p-4 bg-white border rounded-2xl shadow-sm flex flex-col gap-1 transition-colors ${!notif.read_at ? 'border-amber-200 bg-amber-50' : 'border-slate-100'}`}>
+                                        <p className={`text-xs ${!notif.read_at ? 'font-bold text-amber-900' : 'text-slate-700'}`}>{notif.data.message}</p>
+                                        <span className="text-[10px] text-slate-400">{new Date(notif.created_at).toLocaleString()}</span>
+                                    </div>
+                                )) : (
+                                    <div className="text-center py-6 bg-slate-50 border border-slate-100 rounded-2xl">
+                                        <p className="text-xs text-slate-500">No new notifications.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

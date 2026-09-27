@@ -176,7 +176,7 @@ export default function Footer() {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
                                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                                             <strong className="block text-slate-900 text-sm mb-1">Document Requests</strong>
-                                            <span className="text-xs text-slate-600">Request Internship Certificates, Copy of COBC, and other academic records effortlessly.</span>
+                                            <span className="text-xs text-slate-600">Request Internship Certificates, Copy of COPC, and other academic records effortlessly.</span>
                                         </div>
                                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                                             <strong className="block text-slate-900 text-sm mb-1">Real-Time Tracking</strong>

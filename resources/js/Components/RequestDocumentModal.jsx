@@ -55,12 +55,24 @@ export default function RequestDocumentModal({ services = [], onClose }) {
         grade_level_handled: '',
         semester: '',
         school_year: '',
-        requirement_file: null,
+        requirement_files: [],
     });
 
     const isInternship =
         services.find((s) => String(s.id) === String(form.data.service_id))?.code ===
         INTERNSHIP_SERVICE_CODE;
+
+    const getProofRequirement = (serviceId) => {
+        const service = services.find(s => String(s.id) === String(serviceId));
+        if (!service) return 'Required Supporting Document/s (if any)';
+        
+        switch (service.code) {
+            case 'internship_certificate': return 'Required Proof: Diploma';
+            case 'copc': return 'Required Proof: Proof of Graduate TOR or Diploma';
+            case 'golden_grain': return 'Required Proof: Receipt';
+            default: return 'Required Supporting Document/s (if any)';
+        }
+    };
 
     // Changing the document type clears the internship-only fields
     const handleServiceChange = (e) => {
@@ -135,6 +147,17 @@ export default function RequestDocumentModal({ services = [], onClose }) {
                             <option value="hard_copy">Hard Copy</option>
                         </select>
                         <FieldError message={form.errors.delivery_mode} />
+                        
+                        {form.data.delivery_mode === 'hard_copy' && (
+                            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex gap-3 items-start">
+                                <svg className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <p className="text-xs text-amber-800 font-medium">
+                                    <span className="font-bold">Reminder:</span> If an authorized person will claim the physical document on your behalf, they must present a valid <span className="font-bold">Authorization Letter</span> and a <span className="font-bold">Copy of their ID</span> upon claiming.
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {isInternship && (
@@ -208,13 +231,15 @@ export default function RequestDocumentModal({ services = [], onClose }) {
                     </div>
 
                     <div>
-                        <label className={labelClass}>Required Supporting Document/s (if any)</label>
+                        <label className={labelClass}>{getProofRequirement(form.data.service_id)}</label>
                         <input
                             type="file"
-                            onChange={(e) => form.setData('requirement_file', e.target.files[0])}
+                            multiple
+                            onChange={(e) => form.setData('requirement_files', Array.from(e.target.files))}
                             className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 border border-slate-200 cursor-pointer"
                         />
-                        <FieldError message={form.errors.requirement_file} />
+                        <p className="text-[10px] text-slate-400 mt-1">You can select multiple files if needed.</p>
+                        <FieldError message={form.errors.requirement_files} />
                     </div>
 
                     <div>

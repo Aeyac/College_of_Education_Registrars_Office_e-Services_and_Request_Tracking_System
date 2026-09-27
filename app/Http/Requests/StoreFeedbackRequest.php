@@ -18,7 +18,7 @@ class StoreFeedbackRequest extends FormRequest
             // is allowed, not just per-request feedback).
             'request_id' => ['nullable', 'exists:requests,id'],
             'rating' => ['nullable', 'integer', 'min:1', 'max:5'],
-            'comments' => ['nullable', 'string', 'max:2000'],
+            'comments' => ['nullable', 'string', 'max:2000', new \App\Rules\NotProfane],
         ];
     }
 }

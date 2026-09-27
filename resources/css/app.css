@@ -104,3 +104,7 @@ html, body, div, main, aside {
     border: none !important;
     min-height: 200px;
 }
+/* Recharts Global Fixes */
+.recharts-wrapper, .recharts-surface, .recharts-layer {
+    outline: none !important;
+}

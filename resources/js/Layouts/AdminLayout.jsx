@@ -58,6 +58,26 @@ export default function AdminLayout({ children }) {
         router.post('/admin/notifications/mark-as-read', {}, { preserveScroll: true, preserveState: true, onSuccess: () => setIsNotifOpen(false) });
     };
 
+    const markSingleAsRead = (notif) => {
+        if (!notif.read_at) {
+            router.post(`/admin/notifications/${notif.id}/mark-as-read`, {}, {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    if (notif.data.link) {
+                        router.visit(notif.data.link);
+                    }
+                    setIsNotifOpen(false);
+                }
+            });
+        } else {
+            if (notif.data.link) {
+                router.visit(notif.data.link);
+            }
+            setIsNotifOpen(false);
+        }
+    };
+
     const adminName = auth?.user?.first_name ? `${auth.user.first_name} ${auth.user.last_name}` : 'Registrar Admin';
 
     const userAvatar = auth?.user?.profile_picture
@@ -71,6 +91,7 @@ export default function AdminLayout({ children }) {
         { name: 'Faculty Schedules', link: '/admin/faculty', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
         { name: 'Announcements', link: '/admin/announcements', icon: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z' },
         { name: 'Student Inquiries', link: '/admin/inquiries', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
+        { name: 'Student Feedback', link: '/admin/feedback', icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' },
         { name: 'FAQ Management', link: '/admin/faqs', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
         { name: 'User Management', link: '/admin/users', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
         { name: 'Audit Trail', link: '/admin/audit-trail', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
@@ -138,7 +159,7 @@ export default function AdminLayout({ children }) {
             </div>
 
             <div className="flex-1 flex flex-col h-screen overflow-y-auto">
-                <header className="py-4 px-6 lg:px-10 flex justify-between items-center shrink-0 border-b-2 bg-white sticky top-0 z-30">
+                <header className="py-4 px-6 lg:px-10 flex justify-between items-center shrink-0 border-b-2 bg-white sticky top-0 z-50">
                     <div className="flex items-center gap-4 relative z-10 w-full justify-between lg:justify-end">
                         <div className="flex items-center gap-4 lg:hidden">
                             <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-slate-600 hover:text-slate-900">
@@ -160,8 +181,11 @@ export default function AdminLayout({ children }) {
                                     </div>
                                     <div className="max-h-[350px] overflow-y-auto">
                                         {notifications.length > 0 ? notifications.map((notif) => (
-                                            <div key={notif.id} className="px-6 py-5 border-b border-slate-50 text-xs text-slate-700">
-                                                <p className="font-bold mb-1">{notif.data.message}</p>
+                                            <div key={notif.id} onClick={() => markSingleAsRead(notif)} className={`px-6 py-5 border-b border-slate-50 text-xs text-slate-700 cursor-pointer transition-colors ${!notif.read_at ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-slate-50'}`}>
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <p className={`font-bold ${!notif.read_at ? 'text-amber-900' : ''}`}>{notif.data.message}</p>
+                                                    {!notif.read_at && <span className="w-2 h-2 rounded-full bg-amber-500 mt-1 shrink-0"></span>}
+                                                </div>
                                                 <span className="text-[10px] text-slate-400">{timeAgo(notif.created_at)}</span>
                                             </div>
                                         )) : <div className="p-8 text-center text-slate-500 text-sm">No new alerts.</div>}

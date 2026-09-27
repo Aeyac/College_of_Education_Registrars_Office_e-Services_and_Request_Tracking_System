@@ -1,42 +1,13 @@
-import { Head, router } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
+import { Head, router, Link } from '@inertiajs/react';
+import { useState } from 'react';
 import UserLayout from '@/Layouts/UserLayout';
 import NewInquiryModal from '@/Components/NewInquiryModal';
 
-export default function Faq({ userRole, faqs = [], search = '' }) {
-    const [openFaq, setOpenFaq] = useState(null);
+export default function Faq({ userRole }) {
     const [isTutorialOpen, setIsTutorialOpen] = useState(false);
-    const [searchValue, setSearchValue] = useState(search);
-    const isFirstRun = useRef(true);
     const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
 
-    useEffect(() => {
-        if (isFirstRun.current) {
-            isFirstRun.current = false;
-            return;
-        }
-
-        const timeout = setTimeout(() => {
-            router.get(route('user.faq'), { search: searchValue }, {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            });
-        }, 400);
-
-        return () => clearTimeout(timeout);
-    }, [searchValue]);
-
-    const handleSearch = (event) => {
-        setSearchValue(event.target.value);
-    };
-
     const quickActions = [
-        {
-            title: 'Browse FAQs',
-            icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
-            action: () => document.getElementById('faq-list')?.scrollIntoView({ behavior: 'smooth' })
-        },
         {
             title: 'Submit Inquiry',
             icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
@@ -46,78 +17,99 @@ export default function Faq({ userRole, faqs = [], search = '' }) {
             title: 'Guides & Tutorials',
             icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
             action: () => setIsTutorialOpen(true)
+        },
+        {
+            title: 'Track My Requests',
+            icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+            action: () => router.get('/user/requests')
+        }
+    ];
+
+    const processSteps = [
+        {
+            title: '1. Submit Your Request',
+            desc: 'Navigate to "New Request" in your dashboard. Select your desired document type and upload all required compliance files (e.g., clearance, valid ID).',
+            bg: 'bg-sky-50',
+            border: 'border-sky-100',
+            iconText: 'text-sky-600',
+            icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+        },
+        {
+            title: '2. Evaluation & Processing',
+            desc: 'The CED Registrar will verify your uploaded documents. If there are missing requirements, your request will be returned for compliance. Otherwise, it will proceed to processing.',
+            bg: 'bg-yellow-50',
+            border: 'border-yellow-100',
+            iconText: 'text-yellow-600',
+            icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        },
+        {
+            title: '3. Ready for Release',
+            desc: 'You will receive an email and an in-app notification once your document is successfully printed, signed, and ready for pickup at the Registrar\'s Office.',
+            bg: 'bg-emerald-50',
+            border: 'border-emerald-100',
+            iconText: 'text-emerald-600',
+            icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+        },
+        {
+            title: '4. Claiming your Document',
+            desc: 'Visit the CED Registrar. If you are claiming it yourself, present a Valid ID. If an authorized person is claiming it for you, they must provide an Authorization Letter and a copy of their Valid ID.',
+            bg: 'bg-indigo-50',
+            border: 'border-indigo-100',
+            iconText: 'text-indigo-600',
+            icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         }
     ];
 
     return (
         <UserLayout userRole={userRole}>
-            <Head title="FAQ / Help Center" />
+            <Head title="Help Center" />
 
             <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl">
-                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">FAQ / Help Center</h2>
-                <p className="text-xs text-slate-500 mt-1">Find answers, guides, and support resources.</p>
+                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Help Center</h2>
+                <p className="text-xs text-slate-500 mt-1">Learn how to request documents, navigate the system, and find support resources.</p>
             </div>
 
-            <div className="p-6 sm:p-8">
-                <div className="relative mb-8">
-                    <input
-                        type="text"
-                        value={searchValue}
-                        onChange={handleSearch}
-                        placeholder="Search for help..."
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-12 pr-4 text-sm focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-colors shadow-sm"
-                    />
-                    <svg className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
+            <div className="p-6 sm:p-8 max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
                     {quickActions.map((item, i) => (
                         <button
                             key={i}
                             onClick={item.action}
-                            className="flex flex-col items-center justify-center p-4 bg-white border border-slate-100 rounded-2xl hover:border-yellow-400 hover:bg-yellow-50 hover:shadow-md transition-all group outline-none"
+                            className="flex flex-col items-center justify-center p-6 bg-white border border-slate-100 rounded-3xl hover:border-yellow-400 hover:bg-yellow-50 hover:shadow-lg hover:-translate-y-1 transition-all group outline-none cursor-pointer"
                         >
-                            <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-white group-hover:border-yellow-200 transition-colors">
-                                <svg className="w-5 h-5 text-slate-500 group-hover:text-yellow-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-white group-hover:border-yellow-200 transition-colors shadow-sm group-hover:shadow-md">
+                                <svg className="w-6 h-6 text-slate-400 group-hover:text-yellow-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
                                 </svg>
                             </div>
-                            <span className="text-[10px] font-bold text-slate-700 text-center">{item.title}</span>
+                            <span className="text-[13px] font-black text-slate-700 text-center tracking-wide">{item.title}</span>
                         </button>
                     ))}
                 </div>
 
-                <h3 id="faq-list" className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 scroll-mt-32">Frequently Asked Questions</h3>
+                <div className="mb-6 flex items-center gap-3">
+                    <div className="w-1.5 h-6 bg-yellow-400 rounded-full"></div>
+                    <h3 className="text-lg font-black text-slate-800 uppercase tracking-widest">Document Requesting Process</h3>
+                </div>
 
-                <div className="space-y-3">
-                    {faqs.length > 0 ? (
-                        faqs.map((faq, index) => (
-                            <div key={faq.id ?? index} className="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm">
-                                <button className="w-full px-5 py-4 flex justify-between items-center hover:bg-slate-50 transition-colors outline-none" onClick={() => setOpenFaq(openFaq === index ? null : index)}>
-                                    <span className="font-bold text-sm text-slate-800 text-left flex items-center gap-3">
-                                        <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500 shrink-0 font-black">{index + 1}</span>
-                                        {faq.question}
-                                    </span>
-                                    <svg className={`w-4 h-4 text-slate-400 transform transition-transform ${openFaq === index ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                                </button>
-                                {openFaq === index && (
-                                    <div className="px-5 pb-4 pl-14 text-sm text-slate-600 leading-relaxed bg-slate-50/50 pt-2 border-t border-slate-100">
-                                        {faq.answer}
-                                    </div>
-                                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+                    {processSteps.map((step, idx) => (
+                        <div key={idx} className={`p-6 sm:p-8 rounded-[2rem] border ${step.border} ${step.bg} shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group`}>
+                            <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white opacity-40 rounded-full transform group-hover:scale-150 transition-transform duration-700 ease-out" />
+                            
+                            <div className="relative z-10">
+                                <div className={`w-14 h-14 bg-white rounded-2xl border ${step.border} shadow-sm flex items-center justify-center mb-6 ${step.iconText}`}>
+                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        {step.icon}
+                                    </svg>
+                                </div>
+                                <h4 className="text-xl font-black text-slate-900 mb-3">{step.title}</h4>
+                                <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                                    {step.desc}
+                                </p>
                             </div>
-                        ))
-                    ) : (
-                        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-sm text-slate-500">
-                            <p>No FAQs match your search.</p>
-                            <button
-                                onClick={() => setIsInquiryModalOpen(true)}
-                                className="mt-3 inline-flex items-center gap-1.5 text-yellow-600 hover:text-yellow-700 font-bold text-sm underline underline-offset-2 transition-colors"
-                            >
-                                Submit an Inquiry instead
-                            </button>
                         </div>
-                    )}
+                    ))}
                 </div>
             </div>
 
@@ -141,7 +133,6 @@ export default function Faq({ userRole, faqs = [], search = '' }) {
 
                         <div className="flex-1 overflow-y-auto bg-slate-950 p-2 sm:p-4 custom-scrollbar">
                             <div className="w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-inner border border-slate-800">
-                                {   /* Video Tutorial */}
                                 <iframe
                                     className="w-full h-full"
                                     src="https://www.youtube.com/embed/dxUkqWHF9g0?list=RDdxUkqWHF9g0"

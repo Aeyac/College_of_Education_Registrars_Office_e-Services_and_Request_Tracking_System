@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Icon } from '@/Components/Icon';
+import Swal from 'sweetalert2';
 
 const LOCKED_STATUSES = new Set(['cancelled', 'released', 'rejected']);
 const NOTE_REQ_STATUSES = new Set(['rejected', 'for_compliance']);
@@ -39,11 +40,15 @@ const Badge = ({ children, className }) => (
     </span>
 );
 
-export default function ManageRequests({ requests = [], showingArchived = false }) {
+export default function ManageRequests({ requests = [], showingArchived = false, initialStatus = 'all' }) {
 
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState(initialStatus);
+
+    useEffect(() => {
+        setStatusFilter(initialStatus);
+    }, [initialStatus]);
     const [docTypeFilter, setDocTypeFilter] = useState('all');
     const [exporting, setExporting] = useState(null);
     const [archiving, setArchiving] = useState(null); // holds the id currently being archived/restored
@@ -63,7 +68,26 @@ export default function ManageRequests({ requests = [], showingArchived = false 
 
     const handleUpdate = (e) => {
         e.preventDefault();
-        post(`/admin/requests/${selectedRequest.id}`, { forceFormData: true, onSuccess: closeModal });
+        post(`/admin/requests/${selectedRequest.id}`, { 
+            forceFormData: true, 
+            onSuccess: () => {
+                closeModal();
+                Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    customClass: {
+                        popup: 'rounded-xl shadow-lg border border-slate-100 bg-white',
+                        title: 'text-sm font-bold text-slate-800'
+                    }
+                }).fire({
+                    icon: 'success',
+                    title: 'Request updated successfully'
+                });
+            }
+        });
     };
 
     const handleExport = (type) => {

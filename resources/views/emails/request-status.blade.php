@@ -70,6 +70,22 @@
 
     <p style="max-width: 480px; margin: 20px auto;">{{ $theme['message'] }}</p>
 
+    @if ($code === 'ready_for_release' && $isHardCopy)
+        <div style="max-width: 480px; margin: 0 auto 20px; text-align: left; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px; padding: 14px 18px; font-size: 14px; color: #92400e;">
+            <strong style="color: #b45309;">Claiming Requirements:</strong><br>
+            <ul style="margin: 8px 0 0; padding-left: 20px;">
+                <li style="margin-bottom: 6px;"><strong>If you (the requester) will claim:</strong> Please present any valid ID.</li>
+                <li><strong>If an authorized person will claim:</strong> They must present:
+                    <ul style="margin-top: 4px; padding-left: 20px;">
+                        <li>Your valid ID (the requester)</li>
+                        <li>Any valid ID of the authorized person with 3 specimen signatures</li>
+                        <li>An Authorization Letter</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    @endif
+
     @if (!empty($note))
         <div
             style="max-width: 480px; margin: 0 auto 20px; text-align: left; background: {{ $theme['bg'] }}; border-left: 4px solid {{ $theme['color'] }}; border-radius: 6px; padding: 14px 18px; font-size: 14px;">
