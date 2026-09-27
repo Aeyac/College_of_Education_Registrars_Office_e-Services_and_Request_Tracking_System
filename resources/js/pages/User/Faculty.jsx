@@ -14,13 +14,13 @@ export default function FacultySchedules({ faculty = [] }) {
     const processedFaculty = useMemo(() => {
         return faculty.filter(prof => {
             const searchLower = searchTerm.toLowerCase();
-            const matchesSearch = !searchTerm || 
+            const matchesSearch = !searchTerm ||
                 (prof.name && prof.name.toLowerCase().includes(searchLower)) ||
                 (prof.role && prof.role.toLowerCase().includes(searchLower)) ||
                 (prof.room && prof.room.toLowerCase().includes(searchLower));
-            
+
             const matchesDept = deptFilter === 'all' || prof.role === deptFilter || prof.department_or_program === deptFilter;
-            
+
             return matchesSearch && matchesDept;
         });
     }, [faculty, searchTerm, deptFilter]);
@@ -41,76 +41,10 @@ export default function FacultySchedules({ faculty = [] }) {
 
     const daysOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-    const getConsultationBlocks = (schedule) => {
-        if (!schedule) return [];
-        
-        const targetDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
-        const consultations = [];
-        
-        const toMins = (timeStr) => {
-            if (!timeStr) return 0;
-            const [h, m] = timeStr.split(':').map(Number);
-            return h * 60 + m;
-        };
-        
-        const toTimeStr = (mins) => {
-            const h = Math.floor(mins / 60).toString().padStart(2, '0');
-            const m = (mins % 60).toString().padStart(2, '0');
-            return `${h}:${m}`;
-        };
-
-        targetDays.forEach(day => {
-            const classes = schedule.filter(c => c.day === day && c.start_time && c.end_time);
-            
-            let freeSlots = [
-                { start: 480, end: 720 }, // 08:00 - 12:00
-                { start: 780, end: 1020 } // 13:00 - 17:00
-            ];
-            
-            classes.forEach(c => {
-                const cStart = toMins(c.start_time);
-                const cEnd = toMins(c.end_time);
-                
-                let newFreeSlots = [];
-                freeSlots.forEach(slot => {
-                    if (cStart < slot.end && cEnd > slot.start) {
-                        if (slot.start < cStart) {
-                            newFreeSlots.push({ start: slot.start, end: cStart });
-                        }
-                        if (slot.end > cEnd) {
-                            newFreeSlots.push({ start: cEnd, end: slot.end });
-                        }
-                    } else {
-                        newFreeSlots.push(slot);
-                    }
-                });
-                freeSlots = newFreeSlots;
-            });
-            
-            freeSlots.forEach(slot => {
-                if (slot.end - slot.start >= 30) {
-                    consultations.push({
-                        day: day,
-                        start_time: toTimeStr(slot.start),
-                        end_time: toTimeStr(slot.end),
-                        room: 'Main Office',
-                        type: 'consultation',
-                        isAuto: true
-                    });
-                }
-            });
-        });
-        
-        return consultations;
-    };
-
     const getSortedSchedule = (schedule) => {
         if (!schedule) return [];
-        
-        const autoConsultations = getConsultationBlocks(schedule);
-        const combined = [...schedule, ...autoConsultations];
-        
-        return combined.sort((a, b) => {
+
+        return [...schedule].sort((a, b) => {
             const dayDiff = daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day);
             if (dayDiff !== 0) return dayDiff;
             return (a.start_time || '').localeCompare(b.start_time || '');
@@ -120,7 +54,7 @@ export default function FacultySchedules({ faculty = [] }) {
     return (
         <UserLayout>
             <Head title="Faculty Schedules" />
-            
+
             <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
                     <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Faculty Schedules</h2>
@@ -131,12 +65,12 @@ export default function FacultySchedules({ faculty = [] }) {
             <div className="p-6 sm:p-8">
                 <div className="flex flex-col lg:flex-row gap-4 mb-8">
                     <div className="relative flex-1 max-w-lg">
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search by professor name, department, or room..." 
-                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all shadow-sm" 
+                            placeholder="Search by professor name, department, or room..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all shadow-sm"
                         />
                         <svg className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -202,7 +136,7 @@ export default function FacultySchedules({ faculty = [] }) {
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        
+
                         <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar flex-1 bg-slate-50">
                             <div className="mb-6 flex items-center gap-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
                                 <div className="w-10 h-10 rounded-xl bg-yellow-100 text-yellow-600 flex items-center justify-center">
@@ -253,27 +187,28 @@ export default function FacultySchedules({ faculty = [] }) {
                                             Consultation Availability
                                         </h4>
                                         <div className="space-y-3">
-                                            {getSortedSchedule(selectedProf.weekly_schedule).filter(b => b.type === 'consultation').map((block, idx) => (
-                                                <div key={idx} className="bg-emerald-50/30 p-4 rounded-2xl shadow-sm border border-emerald-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-emerald-300 transition-colors">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-24 shrink-0 text-center py-1.5 px-3 bg-emerald-100 rounded-lg">
-                                                            <span className="text-xs font-bold text-emerald-700 uppercase">{block.day}</span>
+                                            {getSortedSchedule(selectedProf.weekly_schedule).filter(b => b.type === 'consultation').length > 0 ? (
+                                                getSortedSchedule(selectedProf.weekly_schedule).filter(b => b.type === 'consultation').map((block, idx) => (
+                                                    <div key={idx} className="bg-emerald-50/30 p-4 rounded-2xl shadow-sm border border-emerald-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-emerald-300 transition-colors">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-24 shrink-0 text-center py-1.5 px-3 bg-emerald-100 rounded-lg">
+                                                                <span className="text-xs font-bold text-emerald-700 uppercase">{block.day}</span>
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-bold text-emerald-900">
+                                                                    {formatTime(block.start_time)} <span className="text-emerald-400 mx-1">-</span> {formatTime(block.end_time)}
+                                                                </span>
+                                                                <span className="text-xs font-medium text-emerald-600 mt-0.5">Available for Students</span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm font-bold text-emerald-900">
-                                                                {formatTime(block.start_time)} <span className="text-emerald-400 mx-1">-</span> {formatTime(block.end_time)}
+                                                        <div className="sm:text-right bg-white sm:bg-transparent p-2 sm:p-0 rounded-lg">
+                                                            <span className="text-xs font-bold text-emerald-700 bg-white border border-emerald-200 px-3 py-1.5 rounded-full inline-block truncate max-w-[150px]" title={block.room || selectedProf.room || selectedProf.room_or_location}>
+                                                                📍 {block.room || selectedProf.room || selectedProf.room_or_location || 'Main Office'}
                                                             </span>
-                                                            <span className="text-xs font-medium text-emerald-600 mt-0.5">Available for Students</span>
                                                         </div>
                                                     </div>
-                                                    <div className="sm:text-right bg-white sm:bg-transparent p-2 sm:p-0 rounded-lg">
-                                                        <span className="text-xs font-bold text-emerald-700 bg-white border border-emerald-200 px-3 py-1.5 rounded-full inline-block truncate max-w-[150px]" title={block.room}>
-                                                            📍 {block.room || 'Main Office'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {getSortedSchedule(selectedProf.weekly_schedule).filter(b => b.type === 'consultation').length === 0 && (
+                                                ))
+                                            ) : (
                                                 <div className="text-center py-8 bg-emerald-50/50 rounded-2xl border border-dashed border-emerald-200">
                                                     <p className="text-sm text-emerald-600 font-medium">No consultation hours available.</p>
                                                 </div>
@@ -295,7 +230,7 @@ export default function FacultySchedules({ faculty = [] }) {
                                     <span className="text-lg">💡</span>
                                     <span>
                                         <strong className="text-blue-900 block mb-0.5">Consultation Availability</strong>
-                                        Any vacant periods between 8:00 AM to 5:00 PM outside of these scheduled classes are generally available for student consultation. Please verify with the professor's main office.
+                                        Consultation hours above are set directly by the professor's office. Please verify in person for any changes.
                                     </span>
                                 </p>
                             </div>

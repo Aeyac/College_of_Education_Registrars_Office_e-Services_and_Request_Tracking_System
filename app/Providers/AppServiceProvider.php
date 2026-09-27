@@ -2,14 +2,14 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\Vite;
+use App\Services\ScheduleExtraction\GeminiScheduleExtractor;
+use App\Services\ScheduleExtraction\ScheduleExtractorContract;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\URL;
-use App\Models\Course;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Auth\Notifications\ResetPassword; 
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Cache\RateLimiting\Limit;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,7 +18,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+         $this->app->bind(ScheduleExtractorContract::class, function ($app) {
+            return match (config('services.ai_extractor.provider', 'gemini')) {
+                'gemini' => new GeminiScheduleExtractor(
+                    apiKey: config('services.gemini.key'),
+                    model: config('services.gemini.model'),
+                    baseUrl: config('services.gemini.base_url'),
+                ),
+                default => throw new \RuntimeException('Unsupported AI extractor provider.'),
+            };
+        });
     }
 
     /**
@@ -55,6 +64,10 @@ class AppServiceProvider extends ServiceProvider
             return (new MailMessage)
                 ->subject('Reset Your Password - CED E-Services')
                 ->view('emails.custom-reset-password', ['url' => $url]);
+        });
+
+         RateLimiter::for('schedule-extraction', function (Request $request) {
+            return Limit::perMinute(6)->by($request->user()?->id ?: $request->ip());
         });
     }
 }

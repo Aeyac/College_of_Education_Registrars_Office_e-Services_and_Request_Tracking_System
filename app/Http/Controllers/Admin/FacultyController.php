@@ -3,14 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\AlumniVerification;
-use App\Models\CertificateRequest;
-use App\Models\Course;
 use App\Models\Faculty;
-use App\Models\User;
-use App\Services\ScheduleExtractorService;
+use App\Services\ScheduleExtraction\ScheduleExtractorContract;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Throwable;
 
 class FacultyController extends Controller
 {
@@ -22,32 +20,38 @@ class FacultyController extends Controller
                 'name' => $prof->name,
                 'department_or_program' => $prof->department_or_program,
                 'room_or_location' => $prof->room_or_location,
-                'consultation_days' => $prof->consultation_days,
-                'consultation_time_start' => $prof->consultation_time_start ? \Carbon\Carbon::parse($prof->consultation_time_start)->format('H:i') : '',
-                'consultation_time_end' => $prof->consultation_time_end ? \Carbon\Carbon::parse($prof->consultation_time_end)->format('H:i') : '',
                 'weekly_schedule' => $prof->weekly_schedule,
                 'current_status' => $prof->current_status,
                 'role' => $prof->department_or_program,
                 'room' => $prof->room_or_location,
-                'hours' => $prof->formattedConsultationHours(),
             ];
         });
 
         return Inertia::render('Admin/Faculty', ['faculty' => $faculty]);
     }
 
-    public function extractSchedule(Request $request, ScheduleExtractorService $extractor)
+    public function extractSchedule(Request $request, ScheduleExtractorContract $extractor)
     {
         $request->validate([
-            'schedule_file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'schedule_files' => ['required', 'array', 'min:1', 'max:5'],
+            'schedule_files.*' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
         ]);
 
         try {
-            $extractedData = $extractor->extract($request->file('schedule_file'));
-            return response()->json(['success' => true, 'data' => $extractedData]);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Extraction failed: ' . $e->getMessage()], 500);
+            $results = $extractor->extractMany($request->file('schedule_files'));
+        } catch (Throwable $e) {
+            Log::error('Schedule extraction provider error', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'The AI scanner is unavailable right now. Please try again shortly or add schedules manually.',
+            ], 503);
         }
+
+        return response()->json([
+            'success' => true,
+            'results' => $results,
+        ]);
     }
 
     public function storeFaculty(Request $request)
@@ -56,9 +60,6 @@ class FacultyController extends Controller
             'name' => 'required|string|max:255',
             'department_or_program' => 'required|string|max:255',
             'room_or_location' => 'required|string|max:255',
-            'consultation_days' => 'nullable|string|max:255',
-            'consultation_time_start' => 'nullable',
-            'consultation_time_end' => 'nullable',
             'weekly_schedule' => 'nullable|array',
         ]));
 
@@ -71,9 +72,6 @@ class FacultyController extends Controller
             'name' => 'required|string|max:255',
             'department_or_program' => 'required|string|max:255',
             'room_or_location' => 'required|string|max:255',
-            'consultation_days' => 'nullable|string|max:255',
-            'consultation_time_start' => 'nullable',
-            'consultation_time_end' => 'nullable',
             'weekly_schedule' => 'nullable|array',
         ]));
 
