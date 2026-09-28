@@ -139,11 +139,38 @@ export default function Welcome({ auth, announcements = [], faqs = [] }) {
 
             <main className="flex-grow pt-20">
                 {/* Hero Section */}
-                <section id="home" className="relative pt-12 md:pt-16 pb-20 px-6 md:px-12 w-full overflow-hidden bg-gradient-to-br from-amber-50/60 via-white to-yellow-50/40 border-b border-slate-100 scroll-mt-24">
-                    <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12 relative z-10">
-                        <div className="w-full md:w-1/2 flex flex-col gap-6 items-start">
+                <section id="home" className="relative min-h-[85vh] flex items-center pt-24 pb-20 px-6 md:px-12 w-full overflow-hidden border-b border-slate-200 scroll-mt-24">
+                    {/* Background Layer */}
+                    <div className="absolute inset-0 z-0 pointer-events-none bg-slate-50">
+                        {/* Image Container - restricted height on mobile to prevent extreme zooming */}
+                        <div className="absolute top-0 left-0 w-full h-[65%] md:h-full">
+                            <img
+                                src="/images/cedbuilding.jpg"
+                                alt="CED Building Background"
+                                className="w-full h-full object-cover object-center md:object-right-top"
+                            />
+                            {/* Mobile Gradient: Fades smoothly into the slate-50 background below */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-slate-50/95 via-slate-50/70 to-slate-50 md:hidden z-10"></div>
+                        </div>
+                        {/* Desktop Gradient */}
+                        <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-slate-50 via-slate-50/90 to-transparent z-10 md:w-3/4"></div>
+                        {/* Overall subtle overlay to ensure contrast on all devices */}
+                        <div className="absolute inset-0 bg-slate-900/5 md:bg-transparent z-10"></div>
+                    </div>
+
+                    <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12 relative z-10 w-full h-full">
+
+                        {/* Left Side: Original Text Layout */}
+                        <div className="w-full md:w-1/2 flex flex-col gap-6 items-center md:items-start text-center md:text-left pt-10 md:pt-0">
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-slate-200 text-yellow-600 text-xs font-bold tracking-wider mb-2 shadow-sm">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                                </span>
+                                COLLEGE OF EDUCATION
+                            </div>
                             <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tight text-slate-900 leading-none md:leading-tight">
-                                WELCOME TO <br />
+                                WELCOME TO <br className="hidden md:block" />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-400 block mt-2 md:inline">
                                     CED E-SERVICES
                                 </span>
@@ -153,25 +180,45 @@ export default function Welcome({ auth, announcements = [], faqs = [] }) {
                             </p>
                             <Link
                                 href={route('register')}
-                                className="mt-2 px-12 py-3.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold rounded-full transition-colors shadow-md shadow-yellow-500/20"
+                                className="mt-4 px-12 py-3.5 bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold rounded-full transition-all shadow-lg shadow-yellow-500/20 hover:-translate-y-1 hover:shadow-xl hover:shadow-yellow-500/30 w-full sm:w-auto"
                             >
                                 GET STARTED
                             </Link>
                         </div>
 
-                        <div className="w-full md:w-1/2 relative flex justify-center mt-6 md:mt-0">
-                            <div className="absolute -inset-1 bg-gradient-to-tr from-yellow-300 to-amber-200 rounded-2xl blur-xl opacity-30"></div>
-                            <div className="relative w-full max-w-lg aspect-video bg-white p-2 rounded-2xl border border-slate-200/80 shadow-xl">
-                                <div className="relative w-full h-full rounded-xl overflow-hidden">
-                                    <img
-                                        src="/images/cedbuilding.jpg"
-                                        alt="College of Education Building"
-                                        className="w-full h-full object-cover"
-                                    />
-                                    <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-lg border border-white/20 font-medium">
-                                        College of Education
-                                    </div>
-                                </div>
+                        {/* Right Side: Glass Premium Card */}
+                        <div className="w-full md:w-1/2 relative flex justify-center mt-6 md:mt-0 pb-10 md:pb-0">
+                            <div className="w-full max-w-md bg-white/80 md:bg-white/60 backdrop-blur-xl border border-white/80 md:border-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] md:shadow-[0_8px_30px_rgb(0,0,0,0.08)] relative hover:shadow-[0_8px_40px_rgb(0,0,0,0.16)] transition-shadow duration-300">
+                                <h3 className="text-xl font-extrabold text-slate-900 mb-6 drop-shadow-sm text-left">Why use CED E-Services?</h3>
+                                <ul className="space-y-5 text-left">
+                                    <li className="flex items-start gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-yellow-500">
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-slate-900 text-sm drop-shadow-sm">Fast Processing</h4>
+                                            <p className="text-slate-800 font-medium text-xs mt-1">Request documents online without queuing up at the office.</p>
+                                        </div>
+                                    </li>
+                                    <li className="flex items-start gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-green-500">
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-slate-900 text-sm drop-shadow-sm">Real-time Tracking</h4>
+                                            <p className="text-slate-800 font-medium text-xs mt-1">Know exactly when your requests are ready for pickup.</p>
+                                        </div>
+                                    </li>
+                                    <li className="flex items-start gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-blue-500">
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" /></svg>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-slate-900 text-sm drop-shadow-sm">Direct Inquiries</h4>
+                                            <p className="text-slate-800 font-medium text-xs mt-1">Chat directly with the Registrar's Office staff for concerns.</p>
+                                        </div>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -245,172 +292,172 @@ export default function Welcome({ auth, announcements = [], faqs = [] }) {
                 </section>
 
                 {/* About Section */}
-<section id="about" className="relative py-24 px-6 md:px-12 bg-white scroll-mt-20 overflow-hidden">
-    <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-yellow-100/50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 -translate-y-1/3 -translate-x-1/4 -z-10"></div>
-    
-    <div className="max-w-7xl mx-auto relative z-10">
-        <div className="flex flex-col items-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs font-black uppercase tracking-widest mb-4 shadow-sm">
-                <svg className="w-4 h-4 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" /></svg>
-                Our College
-            </div>
-            <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight text-center">About College of Education</h2>
-        </div>
+                <section id="about" className="relative py-24 px-6 md:px-12 bg-white scroll-mt-20 overflow-hidden">
+                    <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-yellow-100/50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 -translate-y-1/3 -translate-x-1/4 -z-10"></div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div className="bg-gradient-to-br from-yellow-50 to-orange-50/20 p-10 rounded-[2rem] border border-yellow-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-center relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform duration-700">
-                    <svg className="w-48 h-48 text-yellow-700" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z" /></svg>
-                </div>
-                <h3 className="text-3xl font-black text-yellow-800 mb-6 flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-yellow-100 text-yellow-700 flex items-center justify-center shrink-0">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
-                    </div>
-                    A Center of Excellence
-                </h3>
-                <p className="text-slate-600 text-base leading-relaxed mb-4 font-medium relative z-10">
-                    Since 1950, the College of Education (CED) has been a leading institution in training highly qualified educators and professionals. Officially established in 1964, it has since expanded its programs to meet the evolving needs of the Philippine education system.
-                </p>
-                <p className="text-slate-600 text-base leading-relaxed font-medium relative z-10">
-                    Today, CED is proudly recognized as a <strong className="text-yellow-700 bg-yellow-100/50 px-1 rounded">Center of Excellence (COE)</strong> in Teacher Education, continuing to uphold academic excellence, research, and community engagement.
-                </p>
-                <div className="mt-8 pt-8 border-t border-yellow-200/60 flex flex-col sm:flex-row gap-6 relative z-10">
-                    <div className="flex items-center gap-4 bg-white/60 p-4 rounded-xl border border-yellow-50 shadow-sm flex-1">
-                        <div className="w-10 h-10 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    <div className="max-w-7xl mx-auto relative z-10">
+                        <div className="flex flex-col items-center mb-16">
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs font-black uppercase tracking-widest mb-4 shadow-sm">
+                                <svg className="w-4 h-4 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" /></svg>
+                                Our College
+                            </div>
+                            <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight text-center">About College of Education</h2>
                         </div>
-                        <div>
-                            <p className="text-[10px] text-yellow-600 uppercase tracking-widest font-black mb-0.5">Dean</p>
-                            <p className="text-sm font-bold text-slate-800">Dr. Florante P. Ibarra</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-4 bg-white/60 p-4 rounded-xl border border-yellow-50 shadow-sm flex-1">
-                        <div className="w-10 h-10 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                        </div>
-                        <div>
-                            <p className="text-[10px] text-yellow-600 uppercase tracking-widest font-black mb-0.5">Registrar</p>
-                            <p className="text-sm font-bold text-slate-800">Dr. Abegail V. Dela Fuente</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div className="bg-white p-10 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-center relative overflow-hidden group">
-                <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-yellow-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-700"></div>
-                <h3 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-4 relative z-10">
-                    <div className="w-12 h-12 bg-yellow-100 rounded-2xl flex items-center justify-center text-yellow-600 shrink-0">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                    </div>
-                    Goals of the College
-                </h3>
-                <ul className="space-y-6 text-slate-600 text-base font-medium relative z-10">
-                    <li className="flex gap-4 items-start group/item">
-                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-200 group-hover/item:bg-yellow-400 group-hover/item:border-yellow-400 transition-colors duration-300 shadow-sm">
-                            <svg className="w-4 h-4 text-slate-400 group-hover/item:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                        </div>
-                        <span className="pt-1">Train future educators across all levels of education.</span>
-                    </li>
-                    <li className="flex gap-4 items-start group/item">
-                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-200 group-hover/item:bg-yellow-400 group-hover/item:border-yellow-400 transition-colors duration-300 shadow-sm">
-                            <svg className="w-4 h-4 text-slate-400 group-hover/item:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                        </div>
-                        <span className="pt-1">Provide quality teacher education responsive to national needs.</span>
-                    </li>
-                    <li className="flex gap-4 items-start group/item">
-                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-200 group-hover/item:bg-yellow-400 group-hover/item:border-yellow-400 transition-colors duration-300 shadow-sm">
-                            <svg className="w-4 h-4 text-slate-400 group-hover/item:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                        </div>
-                        <span className="pt-1">Promote research, instruction, and development.</span>
-                    </li>
-                    <li className="flex gap-4 items-start group/item">
-                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-200 group-hover/item:bg-yellow-400 group-hover/item:border-yellow-400 transition-colors duration-300 shadow-sm">
-                            <svg className="w-4 h-4 text-slate-400 group-hover/item:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                        </div>
-                        <span className="pt-1">Disseminate knowledge through extension and networking.</span>
-                    </li>
-                </ul>
-            </div>
-        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                            <div className="bg-gradient-to-br from-yellow-50 to-orange-50/20 p-10 rounded-[2rem] border border-yellow-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-center relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform duration-700">
+                                    <svg className="w-48 h-48 text-yellow-700" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z" /></svg>
+                                </div>
+                                <h3 className="text-3xl font-black text-yellow-800 mb-6 flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-2xl bg-yellow-100 text-yellow-700 flex items-center justify-center shrink-0">
+                                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                                    </div>
+                                    A Center of Excellence
+                                </h3>
+                                <p className="text-slate-600 text-base leading-relaxed mb-4 font-medium relative z-10">
+                                    Since 1950, the College of Education (CED) has been a leading institution in training highly qualified educators and professionals. Officially established in 1964, it has since expanded its programs to meet the evolving needs of the Philippine education system.
+                                </p>
+                                <p className="text-slate-600 text-base leading-relaxed font-medium relative z-10">
+                                    Today, CED is proudly recognized as a <strong className="text-yellow-700 bg-yellow-100/50 px-1 rounded">Center of Excellence (COE)</strong> in Teacher Education, continuing to uphold academic excellence, research, and community engagement.
+                                </p>
+                                <div className="mt-8 pt-8 border-t border-yellow-200/60 flex flex-col sm:flex-row gap-6 relative z-10">
+                                    <div className="flex items-center gap-4 bg-white/60 p-4 rounded-xl border border-yellow-50 shadow-sm flex-1">
+                                        <div className="w-10 h-10 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center">
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-yellow-600 uppercase tracking-widest font-black mb-0.5">Dean</p>
+                                            <p className="text-sm font-bold text-slate-800">Dr. Florante P. Ibarra</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 bg-white/60 p-4 rounded-xl border border-yellow-50 shadow-sm flex-1">
+                                        <div className="w-10 h-10 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center">
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-yellow-600 uppercase tracking-widest font-black mb-0.5">Registrar</p>
+                                            <p className="text-sm font-bold text-slate-800">Dr. Abegail V. Dela Fuente</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white p-8 sm:p-10 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-center relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-orange-400 rounded-full mix-blend-multiply filter blur-[80px] opacity-10 -translate-y-1/2 translate-x-1/3 group-hover:opacity-20 transition-opacity duration-700"></div>
-                
-                <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3 relative z-10">
-                    <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0 text-orange-600">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                    </div>
-                    Academic Departments & Heads
-                </h3>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-orange-300 transition-colors shadow-sm">
-                        <span className="text-xs font-black text-orange-600 tracking-wider">DEPP</span>
-                        <p className="text-[11px] text-slate-500 font-medium mb-1.5 uppercase leading-tight">Education Policy & Practice</p>
-                        <p className="text-sm font-bold text-slate-900">Dr. Jennifer V. Fajanela</p>
-                    </div>
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-orange-300 transition-colors shadow-sm">
-                        <span className="text-xs font-black text-orange-600 tracking-wider">DECEE</span>
-                        <p className="text-[11px] text-slate-500 font-medium mb-1.5 uppercase leading-tight">Early Childhood & Elem.</p>
-                        <p className="text-sm font-bold text-slate-900">Dr. Verjun J. Dilla</p>
-                    </div>
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-orange-300 transition-colors shadow-sm">
-                        <span className="text-xs font-black text-orange-600 tracking-wider">DLCAED</span>
-                        <p className="text-[11px] text-slate-500 font-medium mb-1.5 uppercase leading-tight">Language, Culture & Arts</p>
-                        <p className="text-sm font-bold text-slate-900">Dr. Myla L. Santos</p>
-                    </div>
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-orange-300 transition-colors shadow-sm">
-                        <span className="text-xs font-black text-orange-600 tracking-wider">DSED</span>
-                        <p className="text-[11px] text-slate-500 font-medium mb-1.5 uppercase leading-tight">Science Education</p>
-                        <p className="text-sm font-bold text-slate-900">Dr. Edwin D. Ibañez</p>
-                    </div>
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-orange-300 transition-colors shadow-sm">
-                        <span className="text-xs font-black text-orange-600 tracking-wider">DTLLSED</span>
-                        <p className="text-[11px] text-slate-500 font-medium mb-1.5 uppercase leading-tight">Tech, Livelihood & Skills</p>
-                        <p className="text-sm font-bold text-slate-900">Dr. Ma. Catalina D. Cadiz</p>
-                    </div>
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-orange-300 transition-colors shadow-sm">
-                        <span className="text-xs font-black text-orange-600 tracking-wider">DSPED</span>
-                        <p className="text-[11px] text-slate-500 font-medium mb-1.5 uppercase leading-tight">Sports & Physical Ed.</p>
-                        <p className="text-sm font-bold text-slate-900">Dr. Jennifer T. De Jesus</p>
-                    </div>
-                </div>
-            </div>
+                            <div className="bg-white p-10 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-center relative overflow-hidden group">
+                                <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-yellow-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 group-hover:opacity-20 transition-opacity duration-700"></div>
+                                <h3 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-4 relative z-10">
+                                    <div className="w-12 h-12 bg-yellow-100 rounded-2xl flex items-center justify-center text-yellow-600 shrink-0">
+                                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        </svg>
+                                    </div>
+                                    Goals of the College
+                                </h3>
+                                <ul className="space-y-6 text-slate-600 text-base font-medium relative z-10">
+                                    <li className="flex gap-4 items-start group/item">
+                                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-200 group-hover/item:bg-yellow-400 group-hover/item:border-yellow-400 transition-colors duration-300 shadow-sm">
+                                            <svg className="w-4 h-4 text-slate-400 group-hover/item:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        </div>
+                                        <span className="pt-1">Train future educators across all levels of education.</span>
+                                    </li>
+                                    <li className="flex gap-4 items-start group/item">
+                                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-200 group-hover/item:bg-yellow-400 group-hover/item:border-yellow-400 transition-colors duration-300 shadow-sm">
+                                            <svg className="w-4 h-4 text-slate-400 group-hover/item:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        </div>
+                                        <span className="pt-1">Provide quality teacher education responsive to national needs.</span>
+                                    </li>
+                                    <li className="flex gap-4 items-start group/item">
+                                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-200 group-hover/item:bg-yellow-400 group-hover/item:border-yellow-400 transition-colors duration-300 shadow-sm">
+                                            <svg className="w-4 h-4 text-slate-400 group-hover/item:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        </div>
+                                        <span className="pt-1">Promote research, instruction, and development.</span>
+                                    </li>
+                                    <li className="flex gap-4 items-start group/item">
+                                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-200 group-hover/item:bg-yellow-400 group-hover/item:border-yellow-400 transition-colors duration-300 shadow-sm">
+                                            <svg className="w-4 h-4 text-slate-400 group-hover/item:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                        </div>
+                                        <span className="pt-1">Disseminate knowledge through extension and networking.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
 
-            <div className="bg-white p-8 sm:p-10 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-center relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 opacity-5 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform duration-700">
-                    <svg className="w-40 h-40 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18s-.41-.06-.57-.18l-7.9-4.44A.991.991 0 013 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18s.41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L5.46 7.82l6.54 3.67 6.54-3.67L12 4.15zM5 14.91l6 3.38v-4.98l-6-3.37v4.97zm14 0v-4.97l-6 3.37v4.98l6-3.38z" /></svg>
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-4 relative z-10">
-                    <div className="w-12 h-12 bg-amber-50 rounded-2xl border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="bg-white p-8 sm:p-10 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-center relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-orange-400 rounded-full mix-blend-multiply filter blur-[80px] opacity-10 -translate-y-1/2 translate-x-1/3 group-hover:opacity-20 transition-opacity duration-700"></div>
+
+                                <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3 relative z-10">
+                                    <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0 text-orange-600">
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                                    </div>
+                                    Academic Departments & Heads
+                                </h3>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-orange-300 transition-colors shadow-sm">
+                                        <span className="text-xs font-black text-orange-600 tracking-wider">DEPP</span>
+                                        <p className="text-[11px] text-slate-500 font-medium mb-1.5 uppercase leading-tight">Education Policy & Practice</p>
+                                        <p className="text-sm font-bold text-slate-900">Dr. Jennifer V. Fajanela</p>
+                                    </div>
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-orange-300 transition-colors shadow-sm">
+                                        <span className="text-xs font-black text-orange-600 tracking-wider">DECEE</span>
+                                        <p className="text-[11px] text-slate-500 font-medium mb-1.5 uppercase leading-tight">Early Childhood & Elem.</p>
+                                        <p className="text-sm font-bold text-slate-900">Dr. Verjun J. Dilla</p>
+                                    </div>
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-orange-300 transition-colors shadow-sm">
+                                        <span className="text-xs font-black text-orange-600 tracking-wider">DLCAED</span>
+                                        <p className="text-[11px] text-slate-500 font-medium mb-1.5 uppercase leading-tight">Language, Culture & Arts</p>
+                                        <p className="text-sm font-bold text-slate-900">Dr. Myla L. Santos</p>
+                                    </div>
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-orange-300 transition-colors shadow-sm">
+                                        <span className="text-xs font-black text-orange-600 tracking-wider">DSED</span>
+                                        <p className="text-[11px] text-slate-500 font-medium mb-1.5 uppercase leading-tight">Science Education</p>
+                                        <p className="text-sm font-bold text-slate-900">Dr. Edwin D. Ibañez</p>
+                                    </div>
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-orange-300 transition-colors shadow-sm">
+                                        <span className="text-xs font-black text-orange-600 tracking-wider">DTLLSED</span>
+                                        <p className="text-[11px] text-slate-500 font-medium mb-1.5 uppercase leading-tight">Tech, Livelihood & Skills</p>
+                                        <p className="text-sm font-bold text-slate-900">Dr. Ma. Catalina D. Cadiz</p>
+                                    </div>
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-orange-300 transition-colors shadow-sm">
+                                        <span className="text-xs font-black text-orange-600 tracking-wider">DSPED</span>
+                                        <p className="text-[11px] text-slate-500 font-medium mb-1.5 uppercase leading-tight">Sports & Physical Ed.</p>
+                                        <p className="text-sm font-bold text-slate-900">Dr. Jennifer T. De Jesus</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-8 sm:p-10 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-center relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-8 opacity-5 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform duration-700">
+                                    <svg className="w-40 h-40 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18s-.41-.06-.57-.18l-7.9-4.44A.991.991 0 013 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18s.41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9zM12 4.15L5.46 7.82l6.54 3.67 6.54-3.67L12 4.15zM5 14.91l6 3.38v-4.98l-6-3.37v4.97zm14 0v-4.97l-6 3.37v4.98l6-3.38z" /></svg>
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-4 relative z-10">
+                                    <div className="w-12 h-12 bg-amber-50 rounded-2xl border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                                    </div>
+                                    CLSU Laboratory for Teaching and Learning (CLTL)
+                                </h3>
+                                <p className="text-slate-600 text-base leading-relaxed mb-6 font-medium relative z-10">
+                                    CED houses the CLTL which serves as the premier venue for teaching practice, research, and innovation in education. It includes two specialized schools:
+                                </p>
+                                <ul className="space-y-4 relative z-10">
+                                    <li className="flex items-center gap-4 bg-amber-50/50 p-4 rounded-xl border border-amber-100/50">
+                                        <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                                            <span className="font-black text-sm">ASTS</span>
+                                        </div>
+                                        <span className="text-sm font-bold text-slate-700">Agricultural Science & Technology School</span>
+                                    </li>
+                                    <li className="flex items-center gap-4 bg-amber-50/50 p-4 rounded-xl border border-amber-100/50">
+                                        <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                                            <span className="font-black text-sm">USHS</span>
+                                        </div>
+                                        <span className="text-sm font-bold text-slate-700">University Science High School</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    CLSU Laboratory for Teaching and Learning (CLTL)
-                </h3>
-                <p className="text-slate-600 text-base leading-relaxed mb-6 font-medium relative z-10">
-                    CED houses the CLTL which serves as the premier venue for teaching practice, research, and innovation in education. It includes two specialized schools:
-                </p>
-                <ul className="space-y-4 relative z-10">
-                    <li className="flex items-center gap-4 bg-amber-50/50 p-4 rounded-xl border border-amber-100/50">
-                        <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                            <span className="font-black text-sm">ASTS</span>
-                        </div>
-                        <span className="text-sm font-bold text-slate-700">Agricultural Science & Technology School</span>
-                    </li>
-                    <li className="flex items-center gap-4 bg-amber-50/50 p-4 rounded-xl border border-amber-100/50">
-                        <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                            <span className="font-black text-sm">USHS</span>
-                        </div>
-                        <span className="text-sm font-bold text-slate-700">University Science High School</span>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</section>
+                </section>
 
                 {/* E-Services Section */}
                 <section id="services" className="relative py-24 px-6 md:px-12 bg-white scroll-mt-20 overflow-hidden">

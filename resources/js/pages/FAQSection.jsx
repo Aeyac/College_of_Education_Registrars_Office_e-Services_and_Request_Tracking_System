@@ -10,8 +10,8 @@ export default function FAQSection({ faqs = [] }) {
         const grouped = [];
         const indexByCategory = {};
 
-        const filtered = faqs.filter(faq => 
-            (faq.question || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+        const filtered = faqs.filter(faq =>
+            (faq.question || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
             (faq.answer || '').toLowerCase().includes(searchQuery.toLowerCase())
         );
 
@@ -42,7 +42,7 @@ export default function FAQSection({ faqs = [] }) {
                     <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Frequently Asked Questions</h2>
                 </div>
                 <p className="text-slate-500 text-center text-sm mb-6">Comprehensive guide on academic policies, enrollment, and records.</p>
-                
+
                 <div className="relative w-full max-w-lg">
                     <input
                         type="text"
