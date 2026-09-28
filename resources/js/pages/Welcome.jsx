@@ -68,8 +68,12 @@ export default function Welcome({ auth, announcements = [], faqs = [] }) {
             acronym: "BCAEd",
             desc: "Prepares educators who are equipped to teach culture and arts, preserving cultural heritage and fostering artistic expression.",
             icon: (
-                <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                <svg className="w-8 h-8 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22a1 1 0 0 1 0-20 10 10 0 0 1 10 10c0 1.1-.9 2-2 2h-2.1a2 2 0 0 0-1.8 2.8l.3.7a2 2 0 0 1-1.8 2.5Z"/>
+                    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
                 </svg>
             ),
             majors: []
@@ -80,7 +84,7 @@ export default function Welcome({ auth, announcements = [], faqs = [] }) {
             desc: "Designed to prepare educators with the foundational knowledge and skills for teaching young children, focusing on developmental and pedagogical principles.",
             icon: (
                 <svg className="w-8 h-8 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 6.087c0-.355.186-.676.401-.959.221-.29.349-.634.349-1.003 0-1.036-1.007-1.875-2.25-1.875s-2.25.84-2.25 1.875c0 .369.128.713.349 1.003.215.283.401.604.401.959v0a.64.64 0 01-.657.643 48.39 48.39 0 01-4.163-.3c.186 1.613.293 3.25.315 4.907a.656.656 0 01-.658.663v0c-.355 0-.676-.186-.959-.401a1.647 1.647 0 00-1.003-.349c-1.036 0-1.875 1.007-1.875 2.25s.84 2.25 1.875 2.25c.369 0 .713-.128 1.003-.349.283-.215.604-.401.959-.401v0c.31 0 .575.27.592.58.106 1.95.34 3.844.693 5.666a.652.652 0 00.655.51h0c.355 0 .676.186.959.401.29.221.634.349 1.003.349 1.036 0 1.875-1.007 1.875-2.25s-1.875-2.25-1.875-2.25c0-.369-.128-.713-.349-1.003-.215-.283-.401-.604-.401-.959v0c0-.36.294-.653.653-.653a48.474 48.474 0 004.166-.307c-.187-1.615-.294-3.254-.316-4.912a.655.655 0 01.658-.662v0c.355 0 .676.186.959.401.29.221.634.349 1.003.349 1.036 0 1.875-1.007 1.875-2.25s-.84-2.25-1.875-2.25c-.369 0-.713.128-1.003.349-.283.215-.604.401-.959.401v0a.653.653 0 01-.592-.58 48.336 48.336 0 00-.693-5.666.652.652 0 00-.655-.51h0z" />
                 </svg>
             ),
             majors: []
@@ -102,7 +106,7 @@ export default function Welcome({ auth, announcements = [], faqs = [] }) {
             desc: "Prepares educators to teach physical education, promoting physical fitness, wellness, and healthy lifestyles through movement and sports.",
             icon: (
                 <svg className="w-8 h-8 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 6H5a2 2 0 00-2 2v8a2 2 0 002 2h3 M16 6h3a2 2 0 012 2v8a2 2 0 01-2 2h-3 M8 12h8 M8 6v12 M16 6v12" />
                 </svg>
             ),
             majors: []
@@ -113,7 +117,7 @@ export default function Welcome({ auth, announcements = [], faqs = [] }) {
             desc: "Prepares secondary educators who master their disciplines, integrating innovative teaching strategies to guide adolescents towards academic achievement and personal growth.",
             icon: (
                 <svg className="w-8 h-8 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
                 </svg>
             ),
             majors: ["English", "Filipino", "Mathematics", "Science", "Social Studies", "Values Education"]
@@ -124,8 +128,7 @@ export default function Welcome({ auth, announcements = [], faqs = [] }) {
             desc: "Focuses on equipping educators with skills in technical-vocational tracks, preparing students for practical life skills and technical careers.",
             icon: (
                 <svg className="w-8 h-8 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75a4.5 4.5 0 01-4.884 4.484c-1.076-.091-2.264.071-2.95.904l-7.152 8.684a2.548 2.548 0 11-3.586-3.586l8.684-7.152c.833-.686.995-1.874.904-2.95a4.5 4.5 0 016.336-4.486l-3.276 3.276a3.004 3.004 0 002.25 2.25l3.274-3.274z" />
                 </svg>
             ),
             majors: ["Agri-Fisheries and Arts", "Home Economics", "Industrial Arts"]
@@ -516,7 +519,7 @@ export default function Welcome({ auth, announcements = [], faqs = [] }) {
                                             className="w-full p-8 flex items-start gap-5 text-left focus:outline-none"
                                             onClick={() => setOpenCourse(isOpen ? null : index)}
                                         >
-                                            <div className={`p-4 rounded-2xl shrink-0 transition-all duration-500 shadow-inner ${isOpen ? 'bg-gradient-to-br from-yellow-100 to-yellow-50' : 'bg-slate-50 group-hover:bg-slate-100'}`}>
+                                            <div className={`p-4 rounded-2xl shrink-0 transition-all duration-500 shadow-inner ${isOpen ? 'bg-gradient-to-br from-yellow-100 to-black-50' : 'bg-slate-50 group-hover:bg-slate-100'}`}>
                                                 {course.icon}
                                             </div>
                                             <div className="flex-grow pt-1.5">
