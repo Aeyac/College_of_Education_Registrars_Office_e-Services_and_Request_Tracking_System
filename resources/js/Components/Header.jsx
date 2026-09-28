@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 
 // Nilipat natin sa labas para ma-access ng scroll spy
@@ -55,6 +55,9 @@ export default function Header() {
                 block: 'start'
             });
             window.history.pushState(null, '', href);
+        } else {
+            // Kung wala sa current page yung section (like nasa login/forgot password page), i-redirect sa home page
+            router.visit('/' + href);
         }
     };
 
