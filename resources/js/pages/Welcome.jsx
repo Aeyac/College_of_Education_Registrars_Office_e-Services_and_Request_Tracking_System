@@ -139,15 +139,15 @@ export default function Welcome({ auth, announcements = [], faqs = [] }) {
 
             <main className="flex-grow pt-20">
                 {/* Hero Section */}
-                <section id="home" className="relative min-h-[85vh] flex items-center pt-24 pb-20 px-6 md:px-12 w-full overflow-hidden border-b border-slate-200 scroll-mt-24">
+                <section id="home" className="relative min-h-[95vh] md:min-h-screen flex items-center pt-24 pb-20 px-6 md:px-12 w-full overflow-hidden border-b border-slate-200 scroll-mt-24">
                     {/* Background Layer */}
                     <div className="absolute inset-0 z-0 pointer-events-none bg-slate-50">
-                        {/* Image Container - restricted height on mobile to prevent extreme zooming */}
-                        <div className="absolute top-0 left-0 w-full h-[65%] md:h-full">
+                        {/* Image Container */}
+                        <div className="absolute top-0 left-0 w-full h-full">
                             <img
-                                src="/images/cedbuilding.jpg"
+                                src="/images/cedbuilding.png"
                                 alt="CED Building Background"
-                                className="w-full h-full object-cover object-center md:object-right-top"
+                                className="w-full h-full object-cover object-bottom md:object-[center_75%]"
                             />
                             {/* Mobile Gradient: Fades smoothly into the slate-50 background below */}
                             <div className="absolute inset-0 bg-gradient-to-b from-slate-50/95 via-slate-50/70 to-slate-50 md:hidden z-10"></div>
