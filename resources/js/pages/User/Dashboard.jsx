@@ -148,12 +148,18 @@ export default function UserDashboard({ auth, requests = [], stats, services = [
                                 <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Announcements</h2>
                                 <Link href="/user/announcements" className="text-[11px] font-bold text-yellow-600 hover:text-yellow-700 transition-colors shrink-0">View All</Link>
                             </div>
-
-                            <div className="space-y-3">
+                            <div className="space-y-3 min-w-0">
                                 {announcements?.length > 0 ? announcements.map((ann) => (
-                                    <div key={ann.id} className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col gap-1 hover:border-yellow-300 hover:shadow-md transition-all cursor-pointer min-w-0" onClick={() => router.visit('/user/announcements')}>
-                                        <h3 className="font-bold text-sm text-slate-900 line-clamp-1">{ann.title}</h3>
-                                        <p className="text-xs text-slate-500 line-clamp-2">{ann.content}</p>
+                                    <div
+                                        key={ann.id}
+                                        className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col gap-1 hover:border-yellow-300 hover:shadow-md transition-all cursor-pointer min-w-0 overflow-hidden"
+                                        onClick={() => router.visit('/user/announcements')}
+                                    >
+                                        <h3 className="font-bold text-sm text-slate-900 truncate">{ann.title}</h3>
+                                        <div
+                                            className="text-xs text-slate-500 line-clamp-2 break-words min-w-0 overflow-hidden [&_p]:inline [&_p]:m-0"
+                                            dangerouslySetInnerHTML={{ __html: ann.content }}
+                                        />
                                         <span className="text-[10px] font-medium text-slate-400 mt-1">{ann.date}</span>
                                     </div>
                                 )) : (

@@ -1,11 +1,13 @@
 import { useForm } from '@inertiajs/react';
+import { useEffect } from 'react';
 import Swal from 'sweetalert2';
 
-const INTERNSHIP_SERVICE_CODE = 'internship_certificate',
-    SUCCESS_ICON = '<svg class="w-12 h-12 text-emerald-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>',
-    ERROR_ICON = '<svg class="w-12 h-12 text-red-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
-    inputClass = 'w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none transition-all',
-    labelClass = 'block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2';
+const INTERNSHIP_SERVICE_CODE = 'internship_certificate';
+const SUCCESS_ICON = '<svg class="w-12 h-12 text-emerald-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+const ERROR_ICON = '<svg class="w-12 h-12 text-red-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>';
+
+const inputClass = 'w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all';
+const labelClass = 'block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5';
 
 const showAlert = (title, text, iconHtml) => Swal.mixin({
     customClass: {
@@ -13,7 +15,8 @@ const showAlert = (title, text, iconHtml) => Swal.mixin({
         title: 'text-slate-900 font-extrabold text-2xl pt-4',
         htmlContainer: 'text-slate-500 text-sm font-medium',
         icon: 'border-0 scale-125 mt-6'
-    }, buttonsStyling: false
+    },
+    buttonsStyling: false
 }).fire({ title, text, iconHtml, timer: 2500, showConfirmButton: false });
 
 const toLocalDateString = d => {
@@ -29,18 +32,52 @@ const minClaimingDate = () => {
 };
 
 function FieldError({ message }) {
-    return message ? <p className="text-xs text-red-600 mt-1.5">{message}</p> : null;
+    if (!message) return null;
+    return (
+        <p className="text-xs font-medium text-rose-600 mt-1.5 flex items-center gap-1">
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {message}
+        </p>
+    );
+}
+
+function SectionBadge({ number, title, subtitle }) {
+    return (
+        <div className="flex items-center gap-2.5 pb-2">
+            <div className="w-6 h-6 rounded-lg bg-yellow-400 text-slate-900 flex items-center justify-center text-xs font-black shrink-0 shadow-sm">
+                {number}
+            </div>
+            <div>
+                <h4 className="font-bold text-slate-900 text-sm leading-tight">{title}</h4>
+                {subtitle && <p className="text-[11px] text-slate-500 font-medium">{subtitle}</p>}
+            </div>
+        </div>
+    );
 }
 
 export default function RequestDocumentModal({ services = [], onClose }) {
     const form = useForm({
-        service_id: '', delivery_mode: '', purpose: '', preferred_claiming_date: '',
-        internship_school_or_agency: '', grade_level_handled: '', semester: '',
-        school_year: '', requirement_files: []
+        service_id: '',
+        delivery_mode: '',
+        purpose: '',
+        preferred_claiming_date: '',
+        internship_school_or_agency: '',
+        grade_level_handled: '',
+        semester: '',
+        school_year: '',
+        requirement_files: []
     });
 
-    const selectedService = services.find(s => String(s.id) === String(form.data.service_id)),
-        isInternship = selectedService?.code === INTERNSHIP_SERVICE_CODE;
+    useEffect(() => {
+        const onKey = e => e.key === 'Escape' && onClose();
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [onClose]);
+
+    const selectedService = services.find(s => String(s.id) === String(form.data.service_id));
+    const isInternship = selectedService?.code === INTERNSHIP_SERVICE_CODE;
 
     const getProofRequirement = service => {
         if (!service) return null;
@@ -48,11 +85,11 @@ export default function RequestDocumentModal({ services = [], onClose }) {
             case 'internship_certificate':
                 return ['Required Document', 'Diploma', 'Upload a clear copy of your diploma.'];
             case 'copc':
-                return ['Required Documents', 'Proof of Graduate — TOR or Diploma', 'Upload your proof of graduation, either your TOR or diploma.'];
+                return ['Required Documents', 'Proof of Graduate — TOR or Diploma', 'Upload your proof of graduation (TOR or diploma).'];
             case 'golden_grain':
                 return ['Required Document', 'Receipt', 'Upload a clear copy of the required receipt.'];
             default:
-                return ['Supporting Documents', 'None specified', 'Attach any supporting document requested for this service, if applicable.'];
+                return ['Supporting Documents', 'Optional / As Requested', 'Attach any supporting document required for this service, if applicable.'];
         }
     };
 
@@ -61,13 +98,17 @@ export default function RequestDocumentModal({ services = [], onClose }) {
     const handleServiceChange = e => form.setData({
         ...form.data,
         service_id: e.target.value,
-        internship_school_or_agency: '', grade_level_handled: '',
-        semester: '', school_year: '', requirement_files: []
+        internship_school_or_agency: '',
+        grade_level_handled: '',
+        semester: '',
+        school_year: '',
+        requirement_files: []
     });
 
     const submitRequest = e => {
         e.preventDefault();
-        const minDate = minClaimingDate(), chosenDate = form.data.preferred_claiming_date;
+        const minDate = minClaimingDate();
+        const chosenDate = form.data.preferred_claiming_date;
 
         if (chosenDate && chosenDate < minDate) {
             form.setError('preferred_claiming_date', `Preferred claiming date must be on or after ${minDate}.`);
@@ -75,7 +116,8 @@ export default function RequestDocumentModal({ services = [], onClose }) {
         }
 
         form.post('/user/requests', {
-            forceFormData: true, preserveScroll: true,
+            forceFormData: true,
+            preserveScroll: true,
             onSuccess: () => {
                 onClose();
                 showAlert('Request Submitted!', 'Your document request has been successfully sent.', SUCCESS_ICON);
@@ -85,49 +127,59 @@ export default function RequestDocumentModal({ services = [], onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4">
-            <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
-                <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 bg-white shrink-0">
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="request-modal-title"
+                onClick={e => e.stopPropagation()}
+                className="bg-white w-full sm:max-w-xl rounded-t-[2.5rem] sm:rounded-[2rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-100"
+            >
+                {/* Header */}
+                <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 bg-slate-50/50 shrink-0">
                     <div>
-                        <h3 className="font-extrabold text-slate-900 text-xl">Request Document</h3>
-                        <p className="text-xs text-slate-500 mt-1">Complete the required information below.</p>
+                        <h3 id="request-modal-title" className="font-extrabold text-slate-900 text-lg sm:text-xl tracking-tight">Request Document</h3>
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">Fill out the details below to submit your request.</p>
                     </div>
-                    <button type="button" onClick={onClose} aria-label="Close modal"
-                        className="p-2.5 bg-slate-100 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Close modal"
+                        className="p-2.5 bg-white rounded-full text-slate-400 hover:text-slate-700 border border-slate-200 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 transition-all"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
 
-                <form onSubmit={submitRequest} className="px-6 py-5 space-y-6 overflow-y-auto custom-scrollbar">
+                {/* Form Content */}
+                <form id="request-doc-form" onSubmit={submitRequest} className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+                    {/* Step 1: Request Details */}
                     <section className="space-y-4">
-                        <div className="flex items-center gap-1">
-                            <div className="w-7 h-7 text-yellow-700 flex items-center justify-center text-s font-extrabold">1.</div>
-                            <h4 className="font-bold text-slate-800">Request Details</h4>
-                        </div>
+                        <SectionBadge number="1" title="Request Details" />
 
                         <div>
                             <label className={labelClass}>Document Type</label>
                             <select value={form.data.service_id} onChange={handleServiceChange} className={inputClass} required>
-                                <option value="" disabled>Select Document...</option>
+                                <option value="" disabled>Select document type...</option>
                                 {services.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                             </select>
                             <FieldError message={form.errors.service_id} />
                         </div>
 
                         {proof && (
-                            <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4">
-                                <div className="flex gap-3">
-                                    <div className="w-9 h-9 shrink-0 rounded-xl bg-yellow-400 text-slate-900 flex items-center justify-center">
-                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <div className="rounded-2xl border border-amber-200/80 bg-amber-50/60 p-4">
+                                <div className="flex gap-3 items-start">
+                                    <div className="w-8 h-8 shrink-0 rounded-xl bg-amber-400/20 text-amber-900 flex items-center justify-center mt-0.5">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-extrabold uppercase tracking-wider text-yellow-800">{proof[0]}</p>
-                                        <p className="mt-1 text-base font-extrabold text-slate-900">{proof[1]}</p>
-                                        <p className="mt-1 text-xs leading-relaxed text-slate-600">{proof[2]}</p>
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-200/50 px-2 py-0.5 rounded-full">{proof[0]}</span>
+                                        <p className="mt-1 text-sm font-bold text-slate-900">{proof[1]}</p>
+                                        <p className="mt-0.5 text-xs text-slate-600 leading-relaxed font-medium">{proof[2]}</p>
                                     </div>
                                 </div>
                             </div>
@@ -135,136 +187,174 @@ export default function RequestDocumentModal({ services = [], onClose }) {
 
                         <div>
                             <label className={labelClass}>Delivery Mode</label>
-                            <select value={form.data.delivery_mode}
+                            <select
+                                value={form.data.delivery_mode}
                                 onChange={e => form.setData('delivery_mode', e.target.value)}
-                                className={inputClass} required>
-                                <option value="" disabled>Select Delivery Mode...</option>
-                                <option value="soft_copy">Soft Copy</option>
-                                <option value="hard_copy">Hard Copy</option>
+                                className={inputClass}
+                                required
+                            >
+                                <option value="" disabled>Select delivery mode...</option>
+                                <option value="soft_copy">Soft Copy (Digital)</option>
+                                <option value="hard_copy">Hard Copy (Physical Pick-up)</option>
                             </select>
                             <FieldError message={form.errors.delivery_mode} />
 
                             {form.data.delivery_mode === 'hard_copy' && (
-                                <div className="mt-3 p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex gap-3 items-start">
-                                    <svg className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <div className="mt-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex gap-3 items-start">
+                                    <svg className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <p className="text-xs leading-relaxed text-amber-800">
-                                        <span className="font-bold">For authorized claimants:</span> bring an <strong>Authorization Letter</strong> and a <strong>copy of the claimant's valid ID</strong>.
+                                    <p className="text-xs leading-relaxed text-slate-600 font-medium">
+                                        <strong className="text-slate-900">For authorized claimants:</strong> Please present an <strong>Authorization Letter</strong> along with a copy of the <strong>claimant's valid ID</strong> upon pickup.
                                     </p>
                                 </div>
                             )}
                         </div>
                     </section>
 
+                    {/* Step 2 (Conditional): Internship Details */}
                     {isInternship && (
-                        <section className="space-y-4 rounded-2xl bg-slate-50 border border-slate-200 p-4">
-                            <div className="flex items-center gap-2 pb-3 border-b border-slate-200">
-                                <div className="w-7 h-7 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-extrabold">2</div>
-                                <div>
-                                    <h4 className="font-bold text-slate-800">Internship Details</h4>
-                                    <p className="text-[11px] text-slate-500">Additional information for this document.</p>
-                                </div>
-                            </div>
+                        <section className="space-y-4 rounded-2xl bg-slate-50/80 border border-slate-200 p-4">
+                            <SectionBadge number="2" title="Internship Details" subtitle="Additional information required for this certificate." />
 
                             <div>
                                 <label className={labelClass}>School / Agency</label>
-                                <input type="text" value={form.data.internship_school_or_agency}
+                                <input
+                                    type="text"
+                                    placeholder="e.g. DepEd Central Office"
+                                    value={form.data.internship_school_or_agency}
                                     onChange={e => form.setData('internship_school_or_agency', e.target.value)}
-                                    className={inputClass} required />
+                                    className={inputClass}
+                                    required
+                                />
                                 <FieldError message={form.errors.internship_school_or_agency} />
                             </div>
 
                             <div>
-                                <label className={labelClass}>Grade Level Handled <span className="normal-case tracking-normal font-medium text-slate-400">(if applicable)</span></label>
-                                <input type="text" value={form.data.grade_level_handled}
+                                <label className={labelClass}>Grade Level Handled <span className="normal-case tracking-normal font-normal text-slate-400">(Optional)</span></label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Grade 10"
+                                    value={form.data.grade_level_handled}
                                     onChange={e => form.setData('grade_level_handled', e.target.value)}
-                                    className={inputClass} />
+                                    className={inputClass}
+                                />
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className={labelClass}>Semester</label>
-                                    <input type="text" placeholder="e.g. 1st Sem" value={form.data.semester}
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. 1st Sem"
+                                        value={form.data.semester}
                                         onChange={e => form.setData('semester', e.target.value)}
-                                        className={inputClass} required />
+                                        className={inputClass}
+                                        required
+                                    />
                                     <FieldError message={form.errors.semester} />
                                 </div>
                                 <div>
                                     <label className={labelClass}>School Year</label>
-                                    <input type="text" placeholder="e.g. 2025-2026" value={form.data.school_year}
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. 2025-2026"
+                                        value={form.data.school_year}
                                         onChange={e => form.setData('school_year', e.target.value)}
-                                        className={inputClass} required />
+                                        className={inputClass}
+                                        required
+                                    />
                                     <FieldError message={form.errors.school_year} />
                                 </div>
                             </div>
                         </section>
                     )}
 
+                    {/* Step 2 or 3: Additional Information */}
                     <section className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-lg bg-yellow-100 text-yellow-700 flex items-center justify-center text-xs font-extrabold">
-                                {isInternship ? '3' : '2'}
-                            </div>
-                            <h4 className="font-bold text-slate-800">Additional Information</h4>
-                        </div>
+                        <SectionBadge number={isInternship ? '3' : '2'} title="Additional Information" />
 
                         <div>
                             <label className={labelClass}>Purpose of Request</label>
-                            <textarea rows="2" value={form.data.purpose}
+                            <textarea
+                                rows="2"
+                                value={form.data.purpose}
                                 onChange={e => form.setData('purpose', e.target.value)}
-                                placeholder="Please state your reason..."
-                                className={`${inputClass} resize-none`} required />
+                                placeholder="State your reason for requesting this document..."
+                                className={`${inputClass} resize-none`}
+                                required
+                            />
                             <FieldError message={form.errors.purpose} />
                         </div>
 
                         <div>
-                            <div className="mb-2 flex items-center justify-between">
-                                <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Upload Required Document</label>
-                                <span className="text-[10px] font-bold text-red-500 uppercase">Required</span>
-                            </div>
-
-                            <div className="rounded-2xl border-2 border-dashed border-yellow-300 bg-yellow-50/50 p-4">
-                                <input type="file" multiple
+                            <label className={labelClass}>Upload Supporting Document</label>
+                            <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 hover:bg-slate-50 p-4 transition-colors">
+                                <input
+                                    type="file"
+                                    multiple
                                     onChange={e => form.setData('requirement_files', Array.from(e.target.files))}
-                                    className="w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-slate-900 file:text-white hover:file:bg-slate-800 border-0 cursor-pointer" />
+                                    className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer"
+                                />
 
-                                <div className="mt-3 flex gap-2 items-start">
-                                    <svg className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <p className="text-xs leading-relaxed text-slate-600">
-                                        Please upload the required document shown above. You may select <strong>multiple files</strong> if necessary.
-                                    </p>
-                                </div>
+                                {form.data.requirement_files?.length > 0 && (
+                                    <div className="mt-3 flex flex-wrap gap-1.5">
+                                        {form.data.requirement_files.map((file, i) => (
+                                            <span key={i} className="inline-flex items-center gap-1 text-[11px] font-semibold bg-amber-100 text-amber-900 px-2.5 py-1 rounded-lg">
+                                                📎 {file.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <p className="text-[11px] text-slate-500 font-medium mt-2 leading-relaxed">
+                                    Upload the required proof/document specified above. You can hold Ctrl/Cmd to attach <strong>multiple files</strong>.
+                                </p>
                             </div>
                             <FieldError message={form.errors.requirement_files} />
                         </div>
 
                         <div>
                             <label className={labelClass}>
-                                Preferred Claiming Date <span className="normal-case tracking-normal font-medium text-slate-400">(Optional)</span>
+                                Preferred Claiming Date <span className="normal-case tracking-normal font-normal text-slate-400">(Optional)</span>
                             </label>
-                            <input type="date" value={form.data.preferred_claiming_date}
+                            <input
+                                type="date"
+                                value={form.data.preferred_claiming_date}
                                 min={minClaimingDate()}
                                 onChange={e => {
                                     form.setData('preferred_claiming_date', e.target.value);
                                     form.clearErrors('preferred_claiming_date');
                                 }}
-                                className={inputClass} />
-                            <p className="text-[11px] text-slate-400 mt-1.5">Select a date at least 3 days from today to allow processing time.</p>
+                                className={inputClass}
+                            />
+                            <p className="text-[11px] text-slate-400 font-medium mt-1">Must be at least 3 days from today to allow standard office processing time.</p>
                             <FieldError message={form.errors.preferred_claiming_date} />
                         </div>
                     </section>
+                </form>
 
-                    <div className="pt-1">
-                        <button type="submit" disabled={form.processing}
-                            className="w-full py-3.5 bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-extrabold rounded-xl shadow-md hover:shadow-lg transition-all text-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                {/* Footer (Sticky Actions) */}
+                <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 shrink-0 flex items-center justify-between gap-3">
+                    <p className="text-[11px] text-slate-400 font-medium hidden sm:block">Double check all fields before submitting.</p>
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="w-1/2 sm:w-auto px-5 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 rounded-xl transition-all min-h-[42px]"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            form="request-doc-form"
+                            disabled={form.processing}
+                            className="w-1/2 sm:w-auto px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-extrabold text-xs rounded-xl shadow-sm hover:shadow transition-all disabled:opacity-60 disabled:cursor-not-allowed min-h-[42px] focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500"
+                        >
                             {form.processing ? 'Submitting...' : 'Submit Request'}
                         </button>
-                        <p className="text-center text-[10px] text-slate-400 mt-2">Please review your information before submitting.</p>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     );
