@@ -10,7 +10,7 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
     const Layout = auth.user.user_type === 'admin' ? AdminLayout : UserLayout;
 
     return (
-        <Layout user={auth.user} userRole={auth.user.user_type}>
+        <Layout user={auth.user}>
             <Head title="Profile Settings" />
             
             <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl">

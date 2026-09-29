@@ -93,11 +93,10 @@ function RequestRow({ request, onTrack }) {
     );
 }
 
-export default function UserDashboard({ auth, requests = [], stats, userRole, services = [], announcements = [] }) {
+export default function UserDashboard({ auth, requests = [], stats, services = [], announcements = [] }) {
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
     const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
     const [trackingRequest, setTrackingRequest] = useState(null);
-
     const quickActions = [
         { name: 'New Request', iconPath: ICON_PATHS.newRequest, action: () => setIsRequestModalOpen(true) },
         { name: 'Submit Inquiry', iconPath: ICON_PATHS.inquiry, action: () => router.visit('/user/inquiries') },
@@ -106,7 +105,7 @@ export default function UserDashboard({ auth, requests = [], stats, userRole, se
     ];
 
     return (
-        <UserLayout userRole={userRole}>
+        <UserLayout>
             <Head title="Dashboard" />
 
             <div className="p-4 sm:p-6 lg:p-8 pb-4 border-b border-slate-100 bg-white/90 backdrop-blur-md sticky top-0 z-10">

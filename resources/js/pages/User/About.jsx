@@ -33,12 +33,11 @@ const TEAM = [
     { name: 'Jayveelyn C. Vicente', role: 'Quality Assurance (QA)' },
 ];
 
-export default function About({ userRole }) {
+export default function About({ }) {
     return (
         <InfoPageLayout
             title="About CED E-Services"
             description="Learn more about our mission and digital platform."
-            userRole={userRole}
         >
             <p className="text-lg text-slate-700 mb-10 leading-relaxed font-medium">
                 Welcome to the <strong className="text-slate-900 font-black">College of Education (CED) E-Services Portal</strong>.
@@ -87,7 +86,7 @@ export default function About({ userRole }) {
                             BS Information Technology
                         </span>
                         <span className="text-[9px] text-slate-400 font-bold mt-1.2 block tracking-widest">
-                                Major in Software Systems and Web Applications Engineering
+                            Major in Software Systems and Web Applications Engineering
                         </span>
                     </div>
                 ))}

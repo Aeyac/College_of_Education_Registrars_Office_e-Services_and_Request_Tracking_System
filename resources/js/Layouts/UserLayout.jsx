@@ -11,7 +11,7 @@ const timeAgo = (dateString) => {
     return h < 24 ? `${h}h ago` : `${Math.round(h / 24)}d ago`;
 };
 
-export default function UserLayout({ children, userRole }) {
+export default function UserLayout({ children }) {
     const { url, props: { auth } } = usePage();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -65,7 +65,7 @@ export default function UserLayout({ children, userRole }) {
     };
 
     const userName = auth?.user?.first_name ? `${auth.user.first_name} ${auth.user.last_name}` : auth?.user?.name || 'Juan Dela Cruz';
-    const displayRole = userRole || (auth?.user?.user_type === 'alumni' ? `Alumni Batch ${auth?.user?.batch_year || ''}`.trim() : 'Student');
+    const displayRole = auth.role || (auth?.user?.user_type === 'alumni' ? `Alumni Batch ${auth?.user?.batch_year || ''}`.trim() : 'Student');
     const userAvatar = auth?.user?.profile_picture ? (
         <img src={`/storage/${auth.user.profile_picture}`} alt="Profile" className="w-full h-full object-cover rounded-full" />
     ) : (auth?.user?.first_name ? `${auth.user.first_name.charAt(0)}${auth.user.last_name?.charAt(0) || ''}` : 'U');
@@ -116,9 +116,7 @@ export default function UserLayout({ children, userRole }) {
                             key={item.name}
                             href={item.link}
                             onClick={mobile ? () => setIsSidebarOpen(false) : undefined}
-                            className={`w-full text-left px-4 sm:px-5 py-3 rounded-2xl font-bold transition-all flex items-center gap-3 text-sm min-w-0 ${
-                                isActive ? 'bg-slate-50 border border-slate-200 text-slate-900 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                            }`}
+                            className={`w-full min-w-0 text-left px-5 py-3 rounded-2xl font-bold transition-all flex items-center gap-3 text-sm ${isActive ? 'bg-amber-50 text-amber-600 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
                         >
                             <svg className={`w-5 h-5 shrink-0 ${isActive ? 'text-yellow-500' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 {item.icon}

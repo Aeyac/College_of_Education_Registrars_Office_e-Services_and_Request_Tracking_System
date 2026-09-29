@@ -3,7 +3,7 @@ import { useState } from 'react';
 import UserLayout from '@/Layouts/UserLayout';
 import NewInquiryModal from '@/Components/NewInquiryModal';
 
-export default function Faq({ userRole }) {
+export default function Faq({ }) {
     const [isTutorialOpen, setIsTutorialOpen] = useState(false);
     const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
 
@@ -61,7 +61,7 @@ export default function Faq({ userRole }) {
     ];
 
     return (
-        <UserLayout userRole={userRole}>
+        <UserLayout>
             <Head title="Help Center" />
 
             <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl">
@@ -96,7 +96,7 @@ export default function Faq({ userRole }) {
                     {processSteps.map((step, idx) => (
                         <div key={idx} className={`p-6 sm:p-8 rounded-[2rem] border ${step.border} ${step.bg} shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group`}>
                             <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white opacity-40 rounded-full transform group-hover:scale-150 transition-transform duration-700 ease-out" />
-                            
+
                             <div className="relative z-10">
                                 <div className={`w-14 h-14 bg-white rounded-2xl border ${step.border} shadow-sm flex items-center justify-center mb-6 ${step.iconText}`}>
                                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
