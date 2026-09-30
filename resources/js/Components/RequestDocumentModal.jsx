@@ -1,5 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 
 const INTERNSHIP_SERVICE_CODE = 'internship_certificate';
@@ -8,6 +8,18 @@ const ERROR_ICON = '<svg class="w-12 h-12 text-red-500 mx-auto" fill="none" view
 
 const inputClass = 'w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all';
 const labelClass = 'block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5';
+
+// Guidance text per service. Whether proof is mandatory comes from the server (requires_proof).
+const PROOF_COPY = {
+    internship_certificate: { title: 'Diploma', description: 'Upload a clear copy of your diploma.' },
+    copc: { title: 'Proof of Graduate — TOR or Diploma', description: 'Upload your proof of graduation (TOR or diploma).' },
+    golden_grain: { title: 'Receipt', description: 'Upload a clear copy of the required receipt.' },
+};
+
+const FALLBACK_PROOF_COPY = {
+    required: { title: 'Proof of Requirement', description: 'Upload the document required for this service.' },
+    optional: { title: 'Optional / As Requested', description: 'Attach any supporting document for this service, if applicable.' },
+};
 
 const showAlert = (title, text, iconHtml) => Swal.mixin({
     customClass: {
@@ -43,6 +55,14 @@ function FieldError({ message }) {
     );
 }
 
+function RequiredBadge() {
+    return (
+        <span className="ml-2 inline-block align-middle rounded-full border border-rose-100 bg-rose-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-700">
+            Required
+        </span>
+    );
+}
+
 function SectionBadge({ number, title, subtitle }) {
     return (
         <div className="flex items-center gap-2.5 pb-2">
@@ -70,6 +90,9 @@ export default function RequestDocumentModal({ services = [], onClose }) {
         requirement_files: []
     });
 
+    // Changing this key remounts the file input so the browser clears its selected files.
+    const [fileInputKey, setFileInputKey] = useState(0);
+
     useEffect(() => {
         const onKey = e => e.key === 'Escape' && onClose();
         window.addEventListener('keydown', onKey);
@@ -78,32 +101,35 @@ export default function RequestDocumentModal({ services = [], onClose }) {
 
     const selectedService = services.find(s => String(s.id) === String(form.data.service_id));
     const isInternship = selectedService?.code === INTERNSHIP_SERVICE_CODE;
+    const proofRequired = Boolean(selectedService?.requires_proof);
 
-    const getProofRequirement = service => {
-        if (!service) return null;
-        switch (service.code) {
-            case 'internship_certificate':
-                return ['Required Document', 'Diploma', 'Upload a clear copy of your diploma.'];
-            case 'copc':
-                return ['Required Documents', 'Proof of Graduate — TOR or Diploma', 'Upload your proof of graduation (TOR or diploma).'];
-            case 'golden_grain':
-                return ['Required Document', 'Receipt', 'Upload a clear copy of the required receipt.'];
-            default:
-                return ['Supporting Documents', 'Optional / As Requested', 'Attach any supporting document required for this service, if applicable.'];
-        }
+    const proofCopy = selectedService
+        ? PROOF_COPY[selectedService.code] ?? FALLBACK_PROOF_COPY[proofRequired ? 'required' : 'optional']
+        : null;
+
+    // Collects "requirement_files" plus per-file errors such as "requirement_files.0".
+    const fileErrors = Object.entries(form.errors)
+        .filter(([key]) => key === 'requirement_files' || key.startsWith('requirement_files.'))
+        .map(([, message]) => message);
+
+    const handleServiceChange = e => {
+        form.setData({
+            ...form.data,
+            service_id: e.target.value,
+            internship_school_or_agency: '',
+            grade_level_handled: '',
+            semester: '',
+            school_year: '',
+            requirement_files: []
+        });
+        form.clearErrors('requirement_files');
+        setFileInputKey(k => k + 1);
     };
 
-    const proof = getProofRequirement(selectedService);
-
-    const handleServiceChange = e => form.setData({
-        ...form.data,
-        service_id: e.target.value,
-        internship_school_or_agency: '',
-        grade_level_handled: '',
-        semester: '',
-        school_year: '',
-        requirement_files: []
-    });
+    const handleFilesChange = e => {
+        form.setData('requirement_files', Array.from(e.target.files));
+        form.clearErrors('requirement_files');
+    };
 
     const submitRequest = e => {
         e.preventDefault();
@@ -112,6 +138,11 @@ export default function RequestDocumentModal({ services = [], onClose }) {
 
         if (chosenDate && chosenDate < minDate) {
             form.setError('preferred_claiming_date', `Preferred claiming date must be on or after ${minDate}.`);
+            return;
+        }
+
+        if (proofRequired && form.data.requirement_files.length === 0) {
+            form.setError('requirement_files', 'Please upload the required proof document for this request.');
             return;
         }
 
@@ -160,16 +191,16 @@ export default function RequestDocumentModal({ services = [], onClose }) {
                         <SectionBadge number="1" title="Request Details" />
 
                         <div>
-                            <label className={labelClass}>Document Type</label>
-                            <select value={form.data.service_id} onChange={handleServiceChange} className={inputClass} required>
+                            <label htmlFor="service_id" className={labelClass}>Document Type</label>
+                            <select id="service_id" value={form.data.service_id} onChange={handleServiceChange} className={inputClass} required>
                                 <option value="" disabled>Select document type...</option>
                                 {services.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                             </select>
                             <FieldError message={form.errors.service_id} />
                         </div>
 
-                        {proof && (
-                            <div className="rounded-2xl border border-amber-200/80 bg-amber-50/60 p-4">
+                        {proofCopy && (
+                            <div className={`rounded-2xl border p-4 ${proofRequired ? 'border-amber-200/80 bg-amber-50/60' : 'border-slate-200 bg-slate-50/60'}`}>
                                 <div className="flex gap-3 items-start">
                                     <div className="w-8 h-8 shrink-0 rounded-xl bg-amber-400/20 text-amber-900 flex items-center justify-center mt-0.5">
                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -177,17 +208,20 @@ export default function RequestDocumentModal({ services = [], onClose }) {
                                         </svg>
                                     </div>
                                     <div className="min-w-0">
-                                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-200/50 px-2 py-0.5 rounded-full">{proof[0]}</span>
-                                        <p className="mt-1 text-sm font-bold text-slate-900">{proof[1]}</p>
-                                        <p className="mt-0.5 text-xs text-slate-600 leading-relaxed font-medium">{proof[2]}</p>
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-200/50 px-2 py-0.5 rounded-full">
+                                            {proofRequired ? 'Required Document' : 'Supporting Documents'}
+                                        </span>
+                                        <p className="mt-1 text-sm font-bold text-slate-900">{proofCopy.title}</p>
+                                        <p className="mt-0.5 text-xs text-slate-600 leading-relaxed font-medium">{proofCopy.description}</p>
                                     </div>
                                 </div>
                             </div>
                         )}
 
                         <div>
-                            <label className={labelClass}>Delivery Mode</label>
+                            <label htmlFor="delivery_mode" className={labelClass}>Delivery Mode</label>
                             <select
+                                id="delivery_mode"
                                 value={form.data.delivery_mode}
                                 onChange={e => form.setData('delivery_mode', e.target.value)}
                                 className={inputClass}
@@ -218,8 +252,9 @@ export default function RequestDocumentModal({ services = [], onClose }) {
                             <SectionBadge number="2" title="Internship Details" subtitle="Additional information required for this certificate." />
 
                             <div>
-                                <label className={labelClass}>School / Agency</label>
+                                <label htmlFor="internship_school_or_agency" className={labelClass}>School / Agency</label>
                                 <input
+                                    id="internship_school_or_agency"
                                     type="text"
                                     placeholder="e.g. DepEd Central Office"
                                     value={form.data.internship_school_or_agency}
@@ -231,8 +266,9 @@ export default function RequestDocumentModal({ services = [], onClose }) {
                             </div>
 
                             <div>
-                                <label className={labelClass}>Grade Level Handled <span className="normal-case tracking-normal font-normal text-slate-400">(Optional)</span></label>
+                                <label htmlFor="grade_level_handled" className={labelClass}>Grade Level Handled <span className="normal-case tracking-normal font-normal text-slate-400">(Optional)</span></label>
                                 <input
+                                    id="grade_level_handled"
                                     type="text"
                                     placeholder="e.g. Grade 10"
                                     value={form.data.grade_level_handled}
@@ -243,8 +279,9 @@ export default function RequestDocumentModal({ services = [], onClose }) {
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className={labelClass}>Semester</label>
+                                    <label htmlFor="semester" className={labelClass}>Semester</label>
                                     <input
+                                        id="semester"
                                         type="text"
                                         placeholder="e.g. 1st Sem"
                                         value={form.data.semester}
@@ -255,8 +292,9 @@ export default function RequestDocumentModal({ services = [], onClose }) {
                                     <FieldError message={form.errors.semester} />
                                 </div>
                                 <div>
-                                    <label className={labelClass}>School Year</label>
+                                    <label htmlFor="school_year" className={labelClass}>School Year</label>
                                     <input
+                                        id="school_year"
                                         type="text"
                                         placeholder="e.g. 2025-2026"
                                         value={form.data.school_year}
@@ -275,8 +313,9 @@ export default function RequestDocumentModal({ services = [], onClose }) {
                         <SectionBadge number={isInternship ? '3' : '2'} title="Additional Information" />
 
                         <div>
-                            <label className={labelClass}>Purpose of Request</label>
+                            <label htmlFor="purpose" className={labelClass}>Purpose of Request</label>
                             <textarea
+                                id="purpose"
                                 rows="2"
                                 value={form.data.purpose}
                                 onChange={e => form.setData('purpose', e.target.value)}
@@ -288,12 +327,20 @@ export default function RequestDocumentModal({ services = [], onClose }) {
                         </div>
 
                         <div>
-                            <label className={labelClass}>Upload Supporting Document</label>
-                            <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 hover:bg-slate-50 p-4 transition-colors">
+                            <label htmlFor="requirement_files" className={labelClass}>
+                                Upload Supporting Document
+                                {proofRequired && <RequiredBadge />}
+                            </label>
+                            <div className={`rounded-2xl border-2 border-dashed bg-slate-50/60 hover:bg-slate-50 p-4 transition-colors ${fileErrors.length ? 'border-rose-300' : 'border-slate-200'}`}>
                                 <input
+                                    key={fileInputKey}
+                                    id="requirement_files"
                                     type="file"
                                     multiple
-                                    onChange={e => form.setData('requirement_files', Array.from(e.target.files))}
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    required={proofRequired}
+                                    aria-required={proofRequired}
+                                    onChange={handleFilesChange}
                                     className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800 cursor-pointer"
                                 />
 
@@ -308,17 +355,19 @@ export default function RequestDocumentModal({ services = [], onClose }) {
                                 )}
 
                                 <p className="text-[11px] text-slate-500 font-medium mt-2 leading-relaxed">
-                                    Upload the required proof/document specified above. You can hold Ctrl/Cmd to attach <strong>multiple files</strong>.
+                                    {proofRequired
+                                        ? 'Upload the required proof specified above. '
+                                        : 'Attach a supporting document if you have one. '}
+                                    Accepted: PDF, JPG, PNG (up to 5 files, 10 MB each). Hold Ctrl/Cmd to attach <strong>multiple files</strong>.
                                 </p>
                             </div>
-                            <FieldError message={form.errors.requirement_files} />
+                            {[...new Set(fileErrors)].map((message, i) => <FieldError key={i} message={message} />)}
                         </div>
 
                         <div>
-                            <label className={labelClass}>
-                                Preferred Claiming Date <span className="normal-case tracking-normal font-normal text-slate-400">(Optional)</span>
-                            </label>
+                            <label htmlFor="preferred_claiming_date" className={labelClass}>Preferred Claiming Date</label>
                             <input
+                                id="preferred_claiming_date"
                                 type="date"
                                 value={form.data.preferred_claiming_date}
                                 min={minClaimingDate()}
@@ -327,6 +376,7 @@ export default function RequestDocumentModal({ services = [], onClose }) {
                                     form.clearErrors('preferred_claiming_date');
                                 }}
                                 className={inputClass}
+                                required
                             />
                             <p className="text-[11px] text-slate-400 font-medium mt-1">Must be at least 3 days from today to allow standard office processing time.</p>
                             <FieldError message={form.errors.preferred_claiming_date} />

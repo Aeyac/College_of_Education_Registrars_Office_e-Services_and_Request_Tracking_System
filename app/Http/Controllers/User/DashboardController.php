@@ -8,6 +8,7 @@ use App\Http\Resources\AnnouncementResource;
 use App\Http\Resources\CertificateRequestResource;
 use App\Models\Announcement;
 use App\Models\CertificateRequest;
+use App\Models\RequestDocument;
 use App\Models\RequestService;
 use App\Models\RequestStatus;
 use Illuminate\Http\RedirectResponse;
@@ -104,10 +105,12 @@ class DashboardController extends Controller
 
             if ($request->hasFile('requirement_files')) {
                 foreach ($request->file('requirement_files') as $file) {
-                    $path = $file->store('requirements', 'private');
+                    $path = $file->store('requirements', RequestDocument::DISK);
                     $certificateRequest->documents()->create([
-                        'type' => 'requirement',
+                        'type' => RequestDocument::TYPE_REQUIREMENT,
                         'path' => $path,
+                        'original_name' => $file->getClientOriginalName(),
+                        'size' => $file->getSize(),
                         'uploaded_by' => $request->user()->id,
                     ]);
                 }
@@ -138,11 +141,12 @@ class DashboardController extends Controller
     {
         return RequestService::where('is_active', true)
             ->orderBy('sort_order')
-            ->get(['id', 'code', 'label'])
+            ->get(['id', 'code', 'label', 'requires_proof'])
             ->map(fn(RequestService $service) => [
                 'id' => $service->id,
                 'code' => $service->code,
                 'label' => $service->label,
+                'requires_proof' => (bool) $service->requires_proof,
             ]);
     }
 }

@@ -11,6 +11,7 @@ class RequestDocument extends Model
     use HasFactory;
 
     public const TYPE_OUTPUT = 'output';
+    public const TYPE_REQUIREMENT = 'requirement';
     public const DISK = 'private';
 
     protected $fillable = [

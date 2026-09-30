@@ -200,4 +200,36 @@ class CertificateRequest extends Model
         return $document;
     }
 
+    public function scopeFilterForAdmin($query, array $filters)
+    {
+        $archived = filter_var($filters['archived'] ?? false, FILTER_VALIDATE_BOOL);
+        $status = $filters['status'] ?? 'all';
+        $service = $filters['service'] ?? null;
+        $search = trim((string) ($filters['search'] ?? ''));
+        $like = fn(string $t) => '%' . addcslashes($t, '%_\\') . '%';
+
+        return $query
+            ->when($archived, fn($q) => $q->archivedFor('admin'), fn($q) => $q->notArchivedFor('admin'))
+            ->when($status !== '' && $status !== 'all', fn($q) => $q->whereHas('status', fn($s) => $s->where('code', $status)))
+            ->when($service, fn($q) => $q->where('service_id', $service))
+            ->when($search !== '', function ($q) use ($search, $like) {
+                $idTerm = ltrim($search, '#');
+
+                $q->where(function ($q) use ($search, $idTerm, $like) {
+                    if (ctype_digit($idTerm)) {
+                        $q->orWhere('id', (int) $idTerm);
+                    }
+
+                    $q->orWhereHas('service', fn($s) => $s->where('label', 'like', $like($search)))
+                        ->orWhereHas('user', function ($u) use ($search, $like) {
+                            // Every word must match the first or last name, so "juan cruz" works.
+                            foreach (preg_split('/\s+/', $search) as $token) {
+                                $u->where(fn($n) => $n
+                                    ->where('first_name', 'like', $like($token))
+                                    ->orWhere('last_name', 'like', $like($token)));
+                            }
+                        });
+                });
+            });
+    }
 }
