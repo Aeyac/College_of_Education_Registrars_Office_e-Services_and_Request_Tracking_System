@@ -4,6 +4,7 @@ import UserLayout from '@/Layouts/UserLayout';
 import FeedbackModal from './FeedbackModal';
 import RequestDocumentModal from '@/Components/RequestDocumentModal';
 import ComplianceModal from '@/Components/ComplianceModal';
+import StatusHistoryTimeline from '@/Components/StatusHistoryTimeline';
 import Swal from 'sweetalert2';
 import SoftCopyViewerModal from '@/Components/SoftCopyViewerModal';
 import Pagination from '@/Components/Pagination';
@@ -94,7 +95,7 @@ const StatusBadge = ({ label }) => {
     );
 };
 
-function TrackingModal({ request, onClose }) {
+function TrackingModal({ request, viewerId, onClose }) {
     useEffect(() => {
         const onKey = e => e.key === 'Escape' && onClose();
         window.addEventListener('keydown', onKey);
@@ -127,20 +128,7 @@ function TrackingModal({ request, onClose }) {
                         <p><strong className="text-slate-700">Tracking ID:</strong> <span className="font-semibold text-slate-900">#{request.id}</span></p>
                     </div>
                     <h4 className="text-sm font-bold text-slate-900 mb-4">Status History & Remarks</h4>
-                    <div className="relative pl-4 border-l-2 border-slate-200 space-y-5 mt-4">
-                        {request.status_history?.length > 0 ? request.status_history.map((log, i) => (
-                            <div key={i} className="relative">
-                                <div className="absolute -left-[23px] top-1 w-3 h-3 bg-yellow-400 rounded-full ring-4 ring-white" />
-                                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
-                                    <div className="flex justify-between items-start mb-1 gap-2">
-                                        <span className="font-bold text-slate-800">{log.status}</span>
-                                        <span className="text-slate-500 font-medium text-[10px] shrink-0">{log.date}</span>
-                                    </div>
-                                    {log.note ? <p className="text-slate-600 mt-1 italic leading-relaxed">"{log.note}"</p> : <p className="text-slate-500 mt-1 italic">No remarks provided.</p>}
-                                </div>
-                            </div>
-                        )) : <p className="text-sm text-slate-500 text-center">No tracking history available.</p>}
-                    </div>
+                    <StatusHistoryTimeline history={request.status_history} viewerId={viewerId} />
                 </div>
             </div>
         </div>
@@ -438,7 +426,7 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
 
             {/* Modals */}
             {feedbackTarget && <FeedbackModal request={feedbackTarget} onClose={() => setFeedbackTarget(null)} />}
-            {trackingRequest && <TrackingModal request={trackingRequest} onClose={() => setTrackingRequest(null)} />}
+            {trackingRequest && <TrackingModal request={trackingRequest} viewerId={auth?.user?.id} onClose={() => setTrackingRequest(null)} />}
             {isModalOpen && <RequestDocumentModal services={services} onClose={() => setIsModalOpen(false)} />}
             {softCopyRequest && <SoftCopyViewerModal request={softCopyRequest} onClose={() => setSoftCopyRequest(null)} />}
             {complyingRequest && <ComplianceModal request={complyingRequest} onClose={() => setComplyingRequest(null)} />}

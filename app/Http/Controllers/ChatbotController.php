@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Faq;
+use App\Services\HtmlSanitizer;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ChatbotController extends Controller
 {
-    public function ask(Request $request)
+    public function ask(Request $request, HtmlSanitizer $sanitizer)
     {
         $request->validate(['message' => 'required|string']);
         $term = strtolower(trim($request->input('message')));
@@ -17,9 +19,7 @@ class ChatbotController extends Controller
         // =========================================================
         $profanityFilter = app(\App\Services\ProfanityFilter::class);
         if ($profanityFilter->containsProfanity($term)) {
-            return response()->json([
-                'reply' => "I detected inappropriate language in your message. Please maintain a polite and professional tone. How else can I assist you with CED E-Services?"
-            ]);
+            return $this->reply("I detected inappropriate language in your message. Please maintain a polite and professional tone. How else can I assist you with CED E-Services?", $sanitizer);
         }
 
         // =========================================================
@@ -116,7 +116,7 @@ class ChatbotController extends Controller
 
         // Ibalik agad ang system knowledge kung may tumugmang tags (Score > 0)
         if ($bestStaticMatch && $highestScore > 0) {
-            return response()->json(['reply' => $bestStaticMatch]);
+            return $this->reply($bestStaticMatch, $sanitizer);
         }
 
         // =========================================================
@@ -154,7 +154,7 @@ class ChatbotController extends Controller
                 foreach ($scoredFaqs as $faq) {
                     $reply .= "**" . $faq->question . "**\n" . $faq->answer . "\n\n";
                 }
-                return response()->json(['reply' => trim($reply)]);
+                return $this->reply(trim($reply), $sanitizer);
             }
         }
 
@@ -226,9 +226,7 @@ Rule: If the user asks something completely unrelated to school or education, po
                 if ($response->successful()) {
                     $aiContent = $response->json('candidates.0.content.parts.0.text');
                     if (!empty($aiContent)) {
-                        return response()->json([
-                            'reply' => trim($aiContent)
-                        ]);
+                        return $this->reply(trim($aiContent), $sanitizer);
                     }
                 }
             }
@@ -237,8 +235,17 @@ Rule: If the user asks something completely unrelated to school or education, po
         }
 
         // 5. FINAL SAFETY FALLBACK
-        return response()->json([
-            'reply' => "I'm sorry, I couldn't completely understand your question. \n\nHowever, you can easily submit a direct message to our staff via the **My Inquiries** tab on your dashboard, and they will personally assist you!"
-        ]);
+        return $this->reply("I'm sorry, I couldn't completely understand your question. \n\nHowever, you can easily submit a direct message to our staff via the **My Inquiries** tab on your dashboard, and they will personally assist you!", $sanitizer);
+    }
+
+    /**
+     * The client renders every reply as HTML, and the two sources that are not
+     * hard-coded here — FAQ rows and the external model — are both able to
+     * return markup. Sanitize on the way out so a payload never leaves the
+     * server, then let the client apply its own narrower gate as well.
+     */
+    private function reply(string $text, HtmlSanitizer $sanitizer): JsonResponse
+    {
+        return response()->json(['reply' => $sanitizer->cleanChat($text)]);
     }
 }

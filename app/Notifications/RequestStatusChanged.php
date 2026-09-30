@@ -95,8 +95,8 @@ class RequestStatusChanged extends Notification implements ShouldQueue
             'for_compliance' => 'Please comply with missing details.',
             'processing' => 'Your certificate is being processed.',
             'ready_for_release' => 'Your certificate is ready for release.',
-            'released' => 'Your request has been released/resolved.',
-            'cancelled_returned' => 'Your request has been cancelled/returned.',
+            'released' => 'Your request has been released.',
+            'rejected' => 'Your request has been rejected.',
             default => 'Your request status has been updated to ' . $this->certRequest->status->label . '.',
         };
     }

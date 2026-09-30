@@ -1,14 +1,12 @@
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
-import linkifyHtml from 'linkify-html';
+import sanitizeHtml from '@/Utils/sanitizeHtml';
 import UserLayout from '@/Layouts/UserLayout';
 import useHighlightRow from '@/hooks/useHighlightRow';
 
 export default function Announcements({ announcements = [] }) {
     useHighlightRow('announcement-row');
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
-
-    const linkify = (content) => linkifyHtml(content || '', { target: '_blank', rel: 'noopener noreferrer' });
 
     return (
         <UserLayout>
@@ -31,7 +29,7 @@ export default function Announcements({ announcements = [] }) {
                                 <h4 className="font-bold text-lg text-slate-900 leading-snug break-words min-w-0">{ann.title}</h4>
                                 <span className="self-end sm:self-auto text-xs font-bold text-yellow-700 py-1.5 whitespace-nowrap">{ann.date}</span>
                             </div>
-                            <div className="text-sm text-slate-600 leading-relaxed pl-2 quill-content line-clamp-3 overflow-hidden break-words [overflow-wrap:anywhere]" dangerouslySetInnerHTML={{ __html: linkify(ann.content) }} />
+                            <div className="text-sm text-slate-600 leading-relaxed pl-2 quill-content line-clamp-3 overflow-hidden break-words [overflow-wrap:anywhere]" dangerouslySetInnerHTML={{ __html: sanitizeHtml(ann.content) }} />
                             <div className="pl-2 mt-4 text-xs font-bold text-yellow-600 group-hover:text-yellow-700 transition-colors">Click to view announcement →</div>
                         </button>
                     )) : (
@@ -63,7 +61,7 @@ export default function Announcements({ announcements = [] }) {
                         </div>
 
                         <div className="p-6 sm:p-8 overflow-y-auto overflow-x-hidden max-h-[65vh] min-w-0">
-                            <div className="text-sm sm:text-base text-slate-700 leading-relaxed quill-content min-w-0 break-words [overflow-wrap:anywhere]" dangerouslySetInnerHTML={{ __html: linkify(selectedAnnouncement.content) }} />
+                            <div className="text-sm sm:text-base text-slate-700 leading-relaxed quill-content min-w-0 break-words [overflow-wrap:anywhere]" dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedAnnouncement.content) }} />
                         </div>
 
                         <div className="flex justify-end p-4 sm:p-6 border-t border-slate-100 bg-slate-50">

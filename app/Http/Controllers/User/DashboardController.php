@@ -128,7 +128,7 @@ class DashboardController extends Controller
 
     private function userRequests()
     {
-        return CertificateRequest::with(['service', 'status', 'statusHistory.toStatus', 'feedback', 'outputDocument'])
+        return CertificateRequest::with(['service', 'status', 'statusHistory.toStatus', 'statusHistory.changedByWithTrashed:id,first_name,last_name,user_type', 'feedback', 'outputDocument'])
             ->where('user_id', auth()->id());
     }
 

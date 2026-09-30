@@ -45,6 +45,13 @@ class ProfileController extends Controller
 
         $user->save();
 
+        if ($user->isFaculty() && $user->facultyProfile) {
+            $fullName = trim(($user->first_name ?? '').' '.($user->last_name ?? ''));
+            if ($fullName !== trim($user->facultyProfile->name)) {
+                $user->facultyProfile->update(['name' => $fullName]);
+            }
+        }
+
         return Redirect::route('profile.edit');
     }
 

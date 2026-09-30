@@ -4,6 +4,7 @@ import Header from '@/Components/Header';
 import Footer from '@/Components/Footer';
 import Chatbox from '@/Components/Chatbox';
 import FAQSection from '@/pages/FAQSection';
+import sanitizeHtml from '@/Utils/sanitizeHtml';
 
 /* ---------- Icons ---------- */
 const PATHS = {
@@ -476,7 +477,7 @@ export default function Welcome({ announcements = [], faqs = [] }) {
                                             </div>
                                             <h3 className="font-bold text-slate-900 text-lg sm:text-xl mb-4 leading-snug line-clamp-2 break-words">{a.title}</h3>
                                             <div className={`text-slate-600 leading-relaxed line-clamp-3 mb-6 relative flex-grow ${RICH_TEXT}`}>
-                                                <div dangerouslySetInnerHTML={{ __html: a.content || '' }} />
+                                                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.content) }} />
                                                 <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-white to-transparent"></div>
                                             </div>
                                             <div className="mt-auto pt-4 border-t border-slate-100">
@@ -521,7 +522,7 @@ export default function Welcome({ announcements = [], faqs = [] }) {
                 <h4 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug break-words">{selectedAnnouncement?.title}</h4>
                 <div
                     className={`leading-relaxed text-slate-700 text-base ${RICH_TEXT}`}
-                    dangerouslySetInnerHTML={{ __html: selectedAnnouncement?.content || '' }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedAnnouncement?.content) }}
                 />
             </AnnouncementModal>
         </div>

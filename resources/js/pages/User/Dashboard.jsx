@@ -2,9 +2,11 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import UserLayout from '@/Layouts/UserLayout';
 import RequestDocumentModal from '@/Components/RequestDocumentModal';
+import StatusHistoryTimeline from '@/Components/StatusHistoryTimeline';
 import Swal from 'sweetalert2';
 import openNotification from '@/Utils/openNotification';
 import useLiveRefresh from '@/hooks/useLiveRefresh';
+import sanitizeHtml from '@/Utils/sanitizeHtml';
 
 const DASHBOARD_ONLY = ['stats', 'requests', 'announcements'];
 
@@ -211,7 +213,7 @@ export default function UserDashboard({ auth, requests = [], stats, services = [
                                 {announcements?.length > 0 ? announcements.map(ann => (
                                     <div key={ann.id} className="p-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col gap-1 hover:border-yellow-300 hover:shadow-md transition-all cursor-pointer min-w-0 overflow-hidden" onClick={() => router.visit('/user/announcements')}>
                                         <h3 className="font-bold text-sm text-slate-900 truncate">{ann.title}</h3>
-                                        <div className="text-xs text-slate-500 line-clamp-2 break-words min-w-0 overflow-hidden [&_p]:inline [&_p]:m-0" dangerouslySetInnerHTML={{ __html: ann.content }} />
+                                        <div className="text-xs text-slate-500 line-clamp-2 break-words min-w-0 overflow-hidden [&_p]:inline [&_p]:m-0" dangerouslySetInnerHTML={{ __html: sanitizeHtml(ann.content) }} />
                                         <span className="text-[10px] font-medium text-slate-400 mt-1">{ann.date}</span>
                                     </div>
                                 )) : (
@@ -236,20 +238,7 @@ export default function UserDashboard({ auth, requests = [], stats, services = [
 
                         <h4 className="text-sm font-bold text-slate-900 mb-4">Status History & Remarks</h4>
 
-                        <div className="relative pl-4 border-l-2 border-slate-200 space-y-5 mt-4">
-                            {trackingRequest.status_history?.length > 0 ? trackingRequest.status_history.map((log, idx) => (
-                                <div key={idx} className="relative">
-                                    <div className="absolute -left-[23px] top-1 w-3 h-3 bg-yellow-400 rounded-full ring-4 ring-white" />
-                                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
-                                        <div className="flex justify-between items-start mb-1 gap-2">
-                                            <span className="font-bold text-slate-800">{log.status}</span>
-                                            <span className="text-slate-400 font-medium text-[10px] shrink-0">{log.date}</span>
-                                        </div>
-                                        {log.note ? <p className="text-slate-600 mt-1 italic leading-relaxed break-words">"{log.note}"</p> : <p className="text-slate-400 mt-1 italic">No remarks provided.</p>}
-                                    </div>
-                                </div>
-                            )) : <p className="text-sm text-slate-500 text-center">No tracking history available.</p>}
-                        </div>
+                        <StatusHistoryTimeline history={trackingRequest.status_history} viewerId={auth?.user?.id} />
                     </div>
                 </Modal>
             )}

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RequestStatusHistory extends Model
 {
@@ -41,5 +42,16 @@ class RequestStatusHistory extends Model
     public function changedBy()
     {
         return $this->belongsTo(User::class, 'changed_by');
+    }
+
+    /**
+     * The audit trail must still name the actor after their account is
+     * soft-deleted, so this relation reaches trashed users.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function changedByWithTrashed(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'changed_by')->withTrashed();
     }
 }

@@ -1,5 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import { sanitizeChatHtml } from '@/Utils/sanitizeHtml';
+
+/**
+ * The assistant speaks in **bold** and plain newlines. Turning that into
+ * markup happens before the sanitizer runs, so the emphasis tags survive while
+ * anything the text itself contains does not.
+ */
+const formatMessage = (text) =>
+    String(text ?? '')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br/>');
 
 export default function Chatbox() {
     const [isOpen, setIsOpen] = useState(false);
@@ -77,7 +88,7 @@ export default function Chatbox() {
                         {messages.map((msg, idx) => (
                             <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm leading-relaxed shadow-sm ${msg.sender === 'user' ? 'bg-yellow-400 text-slate-900 rounded-tr-sm' : 'bg-white border border-slate-200 text-slate-700 rounded-tl-sm'}`}>
-                                    <span dangerouslySetInnerHTML={{ __html: msg.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }} />
+                                    <span dangerouslySetInnerHTML={{ __html: sanitizeChatHtml(formatMessage(msg.text)) }} />
                                 </div>
                             </div>
                         ))}

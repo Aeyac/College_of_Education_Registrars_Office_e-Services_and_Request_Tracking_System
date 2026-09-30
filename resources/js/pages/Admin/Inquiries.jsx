@@ -174,9 +174,7 @@ export default function ManageInquiries({ inquiries, filters: rawFilters, focus 
                     >
                         <option value="all">All Status</option>
                         <option value="open">Open</option>
-                        <option value="pending">Pending</option>
                         <option value="resolved">Resolved</option>
-                        <option value="closed">Closed</option>
                     </select>
                 </div>
 

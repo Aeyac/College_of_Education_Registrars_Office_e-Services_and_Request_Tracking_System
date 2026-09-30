@@ -28,7 +28,10 @@ class CertificateRequestResource extends JsonResource
             'status_history' => $this->whenLoaded('statusHistory', fn() => $this->statusHistory->map(fn($h) => [
                 'status' => $h->toStatus?->label,
                 'note' => $h->note,
-                'date' => $h->created_at->timezone('Asia/Manila')->format('M d, Y h:i A')
+                'date' => $h->created_at->timezone('Asia/Manila')->format('M d, Y h:i A'),
+                'changed_by_id' => $h->changed_by,
+                'changed_by_name' => $h->changedByWithTrashed?->fullName() ?: 'Former admin',
+                'changed_by_role' => $h->changedByWithTrashed?->user_type,
             ])),
             'has_feedback' => $this->feedback !== null,
             'feedback' => $this->feedback,

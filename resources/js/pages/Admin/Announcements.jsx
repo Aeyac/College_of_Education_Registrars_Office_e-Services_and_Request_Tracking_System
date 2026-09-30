@@ -4,7 +4,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import Swal from 'sweetalert2';
-import linkifyHtml from 'linkify-html';
+import sanitizeHtml from '@/Utils/sanitizeHtml';
 
 export default function ManageAnnouncements({ announcements = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,8 +23,6 @@ export default function ManageAnnouncements({ announcements = [] }) {
             ['clean']
         ],
     };
-
-    const linkify = content => linkifyHtml(content || '', { target: '_blank', rel: 'noopener noreferrer' });
 
     const openNewPost = () => {
         setData({ id: null, title: '', content: '' });
@@ -92,7 +90,7 @@ export default function ManageAnnouncements({ announcements = [] }) {
 
                         <div
                             className="text-sm text-slate-600 mb-6 leading-relaxed quill-content overflow-hidden break-words [overflow-wrap:anywhere]"
-                            dangerouslySetInnerHTML={{ __html: linkify(ann.content) }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(ann.content) }}
                         />
 
                         <div className="flex gap-3">

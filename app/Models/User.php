@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -11,7 +12,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable, SoftDeletes, HasRoles;
+    use HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'first_name',
@@ -30,7 +31,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'otp',
         'otp_expires_at',
 
-        
     ];
 
     protected $hidden = [
@@ -50,22 +50,32 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(CertificateRequest::class);
     }
+
     public function alumniVerification()
     {
         return $this->hasOne(AlumniVerification::class);
     }
+
     public function feedback()
     {
         return $this->hasMany(Feedback::class);
     }
+
     public function major()
     {
         return $this->belongsTo(Major::class);
     }
+
     public function course()
     {
         return $this->belongsTo(Course::class);
     }
+
+    public function fullName(): string
+    {
+        return trim(($this->first_name ?? '').' '.($this->last_name ?? ''));
+    }
+
     public function isAdmin(): bool
     {
         return $this->user_type === 'admin';
@@ -76,16 +86,20 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->user_type === 'faculty';
     }
 
-    public function facultyProfile()
+    /**
+     * @return HasOne<Faculty, $this>
+     */
+    public function facultyProfile(): HasOne
     {
         return $this->hasOne(Faculty::class);
     }
+
     public function displaySubtitle(): string
     {
         $this->loadMissing('course');
 
         if ($this->user_type === 'alumni') {
-            return 'Alumni   Batch ' . ($this->batch_year ?? 'N/A');
+            return 'Alumni   Batch '.($this->batch_year ?? 'N/A');
         }
 
         $courseName = $this->course?->label ?? 'College of Education';
@@ -98,7 +112,7 @@ class User extends Authenticatable implements MustVerifyEmail
             default => 'th',
         };
 
-        return $courseName . '   ' . ($yearLevel ? $yearLevel . $suffix . ' Year' : 'N/A');
+        return $courseName.'   '.($yearLevel ? $yearLevel.$suffix.' Year' : 'N/A');
     }
 
     public function isVerifiedAlumni(): bool
