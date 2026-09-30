@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Icon } from '@/Components/Icon';
+import useLiveRefresh from '@/hooks/useLiveRefresh';
 import Swal from 'sweetalert2';
 
 const NOTE_REQ_STATUSES = new Set(['rejected', 'for_compliance']);
@@ -195,6 +196,15 @@ export default function ManageRequests({ requests, services = [], filters = {}, 
     });
 
     const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all' || serviceFilter !== 'all';
+
+    // No broadcast event carries request-list changes, so this poll is what
+    // surfaces a student's new submission or status change here. Suspended while
+    // a row is being reviewed, a filter visit is running, or a row action is in
+    // flight, so the open form and its state are never clobbered.
+    useLiveRefresh({
+        only: RELOAD_ONLY,
+        enabled: !selectedRequest && !previewDoc && !loading && !processing && !archiving && !exporting,
+    });
 
     // Every list change goes through here. Changing a filter never sends a page number,
     // so the results always start from page 1.

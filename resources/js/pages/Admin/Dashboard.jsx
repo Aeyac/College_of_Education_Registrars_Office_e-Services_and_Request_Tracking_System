@@ -1,13 +1,21 @@
 import React, { useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import useLiveRefresh from '@/hooks/useLiveRefresh';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
 } from 'recharts';
 
+const DASHBOARD_ONLY = ['stats', 'monthlyProcessed', 'statusDistribution'];
+
 export default function DashboardOverview({ stats, monthlyProcessed = [], statusDistribution = [] }) {
     const totalRequests = statusDistribution.reduce((acc, curr) => acc + curr.value, 0);
+
+    // Counters, the monthly released bar chart and the status pie chart are all
+    // aggregates that other users keep changing. Nothing broadcasts them, so
+    // this poll is what keeps them honest.
+    useLiveRefresh({ only: DASHBOARD_ONLY });
 
     // Auto-hide Recharts tooltips natively so they remain clickable
     useEffect(() => {

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ChatModal from '@/Components/ChatModal';
 import Pagination from '@/Components/Pagination';
+import useLiveRefresh from '@/hooks/useLiveRefresh';
 import Swal from 'sweetalert2';
 
 const OPEN_THREAD_ON_REDIRECT = true; // false = only scroll to the row and blink it
@@ -35,6 +36,11 @@ export default function ManageInquiries({ inquiries, filters: rawFilters, focus 
 
     const selectedInquiry = rows.find((i) => i.id === selectedInquiryId);
     const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all';
+
+    // New threads arrive from students and nothing broadcasts them. ChatModal
+    // already polls `inquiries` every 4s while a thread is open, so this 30s
+    // list poll stands down then to avoid a duplicate request for the same prop.
+    useLiveRefresh({ only: RELOAD_ONLY, enabled: !selectedInquiryId });
 
     // Apply filters once the inputs differ from what the server last returned.
     useEffect(() => {

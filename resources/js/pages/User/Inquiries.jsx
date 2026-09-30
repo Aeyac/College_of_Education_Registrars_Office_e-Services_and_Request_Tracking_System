@@ -5,8 +5,13 @@ import ChatModal from '@/Components/ChatModal';
 import NewInquiryModal from '@/Components/NewInquiryModal';
 import Pagination from '@/Components/Pagination';
 import Swal from 'sweetalert2';
+import useHighlightRow from '@/hooks/useHighlightRow';
+import useLiveRefresh from '@/hooks/useLiveRefresh';
+
+const INQUIRIES_ONLY = ['inquiries'];
 
 export default function MyInquiries({ inquiries = [] }) {
+    useHighlightRow('inquiry-row');
     // Works with a plain array or a Laravel paginator object.
     const allRows = Array.isArray(inquiries) ? inquiries : (inquiries?.data ?? []);
 
@@ -14,6 +19,11 @@ export default function MyInquiries({ inquiries = [] }) {
     const [isNewModalOpen, setIsNewModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+
+    // Registrar replies and status changes arrive from the other side without a
+    // broadcast event. ChatModal polls the same prop every 4s while a thread is
+    // open, so this list poll stands down then to avoid a duplicate request.
+    useLiveRefresh({ only: INQUIRIES_ONLY, enabled: !selectedInquiryId });
 
     const selectedInquiry = allRows.find((i) => i.id === selectedInquiryId);
     const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all';
@@ -116,8 +126,8 @@ export default function MyInquiries({ inquiries = [] }) {
                                     key={inq.id}
                                     id={`inquiry-row-${inq.id}`}
                                     className={`p-4 sm:p-5 transition-colors rounded-xl border border-slate-200 border-l-4 shadow-sm ${!inq.is_read
-                                            ? 'bg-blue-50/50 border-l-blue-500'
-                                            : 'bg-white border-l-slate-200 hover:bg-slate-50/80'
+                                        ? 'bg-blue-50/50 border-l-blue-500'
+                                        : 'bg-white border-l-slate-200 hover:bg-slate-50/80'
                                         }`}
                                 >
                                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
@@ -131,10 +141,10 @@ export default function MyInquiries({ inquiries = [] }) {
                                         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                                             <span
                                                 className={`px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${inq.status === 'resolved'
-                                                        ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                                                        : inq.status === 'closed'
-                                                            ? 'bg-slate-100 text-slate-600 border-slate-200'
-                                                            : 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                                    : inq.status === 'closed'
+                                                        ? 'bg-slate-100 text-slate-600 border-slate-200'
+                                                        : 'bg-yellow-100 text-yellow-800 border-yellow-200'
                                                     }`}
                                             >
                                                 {inq.status}

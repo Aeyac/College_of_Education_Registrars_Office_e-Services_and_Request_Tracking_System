@@ -2,8 +2,10 @@ import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import linkifyHtml from 'linkify-html';
 import UserLayout from '@/Layouts/UserLayout';
+import useHighlightRow from '@/hooks/useHighlightRow';
 
 export default function Announcements({ announcements = [] }) {
+    useHighlightRow('announcement-row');
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
 
     const linkify = (content) => linkifyHtml(content || '', { target: '_blank', rel: 'noopener noreferrer' });
@@ -20,7 +22,10 @@ export default function Announcements({ announcements = [] }) {
             <div className="p-6 sm:p-8">
                 <div className="space-y-6">
                     {announcements.length > 0 ? announcements.map((ann) => (
-                        <button key={ann.id} type="button" onClick={() => setSelectedAnnouncement(ann)} className="w-full min-w-0 text-left p-6 sm:p-8 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                        <button key={ann.id} id={`announcement-row-${ann.id}`} type="button" onClick={() => setSelectedAnnouncement(ann)}
+                            className="w-full min-w-0 text-left p-6 sm:p-8 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md 
+                            hover:border-slate-300 transition-all relative overflow-hidden group focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                        >
                             <div className="absolute left-0 top-0 w-1.5 h-full bg-slate-200 group-hover:bg-yellow-400 transition-colors" />
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4 pl-2">
                                 <h4 className="font-bold text-lg text-slate-900 leading-snug break-words min-w-0">{ann.title}</h4>

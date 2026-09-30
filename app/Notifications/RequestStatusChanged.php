@@ -77,7 +77,7 @@ class RequestStatusChanged extends Notification implements ShouldQueue
             return "/admin/requests?open={$id}";
         }
 
-        return route('user.dashboard', ['open' => $id], absolute: false);
+        return route('user.requests', ['highlight' => $id], absolute: false);
     }
 
     protected function messageFor(string $statusCode, object $notifiable): string

@@ -7,8 +7,11 @@ import ComplianceModal from '@/Components/ComplianceModal';
 import Swal from 'sweetalert2';
 import SoftCopyViewerModal from '@/Components/SoftCopyViewerModal';
 import Pagination from '@/Components/Pagination';
+import useHighlightRow from '@/hooks/useHighlightRow';
+import useLiveRefresh from '@/hooks/useLiveRefresh';
 
 const LOCKED_STATUSES = new Set(['cancelled_returned', 'cancelled', 'released', 'rejected']);
+const RELOAD_ONLY = ['requests', 'showingArchived', 'statusFilter'];
 const STATUS_FILTER_OPTIONS = [
     { value: 'submitted', label: 'Submitted' },
     { value: 'processing', label: 'Processing' },
@@ -145,6 +148,7 @@ function TrackingModal({ request, onClose }) {
 }
 
 export default function MyRequests({ requests, services = [], auth, isAlumniVerified, showingArchived = false, statusFilter: initialStatusFilter = 'all' }) {
+    useHighlightRow('request-row');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [trackingRequest, setTrackingRequest] = useState(null);
     const [feedbackTarget, setFeedbackTarget] = useState(null);
@@ -157,7 +161,16 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
     const [docTypeFilter, setDocTypeFilter] = useState('all');
     const [softCopyRequest, setSoftCopyRequest] = useState(null);
 
-    const RELOAD_ONLY = ['requests', 'showingArchived', 'statusFilter'];
+    // Suspended while any modal is open or a row action is in flight, so an
+    // open form is never replaced underneath the user.
+    const isBusy = Boolean(
+        isModalOpen || trackingRequest || feedbackTarget || complyingRequest
+        || softCopyRequest || receivingId || archiving || cancellingId
+    );
+
+    // The notification bell announces a status change in real time, but the list
+    // itself has no broadcast event, so this poll keeps rows current.
+    useLiveRefresh({ only: RELOAD_ONLY, enabled: !isBusy });
 
     const requestList = requests?.data ?? [];
     const paginationLinks = requests?.meta?.links ?? requests?.links ?? [];
@@ -313,7 +326,7 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
                         const label = `${req.document_type}, request #${req.id}`;
 
                         return (
-                            <li key={req.id} className="relative flex flex-col p-4 bg-white border border-slate-200 rounded-xl shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] hover:shadow-md transition-all gap-4 overflow-hidden group">
+                            <li key={req.id} id={`request-row-${req.id}`} className="relative flex flex-col p-4 bg-white border border-slate-200 rounded-xl shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] hover:shadow-md transition-all gap-4 overflow-hidden group">
                                 {/* Top Section: Title & Inline Status */}
                                 <div className="flex items-start gap-3.5 min-w-0">
                                     <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 shrink-0 text-slate-500 mt-0.5">

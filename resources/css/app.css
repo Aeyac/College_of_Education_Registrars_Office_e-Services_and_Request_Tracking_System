@@ -3,16 +3,14 @@
 @tailwind utilities;
 
 @keyframes row-blink {
-    0%,
-    100% {
-        background-color: transparent;
-    }
-    50% {
-        background-color: rgb(253 224 71 / 0.6);
-    }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+    50% { background-color: #fef9c3; box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.55); }
 }
-.row-blink {
-    animation: row-blink 1s ease-in-out 3;
+
+.row-blink { animation: row-blink 0.9s ease-in-out 3; }
+
+@media (prefers-reduced-motion: reduce) {
+    .row-blink { animation: none; background-color: #fef9c3; }
 }
 
 /* =============

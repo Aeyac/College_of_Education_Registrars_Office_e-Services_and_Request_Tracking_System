@@ -1,5 +1,9 @@
 import { useForm, router } from '@inertiajs/react';
 import { useState, useRef, useEffect } from 'react';
+import useLiveRefresh from '@/hooks/useLiveRefresh';
+
+const THREAD_ONLY = ['inquiries'];
+const THREAD_POLL_INTERVAL = 4000; // 4s — near-real-time without hammering the server
 
 export default function ChatModal({ inquiry, onClose, basePath, onResolve }) {
     const [hoveredMsg, setHoveredMsg] = useState(null);
@@ -9,42 +13,13 @@ export default function ChatModal({ inquiry, onClose, basePath, onResolve }) {
     const fileInputRef = useRef(null);
     const replyForm = useForm({ message: '', parent_id: null, attachment: null });
 
-    useEffect(() => {
-        if (!inquiry) return;
-
-        const POLL_INTERVAL = 4000; // 4s — near-real-time without hammering the server
-        let interval = null;
-
-        const startPolling = () => {
-            if (interval) return;
-            interval = setInterval(() => {
-                router.reload({ only: ['inquiries'], preserveScroll: true, preserveState: true });
-            }, POLL_INTERVAL);
-        };
-
-        const stopPolling = () => {
-            clearInterval(interval);
-            interval = null;
-        };
-
-        const handleVisibilityChange = () => {
-            if (document.hidden) {
-                stopPolling();
-            } else {
-                // tab became visible again — refetch immediately, then resume polling
-                router.reload({ only: ['inquiries'], preserveScroll: true, preserveState: true });
-                startPolling();
-            }
-        };
-
-        if (!document.hidden) startPolling();
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        return () => {
-            stopPolling();
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
-    }, [inquiry?.id]);
+    // New replies land here from either side. There is no broadcast event for
+    // chat, so this poll is the primary mechanism while the thread is open.
+    useLiveRefresh({
+        only: THREAD_ONLY,
+        interval: THREAD_POLL_INTERVAL,
+        enabled: Boolean(inquiry?.id),
+    });
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
