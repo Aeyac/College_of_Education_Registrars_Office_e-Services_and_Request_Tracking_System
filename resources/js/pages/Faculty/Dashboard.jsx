@@ -26,7 +26,7 @@ export default function Dashboard({ faculty }) {
     const timeStr = `${currentHrs}:${currentMins}`;
 
     const schedule = faculty?.weekly_schedule || [];
-    
+
     // Sort schedule
     const sortedSchedule = [...schedule].sort((a, b) => {
         const dayDiff = daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day);
@@ -35,7 +35,7 @@ export default function Dashboard({ faculty }) {
     });
 
     const todaysSchedule = sortedSchedule.filter(block => block.day === currentDay);
-    
+
     let currentBlock = null;
     let nextBlock = null;
 
@@ -61,7 +61,7 @@ export default function Dashboard({ faculty }) {
     return (
         <UserLayout>
             <Head title="Faculty Dashboard" />
-            
+
             <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div>
@@ -78,7 +78,7 @@ export default function Dashboard({ faculty }) {
                         </div>
                     </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
@@ -92,10 +92,10 @@ export default function Dashboard({ faculty }) {
                                     {todaysSchedule.map((block, idx) => {
                                         const isCurrent = currentBlock === block;
                                         const isPast = timeStr > block.end_time;
-                                        const typeColors = block.type === 'consultation' 
-                                            ? 'bg-emerald-50 border-emerald-200' 
+                                        const typeColors = block.type === 'consultation'
+                                            ? 'bg-emerald-50 border-emerald-200'
                                             : 'bg-slate-50 border-slate-200';
-                                        
+
                                         return (
                                             <div key={idx} className={`relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active`}>
                                                 <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm ${isCurrent ? 'bg-yellow-400 text-white' : (isPast ? 'bg-slate-200' : 'bg-white text-slate-400')}`}>
@@ -143,22 +143,33 @@ export default function Dashboard({ faculty }) {
                             )}
                         </div>
                     </div>
-                    
+
                     <div className="space-y-6">
-                        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-lg p-6 text-white border border-slate-700">
-                            <h3 className="font-bold text-slate-200 text-sm uppercase tracking-wider mb-4">Quick Details</h3>
+                        <div className="bg-white rounded-2xl shadow-sm p-6 border">
+                            <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wider mb-4 flex items-center gap-2">
+                                Quick Details
+                            </h3>
+
                             <div className="space-y-4">
                                 <div>
-                                    <p className="text-slate-400 text-xs font-medium mb-1">Role / Position</p>
-                                    <p className="font-semibold text-white bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">{faculty?.role || 'Not specified'}</p>
+                                    <p className="text-yellow-600 text-xs font-medium mb-1">Role / Position</p>
+                                    <p className="font-semibold text-slate-800 p-1">
+                                       {faculty?.role || 'Not specified'}
+                                    </p>
                                 </div>
+
                                 <div>
-                                    <p className="text-slate-400 text-xs font-medium mb-1">Department / Program</p>
-                                    <p className="font-semibold text-white bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">{faculty?.department_or_program || 'Not specified'}</p>
+                                    <p className="text-yellow-600 text-xs font-medium mb-1">Department / Program</p>
+                                    <p className="font-semibold text-slate-800 p-1">
+                                        {faculty?.department_or_program || 'Not specified'}
+                                    </p>
                                 </div>
+
                                 <div>
-                                    <p className="text-slate-400 text-xs font-medium mb-1">Main Office / Location</p>
-                                    <p className="font-semibold text-white bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">{faculty?.room_or_location || 'Not specified'}</p>
+                                    <p className="text-yellow-600 text-xs font-medium mb-1">Main Office / Location</p>
+                                    <p className="font-semibold text-slate-800 p-1">
+                                        {faculty?.room_or_location || 'Not specified'}
+                                    </p>
                                 </div>
                             </div>
                         </div>
