@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Feedback;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class FeedbackController extends Controller
@@ -20,9 +21,7 @@ class FeedbackController extends Controller
         $search = trim((string) $request->query('q', ''));
         $rating = $request->query('rating');
 
-        $query = Feedback::with(['user', 'request.service'])
-            ->orderByDesc('created_at')
-            ->orderByDesc('id');
+        $query = $this->baseQuery();
 
         if ($search !== '') {
             $like = '%' . addcslashes($search, '\\%_') . '%';
@@ -44,6 +43,18 @@ class FeedbackController extends Controller
         }
 
         return $query;
+    }
+
+    /**
+     * Newest feedback first, shared by the table and both exports. The
+     * notification redirect reuses this ordering to work out which page holds
+     * its target row.
+     */
+    private function baseQuery()
+    {
+        return Feedback::with(['user', 'request.service'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
     }
 
     private function studentName($fb): string
@@ -75,8 +86,20 @@ class FeedbackController extends Controller
 
     public function index(Request $request)
     {
+        // Notification redirect. Landing on ?open=<id> means the admin arrived
+        // from the bell, so resolve the target and land on the page holding it
+        // rather than whatever page or filter they last had open.
+        $target = null;
+        if ($open = $request->query('open')) {
+            $target = Feedback::find((int) $open);
+        }
+
+        $page = $target
+            ? intdiv($this->baseQuery()->where('id', '>', $target->id)->count(), self::PER_PAGE) + 1
+            : null;
+
         $feedbacks = $this->filteredQuery($request)
-            ->paginate(self::PER_PAGE)
+            ->paginate(self::PER_PAGE, ['*'], 'page', $page)
             ->withQueryString()
             ->through(fn($fb) => [
                 'id' => $fb->id,
@@ -94,6 +117,9 @@ class FeedbackController extends Controller
                 'q' => trim((string) $request->query('q', '')),
                 'rating' => $request->query('rating', 'all') ?: 'all',
             ],
+            // The token changes on every response, so re-navigating to the same
+            // ?open=<id> replays the blink instead of being skipped as unchanged.
+            'focus' => $target ? ['id' => $target->id, 'token' => (string) Str::uuid()] : null,
         ]);
     }
 

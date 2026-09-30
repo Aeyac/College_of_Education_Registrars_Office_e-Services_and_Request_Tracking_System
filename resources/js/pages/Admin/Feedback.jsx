@@ -2,6 +2,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/Components/Pagination';
 import { Head, router, usePage } from '@inertiajs/react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import useLiveRefresh from '@/hooks/useLiveRefresh';
 
 const ICONS = {
     search: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z",
@@ -31,7 +32,7 @@ const Stars = memo(function Stars({ rating }) {
     );
 });
 
-export default function StudentFeedback({ feedbacks, filters = {} }) {
+export default function StudentFeedback({ feedbacks, filters = {}, focus = null }) {
     const { url } = usePage();
     const rows = feedbacks?.data ?? [];
 
@@ -42,6 +43,13 @@ export default function StudentFeedback({ feedbacks, filters = {} }) {
     const [ratingFilter, setRatingFilter] = useState(filters.rating ?? 'all');
     const [loading, setLoading] = useState(false);
     const [exporting, setExporting] = useState(null);
+    const [highlightId, setHighlightId] = useState(null);
+
+    // New feedback arrives from students and nothing broadcasts a table refresh,
+    // so this poll is what makes rows appear without a manual reload. Reuses
+    // PAGE_PROPS, the same prop set the filter visits and Pagination already
+    // request, so the current search, rating filter and page stay in sync.
+    useLiveRefresh({ only: PAGE_PROPS, enabled: !loading });
 
     const exportTimer = useRef(null);
     const appliedRef = useRef({ q: filters.q ?? '', rating: filters.rating ?? 'all' });
@@ -85,6 +93,29 @@ export default function StudentFeedback({ feedbacks, filters = {} }) {
     }, [searchTerm, ratingFilter, applyFilters]);
 
     useEffect(() => () => clearTimeout(exportTimer.current), []);
+
+    // Notification redirect: clean up the 'open' query param and blink the row.
+    useEffect(() => {
+        if (!focus) return;
+
+        const url = new URL(window.location.href);
+        url.searchParams.delete('open');
+        window.history.replaceState(window.history.state, '', url);
+
+        setSearchTerm(filters.q ?? '');
+        setRatingFilter(filters.rating ?? 'all');
+
+        const fb = rows.find((r) => r.id === focus.id);
+        if (!fb) return;
+
+        setHighlightId(fb.id);
+        requestAnimationFrame(() =>
+            document.getElementById(`feedback-row-${fb.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        );
+
+        const timer = setTimeout(() => setHighlightId(null), 3500);
+        return () => clearTimeout(timer);
+    }, [focus]);
 
     const clearFilters = () => {
         setSearchTerm('');
@@ -208,8 +239,12 @@ export default function StudentFeedback({ feedbacks, filters = {} }) {
                             <>
                                 {/* Mobile: stacked cards, no horizontal scrolling */}
                                 <ul className="md:hidden divide-y divide-slate-100">
-                                    {rows.map(fb => (
-                                        <li key={fb.id} className="p-4 space-y-2">
+                                        {rows.map(fb => (
+                                        <li
+                                            key={fb.id}
+                                            id={`feedback-row-${fb.id}`}
+                                            className={`p-4 space-y-2 ${highlightId === fb.id ? 'row-blink' : ''}`}
+                                        >
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="min-w-0">
                                                     <p className="text-sm font-bold text-slate-900 truncate">{fb.student_name}</p>
@@ -241,7 +276,11 @@ export default function StudentFeedback({ feedbacks, filters = {} }) {
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
                                             {rows.map(fb => (
-                                                <tr key={fb.id} className="hover:bg-slate-50/80 transition-colors">
+                                                <tr
+                                                    key={fb.id}
+                                                    id={`feedback-row-${fb.id}`}
+                                                    className={`hover:bg-slate-50/80 transition-colors ${highlightId === fb.id ? 'row-blink' : ''}`}
+                                                >
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div className="flex flex-col">
                                                             <span className="text-sm font-bold text-slate-900">{fb.student_name}</span>
