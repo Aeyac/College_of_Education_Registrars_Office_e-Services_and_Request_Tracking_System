@@ -37,11 +37,12 @@ class InquiryReplied extends Notification implements ShouldQueue
     public function toDatabase(object $notifiable): array
     {
         return [
+            'inquiry_id' => $this->inquiry->id,
             'service_label' => 'Inquiry Reply',
             'message' => 'Admin replied to: ' . $this->inquiry->subject,
             'status_code' => 'released',
             'status_label' => 'Resolved',
-            'link' => route('user.dashboard', absolute: false),
+            'link' => route('user.inquiries', ['highlight' => $this->inquiry->id], absolute: false),
         ];
     }
 }

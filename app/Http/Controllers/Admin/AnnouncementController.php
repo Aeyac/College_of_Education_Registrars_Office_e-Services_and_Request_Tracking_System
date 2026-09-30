@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\User;
+use App\Notifications\AnnouncementPosted;
+use Illuminate\Support\Facades\Notification;
 
 class AnnouncementController extends Controller
 {
@@ -29,13 +32,16 @@ class AnnouncementController extends Controller
             'posted_by' => auth()->id(),
             'published_at' => now(),
         ]);
-        
+
         activity()
             ->causedBy(auth()->user())
             ->performedOn($announcement)
             ->event('created')
             ->log('Posted an announcement: ' . $announcement->title);
-            
+
+        User::whereIn('user_type', ['student', 'alumni'])
+            ->chunkById(200, fn($users) => Notification::send($users, new AnnouncementPosted($announcement)));
+
         return back()->with('success', 'Announcement posted.');
     }
 
@@ -46,13 +52,13 @@ class AnnouncementController extends Controller
             'title' => $request->input('title'),
             'body' => $request->input('content'),
         ]);
-        
+
         activity()
             ->causedBy(auth()->user())
             ->performedOn($announcement)
             ->event('updated')
             ->log('Updated an announcement: ' . $announcement->title);
-            
+
         return back()->with('success', 'Announcement updated.');
     }
 
@@ -61,12 +67,12 @@ class AnnouncementController extends Controller
         $announcement = Announcement::findOrFail($id);
         $title = $announcement->title;
         $announcement->delete();
-        
+
         activity()
             ->causedBy(auth()->user())
             ->event('deleted')
             ->log('Deleted an announcement: ' . $title);
-            
+
         return back()->with('success', 'Announcement deleted.');
     }
 }

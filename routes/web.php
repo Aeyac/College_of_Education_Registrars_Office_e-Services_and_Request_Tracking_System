@@ -90,8 +90,8 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
             Route::get('/about', [StaticPageController::class, 'about'])->name('about');
             Route::get('/privacy-policy', [StaticPageController::class, 'privacy'])->name('privacy');
             Route::get('/terms-of-service', [StaticPageController::class, 'terms'])->name('terms');
-            Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
-
+            Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markNotificationAsRead'])->name('notifications.read.single');
+            
             Route::get('/inquiries', [UserInquiryController::class, 'index'])->name('inquiries');
             Route::get('/inquiries/attachment/{id}', [UserInquiryController::class, 'viewAttachment'])->name('inquiries.attachment');
             Route::post('/inquiries', [UserInquiryController::class, 'store'])->name('inquiries.store');

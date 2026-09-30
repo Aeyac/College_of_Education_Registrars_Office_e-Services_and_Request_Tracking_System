@@ -18,7 +18,12 @@ class NotificationController extends Controller
         $notification = auth()->user()->notifications()->findOrFail($id);
         $notification->markAsRead();
 
-        $link = $notification->data['link'] ?? null;
+        $data = $notification->data;
+        $link = $data['link'] ?? null;
+
+        if ($link && !empty($data['request_id']) && str_starts_with($link, '/user/dashboard')) {
+            $link = route('user.requests', ['highlight' => $data['request_id']], absolute: false);
+        }
 
         return $link ? redirect($link) : back();
     }

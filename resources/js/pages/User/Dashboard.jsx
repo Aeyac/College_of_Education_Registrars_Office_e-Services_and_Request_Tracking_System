@@ -3,6 +3,7 @@ import { useState } from 'react';
 import UserLayout from '@/Layouts/UserLayout';
 import RequestDocumentModal from '@/Components/RequestDocumentModal';
 import Swal from 'sweetalert2';
+import openNotification from '@/Utils/openNotification';
 
 const MySwal = Swal.mixin({
     customClass: {
@@ -171,10 +172,15 @@ export default function UserDashboard({ auth, requests = [], stats, services = [
 
                             <div className="space-y-2.5">
                                 {auth?.notifications?.length > 0 ? auth.notifications.slice(0, 3).map(notif => (
-                                    <div key={notif.id} className={`p-3.5 bg-white border rounded-2xl shadow-sm flex flex-col gap-1 transition-colors ${!notif.read_at ? 'border-amber-200 bg-amber-50' : 'border-slate-100'}`}>
+                                    <button
+                                        key={notif.id}
+                                        type="button"
+                                        onClick={() => openNotification(notif)}
+                                        className={`w-full text-left p-3.5 bg-white border rounded-2xl shadow-sm flex flex-col gap-1 transition-all hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 ${!notif.read_at ? 'border-amber-200 bg-amber-50 hover:bg-amber-100' : 'border-slate-100 hover:border-yellow-300'}`}
+                                    >
                                         <p className={`text-xs ${!notif.read_at ? 'font-bold text-amber-900' : 'text-slate-700'}`}>{notif.data.message}</p>
                                         <span className="text-[10px] text-slate-400">{new Date(notif.created_at).toLocaleString()}</span>
-                                    </div>
+                                    </button>
                                 )) : (
                                     <div className="text-center py-5 bg-slate-50 border border-slate-100 rounded-2xl">
                                         <p className="text-xs text-slate-500">No new notifications.</p>
