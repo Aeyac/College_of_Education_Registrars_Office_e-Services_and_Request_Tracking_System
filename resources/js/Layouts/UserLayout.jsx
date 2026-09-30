@@ -2,6 +2,9 @@ import { Link, usePage, router } from '@inertiajs/react';
 import { useState, useEffect, useRef } from 'react';
 import Chatbox from '@/Components/Chatbox';
 import openNotification from '@/Utils/openNotification';
+import useLiveRefresh from '@/hooks/useLiveRefresh';
+
+const NOTIFICATION_ONLY = ['auth'];
 
 const markSingleAsRead = notif => openNotification(notif, { onNavigate: () => setIsNotifOpen(false) });
 const timeAgo = d => { const s = Math.round((new Date() - new Date(d)) / 1000); if (s < 60) return 'Just now'; const m = Math.round(s / 60); if (m < 60) return `${m}m ago`; const h = Math.round(m / 60); return h < 24 ? `${h}h ago` : `${Math.round(h / 24)}d ago`; };
@@ -19,16 +22,10 @@ export default function UserLayout({ children }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    useEffect(() => {
-        let interval;
-        if (auth?.user && typeof window !== 'undefined' && window.Echo)
-            window.Echo.private(`App.Models.User.${auth.user.id}`).notification(() => router.reload({ only: ['auth'], preserveState: true, preserveScroll: true }));
-        else interval = setInterval(() => router.reload({ only: ['auth'], preserveState: true, preserveScroll: true }), 30000);
-        return () => {
-            if (auth?.user && typeof window !== 'undefined' && window.Echo) window.Echo.leave(`App.Models.User.${auth.user.id}`);
-            if (interval) clearInterval(interval);
-        };
-    }, [auth?.user]);
+    // Keeps the notification bell and unread badge current. Echo is the primary
+    // path; the hook polls `only: ['auth']` every 30s whenever the socket is
+    // unavailable so alerts still arrive without WebSockets.
+    useLiveRefresh({ only: NOTIFICATION_ONLY, realtime: true });
 
     const markAsRead = () => router.post('/user/notifications/mark-as-read', {}, {
         preserveScroll: true,

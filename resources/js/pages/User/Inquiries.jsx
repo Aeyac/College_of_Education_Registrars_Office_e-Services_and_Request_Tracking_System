@@ -6,6 +6,9 @@ import NewInquiryModal from '@/Components/NewInquiryModal';
 import Pagination from '@/Components/Pagination';
 import Swal from 'sweetalert2';
 import useHighlightRow from '@/hooks/useHighlightRow';
+import useLiveRefresh from '@/hooks/useLiveRefresh';
+
+const INQUIRIES_ONLY = ['inquiries'];
 
 export default function MyInquiries({ inquiries = [] }) {
     useHighlightRow('inquiry-row');
@@ -16,6 +19,11 @@ export default function MyInquiries({ inquiries = [] }) {
     const [isNewModalOpen, setIsNewModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+
+    // Registrar replies and status changes arrive from the other side without a
+    // broadcast event. ChatModal polls the same prop every 4s while a thread is
+    // open, so this list poll stands down then to avoid a duplicate request.
+    useLiveRefresh({ only: INQUIRIES_ONLY, enabled: !selectedInquiryId });
 
     const selectedInquiry = allRows.find((i) => i.id === selectedInquiryId);
     const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all';

@@ -4,6 +4,9 @@ import UserLayout from '@/Layouts/UserLayout';
 import RequestDocumentModal from '@/Components/RequestDocumentModal';
 import Swal from 'sweetalert2';
 import openNotification from '@/Utils/openNotification';
+import useLiveRefresh from '@/hooks/useLiveRefresh';
+
+const DASHBOARD_ONLY = ['stats', 'requests', 'announcements'];
 
 const MySwal = Swal.mixin({
     customClass: {
@@ -103,6 +106,14 @@ export default function UserDashboard({ auth, requests = [], stats, services = [
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
     const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
     const [trackingRequest, setTrackingRequest] = useState(null);
+
+    // Pending/completed counters, the recent-requests list and the announcement
+    // strip all change from other actors, and none of them broadcast. Suspended
+    // while a modal is open so an in-progress form is never replaced.
+    useLiveRefresh({
+        only: DASHBOARD_ONLY,
+        enabled: !isRequestModalOpen && !isCalendarModalOpen && !trackingRequest,
+    });
 
     const quickActions = [
         { name: 'New Request', iconPath: ICON_PATHS.newRequest, action: () => setIsRequestModalOpen(true) },

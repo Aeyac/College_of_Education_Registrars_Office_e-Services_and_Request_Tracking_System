@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/Components/Pagination';
 import { Icon } from '@/Components/Icon';
+import useLiveRefresh from '@/hooks/useLiveRefresh';
 
 const RELOAD_ONLY = ['alumni', 'filters'];
 const SEARCH_DEBOUNCE_MS = 350;
@@ -47,6 +48,14 @@ export default function AlumniVerifications({ alumni, courses = [], filters: raw
     const [submitting, setSubmitting] = useState(false);
 
     const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all' || courseFilter !== 'all';
+
+    // New proof submissions arrive from outside this page and nothing broadcasts
+    // them, so this poll is what surfaces them in the pending queue. Suspended
+    // while a verification modal is open or a decision is being submitted.
+    useLiveRefresh({
+        only: RELOAD_ONLY,
+        enabled: !selectedAlumni && !submitting && !loading,
+    });
 
     const visit = (overrides = {}) => {
         router.get(

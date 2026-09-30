@@ -1,5 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useEffect } from 'react';
+import useLiveRefresh from '@/hooks/useLiveRefresh';
+
+const PENDING_ONLY = ['submittedAt', 'proofFileName', 'status'];
+const PENDING_POLL_INTERVAL = 15000;
+
 export default function AlumniPending({ submittedAt, proofFileName, status }) {
     const isRejected = status === 'rejected';
 
@@ -11,13 +15,10 @@ export default function AlumniPending({ submittedAt, proofFileName, status }) {
         router.post(route('logout'));
     };
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            router.reload();
-        }, 15000);
-
-        return () => clearInterval(interval);
-    }, []);
+    // No broadcast event exists for a verification decision, so this poll is
+    // what moves the user off this screen once an admin acts. The controller
+    // redirects to the dashboard, and partial reloads follow that redirect.
+    useLiveRefresh({ only: PENDING_ONLY, interval: PENDING_POLL_INTERVAL });
 
     return (
         <>

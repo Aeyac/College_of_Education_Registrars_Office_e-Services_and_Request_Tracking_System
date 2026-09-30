@@ -8,8 +8,10 @@ import Swal from 'sweetalert2';
 import SoftCopyViewerModal from '@/Components/SoftCopyViewerModal';
 import Pagination from '@/Components/Pagination';
 import useHighlightRow from '@/hooks/useHighlightRow';
+import useLiveRefresh from '@/hooks/useLiveRefresh';
 
 const LOCKED_STATUSES = new Set(['cancelled_returned', 'cancelled', 'released', 'rejected']);
+const RELOAD_ONLY = ['requests', 'showingArchived', 'statusFilter'];
 const STATUS_FILTER_OPTIONS = [
     { value: 'submitted', label: 'Submitted' },
     { value: 'processing', label: 'Processing' },
@@ -159,7 +161,16 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
     const [docTypeFilter, setDocTypeFilter] = useState('all');
     const [softCopyRequest, setSoftCopyRequest] = useState(null);
 
-    const RELOAD_ONLY = ['requests', 'showingArchived', 'statusFilter'];
+    // Suspended while any modal is open or a row action is in flight, so an
+    // open form is never replaced underneath the user.
+    const isBusy = Boolean(
+        isModalOpen || trackingRequest || feedbackTarget || complyingRequest
+        || softCopyRequest || receivingId || archiving || cancellingId
+    );
+
+    // The notification bell announces a status change in real time, but the list
+    // itself has no broadcast event, so this poll keeps rows current.
+    useLiveRefresh({ only: RELOAD_ONLY, enabled: !isBusy });
 
     const requestList = requests?.data ?? [];
     const paginationLinks = requests?.meta?.links ?? requests?.links ?? [];
