@@ -73,6 +73,12 @@ const ROLES = [
         description: 'Already graduated and requesting document certificates.',
         icon: ['M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
     },
+    {
+        value: 'faculty',
+        title: 'Faculty',
+        description: 'Manage schedules and view announcements.',
+        icon: ['M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'],
+    },
 ];
 
 function Icon({ paths, className = 'w-5 h-5' }) {
@@ -277,7 +283,7 @@ export default function Register({ courses = [] }) {
                                     Change role
                                 </button>
                                 <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
-                                    {isAlumni ? 'Alumni Registration' : 'Student Registration'}
+                                    {isAlumni ? 'Alumni Registration' : isStudent ? 'Student Registration' : 'Faculty Registration'}
                                 </h1>
                                 <p className="text-slate-600 text-sm">Please fill in your information to get started.</p>
                             </div>
@@ -349,32 +355,36 @@ export default function Register({ courses = [] }) {
                                     </Field>
                                 )}
 
-                                <Field id="course_id" label="Course" error={errors.course_id}>
-                                    <select id="course_id" value={data.course_id} onChange={handleCourseChange} className={selectClass} required>
-                                        <option value="" disabled>Select course</option>
-                                        {courses.map((course) => <option key={course.id} value={course.id}>{course.label}</option>)}
-                                    </select>
-                                </Field>
+                                {data.user_type !== 'faculty' && (
+                                    <>
+                                        <Field id="course_id" label="Course" error={errors.course_id}>
+                                            <select id="course_id" value={data.course_id} onChange={handleCourseChange} className={selectClass} required>
+                                                <option value="" disabled>Select course</option>
+                                                {courses.map((course) => <option key={course.id} value={course.id}>{course.label}</option>)}
+                                            </select>
+                                        </Field>
 
-                                <Field id="major_id" label="Major" error={errors.major_id}>
-                                    <select
-                                        id="major_id"
-                                        value={data.major_id}
-                                        onChange={(e) => setData('major_id', e.target.value)}
-                                        className={selectClass}
-                                        required={availableMajors.length > 0}
-                                        disabled={availableMajors.length === 0}
-                                    >
-                                        <option value="" disabled>
-                                            {data.course_id === ''
-                                                ? 'Select a course first'
-                                                : availableMajors.length > 0
-                                                    ? 'Select major'
-                                                    : 'No major for this course'}
-                                        </option>
-                                        {availableMajors.map((major) => <option key={major.id} value={major.id}>{major.label}</option>)}
-                                    </select>
-                                </Field>
+                                        <Field id="major_id" label="Major" error={errors.major_id}>
+                                            <select
+                                                id="major_id"
+                                                value={data.major_id}
+                                                onChange={(e) => setData('major_id', e.target.value)}
+                                                className={selectClass}
+                                                required={availableMajors.length > 0}
+                                                disabled={availableMajors.length === 0}
+                                            >
+                                                <option value="" disabled>
+                                                    {data.course_id === ''
+                                                        ? 'Select a course first'
+                                                        : availableMajors.length > 0
+                                                            ? 'Select major'
+                                                            : 'No major for this course'}
+                                                </option>
+                                                {availableMajors.map((major) => <option key={major.id} value={major.id}>{major.label}</option>)}
+                                            </select>
+                                        </Field>
+                                    </>
+                                )}
 
                                 {isAlumni ? (
                                     <Field
@@ -398,7 +408,7 @@ export default function Register({ courses = [] }) {
                                             required
                                         />
                                     </Field>
-                                ) : (
+                                ) : isStudent ? (
                                     <Field id="year_level" label="Year Level" className="md:col-span-2">
                                         <TextInput
                                             id="year_level"
@@ -410,7 +420,7 @@ export default function Register({ courses = [] }) {
                                             tabIndex={-1}
                                         />
                                     </Field>
-                                )}
+                                ) : null}
 
                                 {isAlumni && (
                                     <Field

@@ -26,6 +26,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'verified.alumni' => \App\Http\Middleware\EnsureAlumniIsVerified::class,
         ]);
+        $middleware->redirectUsersTo(function (Request $request) {
+            $user = $request->user();
+            if ($user && $user->user_type === 'admin') {
+                return route('admin.dashboard', absolute: false);
+            } elseif ($user && $user->user_type === 'faculty') {
+                return route('faculty.dashboard', absolute: false);
+            }
+            return route('user.dashboard', absolute: false);
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

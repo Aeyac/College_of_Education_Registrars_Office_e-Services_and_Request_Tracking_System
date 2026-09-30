@@ -106,6 +106,16 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         });
     });
 
+    // === FACULTY ROUTES ===
+    Route::prefix('faculty')->name('faculty.')->middleware('role:faculty')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\Faculty\DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/schedule', [App\Http\Controllers\Faculty\ScheduleController::class, 'index'])->name('schedule');
+        Route::put('/schedule', [App\Http\Controllers\Faculty\ScheduleController::class, 'update'])->name('schedule.update');
+        Route::post('/schedule/extract', [App\Http\Controllers\Faculty\ScheduleController::class, 'extract'])->name('schedule.extract');
+        Route::get('/announcements', [App\Http\Controllers\User\AnnouncementController::class, 'index'])->name('announcements');
+        Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
+    });
+
     // === ADMIN ROUTES ===
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'loadDashboard'])->name('dashboard');

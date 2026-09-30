@@ -10,10 +10,20 @@ use Illuminate\Support\Facades\Mail;
 
 class OtpVerificationController extends Controller
 {
+    private function getDefaultRoute($user)
+    {
+        if ($user->user_type === 'admin') {
+            return route('admin.dashboard', absolute: false);
+        } elseif ($user->user_type === 'faculty') {
+            return route('faculty.dashboard', absolute: false);
+        }
+        return route('user.dashboard', absolute: false);
+    }
+
     public function notice(Request $request)
     {
         return $request->user()->hasVerifiedEmail()
-            ? redirect()->intended(route('user.dashboard', absolute: false))
+            ? Inertia::location($this->getDefaultRoute($request->user()))
             : Inertia::render('Auth/VerifyOtp', ['status' => session('status')]);
     }
 
@@ -37,7 +47,7 @@ class OtpVerificationController extends Controller
             $user->markEmailAsVerified();
             $user->update(['otp' => null, 'otp_expires_at' => null]);
 
-            return redirect()->intended(route('user.dashboard', absolute: false));
+            return Inertia::location($this->getDefaultRoute($user));
         }
 
         // Increment attempt count on failure
@@ -57,7 +67,7 @@ class OtpVerificationController extends Controller
         $user = $request->user();
 
         if ($user->hasVerifiedEmail()) {
-            return redirect()->intended(route('user.dashboard', absolute: false));
+            return Inertia::location($this->getDefaultRoute($user));
         }
 
         // Reset attempt counter when resending

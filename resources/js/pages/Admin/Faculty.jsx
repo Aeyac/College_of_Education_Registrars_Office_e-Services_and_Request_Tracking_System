@@ -4,6 +4,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/Components/Pagination';
 import Swal from 'sweetalert2';
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 
 const MAX_FILES = 5;
 const RELOAD_ONLY = ['faculty', 'filters'];
@@ -48,6 +49,64 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
 
     const [isExtracting, setIsExtracting] = useState(false);
     const fileInputRef = useRef(null);
+    const [exportMenuProfId, setExportMenuProfId] = useState(null);
+    const [exportingProf, setExportingProf] = useState(null);
+
+    const formatTime = (timeString) => {
+        if (!timeString) return '';
+        const [hours, minutes] = timeString.split(':');
+        const h = parseInt(hours, 10);
+        if (Number.isNaN(h)) return timeString;
+        return `${h % 12 || 12}:${minutes} ${h >= 12 ? 'PM' : 'AM'}`;
+    };
+
+    const handleExportExcel = (prof) => {
+        setExportMenuProfId(null);
+        const ws_data = [
+            ['Faculty Schedule'],
+            ['Name:', prof?.name || 'Not specified'],
+            ['Role:', prof?.role || 'Not specified'],
+            ['Department:', prof?.department_or_program || 'Not specified'],
+            ['Office/Room:', prof?.room_or_location || 'Not specified'],
+            [],
+            ['Day', 'Start Time', 'End Time', 'Type', 'Room', 'Course Code', 'Section Code']
+        ];
+
+        if (prof.weekly_schedule && prof.weekly_schedule.length > 0) {
+            prof.weekly_schedule.forEach(block => {
+                ws_data.push([
+                    block.day,
+                    formatTime(block.start_time),
+                    formatTime(block.end_time),
+                    block.type === 'consultation' ? 'Consultation' : 'Class',
+                    block.room || 'TBA',
+                    block.course_code || '-',
+                    block.section_code || '-'
+                ]);
+            });
+        } else {
+            ws_data.push(['No schedule blocks added yet.']);
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        const colWidths = [
+            { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, 
+            { wch: 15 }, { wch: 15 }, { wch: 15 }
+        ];
+        ws['!cols'] = colWidths;
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Schedule");
+        XLSX.writeFile(wb, `${prof.name ? prof.name.replace(/\s+/g, '_') : 'Faculty'}_Schedule.xlsx`);
+    };
+
+    const handleExportPDF = (prof) => {
+        setExportMenuProfId(null);
+        setExportingProf(prof);
+        setTimeout(() => {
+            window.print();
+            setExportingProf(null);
+        }, 100);
+    };
 
     // Queue of successfully-extracted records still waiting to be reviewed
     // and saved. Each upload can return up to MAX_FILES records; the admin
@@ -58,6 +117,7 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
     const { data, setData, post, put, processing, reset, errors, clearErrors } = useForm({
         id: null,
         name: '',
+        role: '',
         department_or_program: '',
         room_or_location: '',
         consultation_days: '',
@@ -89,12 +149,25 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
         return () => clearTimeout(timer);
     }, [searchTerm, deptFilter]);
 
+    // Prevent background scrolling when modal is open
+    useEffect(() => {
+        if (isModalOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isModalOpen]);
+
     // Loads one queued extraction result into the form for review/editing.
     const loadQueueItem = (item) => {
         clearErrors();
         setData({
             id: null,
             name: item.data.name,
+            role: item.data.role || '',
             department_or_program: item.data.department_or_program,
             room_or_location: item.data.room_or_location,
             consultation_days: '',
@@ -287,6 +360,16 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
     return (
         <AdminLayout>
             <Head title="Faculty Schedules" />
+            
+            <style>
+                {`
+                @media print {
+                    body * { visibility: hidden; }
+                    #print-section, #print-section * { visibility: visible; }
+                    #print-section { position: absolute; left: 0; top: 0; width: 100%; }
+                }
+                `}
+            </style>
 
             <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-6">
                 <div className="min-w-0">
@@ -370,12 +453,18 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
                             <div key={prof.id} className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
                                 <div>
                                     <div className="flex items-center gap-4 mb-4">
-                                        <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-black text-xl shrink-0 shadow-sm">
-                                            {(prof.name || 'U').charAt(0)}
-                                        </div>
+                                        {prof.user?.profile_picture ? (
+                                            <img src={`/storage/${prof.user.profile_picture}`} alt={prof.name} className="w-14 h-14 rounded-full object-cover shadow-sm border border-slate-200 shrink-0" />
+                                        ) : (
+                                            <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-black text-xl shrink-0 shadow-sm">
+                                                {(prof.name || 'U').charAt(0)}
+                                            </div>
+                                        )}
                                         <div className="overflow-hidden">
                                             <h4 className="font-bold text-slate-900 text-base truncate">{prof.name}</h4>
-                                            <p className="text-xs font-bold text-yellow-600 truncate uppercase tracking-wide mt-0.5">{getProgram(prof)}</p>
+                                            <p className="text-xs font-bold text-yellow-600 truncate uppercase tracking-wide mt-0.5">
+                                                {prof.role && prof.role !== 'Not specified' ? prof.role : 'Unspecified Role'} <span className="text-slate-300 mx-1">•</span> {prof.department_or_program && prof.department_or_program !== 'Not specified' ? prof.department_or_program : 'Unspecified Dept'}
+                                            </p>
                                         </div>
                                     </div>
 
@@ -414,9 +503,31 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
                                     </div>
                                 </div>
 
-                                <div className="flex gap-3 mt-5">
-                                    <button onClick={() => { setExtractionQueue([]); setQueuePosition(0); setData(prof); clearErrors(); setIsModalOpen(true); }} className="flex-1 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 transition-colors shadow-sm">Edit</button>
-                                    <button onClick={() => confirmDelete(prof.id)} className="flex-1 py-2.5 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors shadow-sm">Remove</button>
+                                <div className="flex gap-2 mt-5">
+                                    <button onClick={() => { setExtractionQueue([]); setQueuePosition(0); setData(prof); clearErrors(); setIsModalOpen(true); }} className="flex-1 py-2 text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 transition-colors shadow-sm">Edit</button>
+                                    <button onClick={() => confirmDelete(prof.id)} className="flex-1 py-2 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors shadow-sm">Remove</button>
+                                    
+                                    <div className="relative flex-1">
+                                        <button 
+                                            onClick={() => setExportMenuProfId(exportMenuProfId === prof.id ? null : prof.id)} 
+                                            className="w-full py-2 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition-colors shadow-sm flex items-center justify-center gap-1"
+                                        >
+                                            Export
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                        </button>
+                                        {exportMenuProfId === prof.id && (
+                                            <div className="absolute right-0 bottom-full mb-2 w-40 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-10 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                                <button onClick={() => handleExportPDF(prof)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-rose-600 flex items-center gap-2">
+                                                    <svg className="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                                    As PDF
+                                                </button>
+                                                <button onClick={() => handleExportExcel(prof)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-emerald-600 flex items-center gap-2 border-t border-slate-100">
+                                                    <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                    As Excel
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -474,8 +585,13 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
                                             {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Department / Role</label>
-                                            <input type="text" value={data.department_or_program} onChange={e => setData('department_or_program', e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl shadow-sm text-sm focus:ring-yellow-500 focus:bg-white py-3 px-4 outline-none transition-colors" placeholder="e.g. BS Elementary Education" required />
+                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Role / Position</label>
+                                            <input type="text" value={data.role} onChange={e => setData('role', e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl shadow-sm text-sm focus:ring-yellow-500 focus:bg-white py-3 px-4 outline-none transition-colors" placeholder="e.g. Instructor I, Faculty" required />
+                                            {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role}</p>}
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Department / Program</label>
+                                            <input type="text" value={data.department_or_program} onChange={e => setData('department_or_program', e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl shadow-sm text-sm focus:ring-yellow-500 focus:bg-white py-3 px-4 outline-none transition-colors" placeholder="e.g. DTLLSED" required />
                                             {errors.department_or_program && <p className="text-red-500 text-xs mt-1">{errors.department_or_program}</p>}
                                         </div>
                                         <div>
@@ -606,6 +722,82 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
                             </div>
                         </form>
 
+                    </div>
+                </div>
+            )}
+
+
+            {/* Hidden Print Section */}
+            {exportingProf && (
+                <div id="print-section" className="hidden print:block bg-white text-black min-h-screen">
+                    <div className="p-8">
+                        <div className="text-center mb-6">
+                            <div className="flex justify-center items-center gap-4 mb-4">
+                                <img src="/images/cedlogo.png" alt="CED Logo" className="w-16 h-16 object-contain" />
+                                <div>
+                                    <h1 className="text-2xl font-bold text-slate-900 uppercase tracking-widest">Faculty Schedule</h1>
+                                    <p className="text-sm text-slate-600 mt-1">College of Education, Central Luzon State University</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-6">
+                            {exportingProf.user?.profile_picture ? (
+                                <img src={`/storage/${exportingProf.user.profile_picture}`} alt={exportingProf.name} className="w-24 h-24 rounded-2xl object-cover shadow-sm border border-slate-200 shrink-0" />
+                            ) : (
+                                <div className="w-24 h-24 rounded-2xl bg-white border border-slate-200 text-slate-700 flex items-center justify-center font-black text-3xl shrink-0 shadow-sm">
+                                    {(exportingProf.name || 'U').charAt(0)}
+                                </div>
+                            )}
+                            <div className="flex-1 grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Name</span> 
+                                    <span className="font-bold text-slate-900 text-lg">{exportingProf.name || 'Not specified'}</span>
+                                </div>
+                                <div>
+                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Role</span> 
+                                    <span className="font-bold text-slate-900">{exportingProf.role || 'Not specified'}</span>
+                                </div>
+                                <div>
+                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Department</span> 
+                                    <span className="font-bold text-slate-900">{exportingProf.department_or_program || 'Not specified'}</span>
+                                </div>
+                                <div>
+                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Office/Room</span> 
+                                    <span className="font-bold text-slate-900">{exportingProf.room_or_location || 'Not specified'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8">
+                            <h2 className="text-lg font-bold text-slate-900 mb-4 border-b border-slate-200 pb-2">Weekly Schedule</h2>
+                            {exportingProf.weekly_schedule && exportingProf.weekly_schedule.length > 0 ? (
+                                <table className="w-full border-collapse">
+                                    <thead>
+                                        <tr className="bg-slate-100 border-y border-slate-300">
+                                            <th className="py-2 px-4 text-left text-sm font-bold text-slate-700">Day</th>
+                                            <th className="py-2 px-4 text-left text-sm font-bold text-slate-700">Time</th>
+                                            <th className="py-2 px-4 text-left text-sm font-bold text-slate-700">Type</th>
+                                            <th className="py-2 px-4 text-left text-sm font-bold text-slate-700">Course & Section</th>
+                                            <th className="py-2 px-4 text-left text-sm font-bold text-slate-700">Room</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {exportingProf.weekly_schedule.map((block, idx) => (
+                                            <tr key={idx} className="border-b border-slate-200 text-sm">
+                                                <td className="py-2 px-4 font-semibold">{block.day}</td>
+                                                <td className="py-2 px-4">{formatTime(block.start_time)} - {formatTime(block.end_time)}</td>
+                                                <td className="py-2 px-4 text-slate-600">{block.type === 'consultation' ? 'Consultation' : 'Class'}</td>
+                                                <td className="py-2 px-4 font-semibold">{block.course_code || '-'} {block.section_code ? `(${block.section_code})` : ''}</td>
+                                                <td className="py-2 px-4 text-slate-600">{block.room || 'TBA'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <p className="text-sm text-slate-500 italic py-4">No schedule blocks found.</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

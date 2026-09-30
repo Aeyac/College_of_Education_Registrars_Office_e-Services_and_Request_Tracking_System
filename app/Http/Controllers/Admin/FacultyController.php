@@ -22,7 +22,8 @@ class FacultyController extends Controller
         ];
 
         $paginator = Faculty::query()
-            ->select(['id', 'name', 'department_or_program', 'room_or_location', 'weekly_schedule'])
+            ->with('user:id,profile_picture')
+            ->select(['id', 'user_id', 'name', 'role', 'department_or_program', 'room_or_location', 'weekly_schedule'])
             ->when($filters['department'] !== 'all', fn($q) => $q->where('department_or_program', $filters['department']))
             ->when($filters['search'] !== '', function ($q) use ($filters) {
                 $like = '%' . addcslashes($filters['search'], '%_\\') . '%';
@@ -45,7 +46,9 @@ class FacultyController extends Controller
 
         $paginator->through(fn($prof) => [
             'id' => $prof->id,
+            'user' => $prof->user,
             'name' => $prof->name,
+            'role' => $prof->role,
             'department_or_program' => $prof->department_or_program,
             'room_or_location' => $prof->room_or_location,
             'weekly_schedule' => $prof->weekly_schedule,
@@ -92,6 +95,7 @@ class FacultyController extends Controller
     {
         Faculty::create($request->validate([
             'name' => 'required|string|max:255',
+            'role' => 'required|string|max:255',
             'department_or_program' => 'required|string|max:255',
             'room_or_location' => 'required|string|max:255',
             'weekly_schedule' => 'nullable|array',
@@ -104,6 +108,7 @@ class FacultyController extends Controller
     {
         Faculty::findOrFail($id)->update($request->validate([
             'name' => 'required|string|max:255',
+            'role' => 'required|string|max:255',
             'department_or_program' => 'required|string|max:255',
             'room_or_location' => 'required|string|max:255',
             'weekly_schedule' => 'nullable|array',

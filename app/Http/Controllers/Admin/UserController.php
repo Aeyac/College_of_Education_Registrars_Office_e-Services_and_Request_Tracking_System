@@ -31,7 +31,7 @@ class UserController extends Controller
     {
         $q = trim((string) $request->query('q', ''));
 
-        $type = in_array($request->query('type'), ['student', 'alumni', 'admin'], true)
+        $type = in_array($request->query('type'), ['student', 'alumni', 'admin', 'faculty'], true)
             ? $request->query('type')
             : 'all';
 
@@ -43,7 +43,7 @@ class UserController extends Controller
         $dir = $request->query('dir') === 'desc' ? 'desc' : 'asc';
 
         $query = User::with(['course:id,label', 'major:id,label'])
-            ->whereIn('user_type', ['student', 'alumni', 'admin']);
+            ->whereIn('user_type', ['student', 'alumni', 'admin', 'faculty']);
 
         if ($q !== '') {
             $like = '%' . addcslashes($q, '\\%_') . '%';
@@ -131,7 +131,7 @@ class UserController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'user_type' => 'required|in:student,alumni,admin',
+            'user_type' => 'required|in:student,alumni,admin,faculty',
             'student_number' => 'nullable|string',
             'course_id' => 'nullable|exists:courses,id',
             'major_id' => 'nullable|exists:majors,id',
@@ -144,6 +144,16 @@ class UserController extends Controller
         $data['password'] = Hash::make($data['password']);
 
         $user = User::create($data);
+
+        if ($data['user_type'] === 'faculty') {
+            $user->facultyProfile()->create([
+                'name' => trim($data['first_name'] . ' ' . $data['last_name']),
+                'role' => 'Not specified',
+                'department_or_program' => 'Not specified',
+                'room_or_location' => 'Not specified',
+                'weekly_schedule' => [],
+            ]);
+        }
 
         $role = Role::firstOrCreate(['name' => $data['user_type']]);
         $user->assignRole($role);
@@ -159,7 +169,7 @@ class UserController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
-            'user_type' => 'required|in:student,alumni,admin',
+            'user_type' => 'required|in:student,alumni,admin,faculty',
             'student_number' => 'nullable|string',
             'course_id' => 'nullable|exists:courses,id',
             'major_id' => 'nullable|exists:majors,id',
@@ -173,6 +183,16 @@ class UserController extends Controller
         }
 
         $user->update($data);
+
+        if ($data['user_type'] === 'faculty' && !$user->facultyProfile) {
+            $user->facultyProfile()->create([
+                'name' => trim($data['first_name'] . ' ' . $data['last_name']),
+                'role' => 'Not specified',
+                'department_or_program' => 'Not specified',
+                'room_or_location' => 'Not specified',
+                'weekly_schedule' => [],
+            ]);
+        }
 
         $role = Role::firstOrCreate(['name' => $data['user_type']]);
         $user->syncRoles([$role]);
