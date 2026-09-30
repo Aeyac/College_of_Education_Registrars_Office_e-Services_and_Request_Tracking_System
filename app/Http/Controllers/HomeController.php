@@ -26,6 +26,7 @@ class HomeController extends Controller
                 'id' => $ann->id,
                 'title' => $ann->title,
                 'content' => $ann->body,
+                'attachments' => $ann->attachments,
                 'date' => $ann->created_at->format('F d, Y'),
             ]);
 

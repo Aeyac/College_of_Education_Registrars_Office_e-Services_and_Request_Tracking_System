@@ -475,10 +475,16 @@ export default function Welcome({ announcements = [], faqs = [] }) {
                                                 <span className="text-[11px] font-bold text-yellow-700 tracking-widest uppercase">{a.date}</span>
                                             </div>
                                             <h3 className="font-bold text-slate-900 text-lg sm:text-xl mb-4 leading-snug line-clamp-2 break-words">{a.title}</h3>
-                                            <div className={`text-slate-600 leading-relaxed line-clamp-3 mb-6 relative flex-grow ${RICH_TEXT}`}>
+                                            <div className={`text-slate-600 leading-relaxed line-clamp-3 relative flex-grow ${RICH_TEXT}`}>
                                                 <div dangerouslySetInnerHTML={{ __html: a.content || '' }} />
-                                                <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-white to-transparent"></div>
+                                                <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
                                             </div>
+                                            {a.attachments && a.attachments.length > 0 && (
+                                                <div className="mt-4 mb-6 flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                                    {a.attachments.length} attachment{a.attachments.length !== 1 ? 's' : ''}
+                                                </div>
+                                            )}
                                             <div className="mt-auto pt-4 border-t border-slate-100">
                                                 <button type="button" onClick={() => setSelectedAnnouncement(a)} className={BTN_SECONDARY}>
                                                     Read Full Announcement
@@ -523,6 +529,28 @@ export default function Welcome({ announcements = [], faqs = [] }) {
                     className={`leading-relaxed text-slate-700 text-base ${RICH_TEXT}`}
                     dangerouslySetInnerHTML={{ __html: selectedAnnouncement?.content || '' }}
                 />
+                
+                {selectedAnnouncement?.attachments && selectedAnnouncement.attachments.length > 0 && (
+                    <div className="mt-8 border-t border-slate-100 pt-6">
+                        <h4 className="text-sm font-bold text-slate-900 mb-4">Attachments</h4>
+                        <div className="flex flex-col gap-3">
+                            {selectedAnnouncement.attachments.map((file, idx) => (
+                                <a key={idx} href={`/storage/${file.path}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-xl hover:bg-yellow-50 hover:border-yellow-200 transition-colors group/file">
+                                    <div className="w-10 h-10 shrink-0 bg-white rounded-lg shadow-sm flex items-center justify-center text-slate-400 group-hover/file:text-yellow-600 border border-slate-100">
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-slate-900 truncate group-hover/file:text-yellow-800 transition-colors">{file.name}</p>
+                                        <p className="text-xs text-slate-500 mt-0.5">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                    </div>
+                                    <div className="shrink-0 px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg group-hover/file:bg-yellow-400 group-hover/file:border-yellow-400 group-hover/file:text-yellow-950 transition-colors shadow-sm">
+                                        Download
+                                    </div>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </AnnouncementModal>
         </div>
     );
