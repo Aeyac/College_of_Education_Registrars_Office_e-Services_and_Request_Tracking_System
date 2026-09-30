@@ -13,7 +13,9 @@ class Faculty extends Model
     protected $table = 'faculty';
 
     protected $fillable = [
+        'user_id',
         'name',
+        'role',
         'department_or_program',
         'consultation_days',
         'consultation_time_start',
@@ -22,6 +24,11 @@ class Faculty extends Model
         'weekly_schedule',
         'is_active',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     protected function casts(): array
     {

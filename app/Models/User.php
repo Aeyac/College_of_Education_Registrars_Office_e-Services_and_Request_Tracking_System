@@ -9,7 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable, SoftDeletes, HasRoles;
 
@@ -71,9 +71,15 @@ class User extends Authenticatable
         return $this->user_type === 'admin';
     }
 
+    public function isFaculty(): bool
+    {
+        return $this->user_type === 'faculty';
+    }
 
-
-
+    public function facultyProfile()
+    {
+        return $this->hasOne(Faculty::class);
+    }
     public function displaySubtitle(): string
     {
         $this->loadMissing('course');

@@ -58,7 +58,7 @@ class UserDashboardController extends Controller
             ->map(fn(Faculty $prof) => [
                 'id' => $prof->id,
                 'name' => $prof->name,
-                'role' => $prof->department_or_program,
+                'role' => $prof->role,
                 'room' => $prof->room_or_location,
                 'hours' => $this->formatConsultationHours($prof),
             ]);

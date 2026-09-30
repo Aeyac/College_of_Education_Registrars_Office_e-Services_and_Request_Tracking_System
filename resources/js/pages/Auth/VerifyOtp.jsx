@@ -1,6 +1,6 @@
 import InputError from '@/Components/InputError';
 import TextInput from '@/Components/TextInput';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, Link } from '@inertiajs/react';
 
 export default function VerifyOtp({ status }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -71,6 +71,15 @@ export default function VerifyOtp({ status }) {
                             Resend Code
                         </button>
                     </p>
+                    <Link
+                        href={route('logout')}
+                        method="post"
+                        as="button"
+                        type="button"
+                        className="text-sm font-bold text-slate-400 hover:text-red-500 transition-colors mt-2 underline"
+                    >
+                        Cancel & Logout
+                    </Link>
                 </div>
             </div>
         </div>

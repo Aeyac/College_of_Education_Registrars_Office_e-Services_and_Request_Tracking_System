@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 use Laravel\Socialite\Facades\Socialite;
 
 class GoogleController extends Controller
@@ -47,10 +48,15 @@ class GoogleController extends Controller
         Auth::login($user);
 
         // Redirect to profile completion if they haven't set an academic role
+        // Redirect to profile completion if they haven't set an academic role
         if (is_null($user->user_type)) {
-            return redirect()->route('profile.complete');
+            return Inertia::location(route('profile.complete'));
         }
 
-        return redirect()->route('user.dashboard');
+        if ($user->user_type === 'faculty') {
+            return Inertia::location(route('faculty.dashboard'));
+        }
+
+        return Inertia::location(route('user.dashboard'));
     }
 }

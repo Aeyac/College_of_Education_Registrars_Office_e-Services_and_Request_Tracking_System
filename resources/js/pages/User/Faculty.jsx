@@ -1,13 +1,11 @@
 import { Head } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import UserLayout from '@/Layouts/UserLayout';
 
 const daysOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-const getProgram = (prof) => {
-    const value = [prof.department_or_program, prof.role].find((v) => v && v !== 'Not specified');
-    return value || 'Unspecified';
-};
+const getProgram = (prof) => prof.department_or_program && prof.department_or_program !== 'Not specified' ? prof.department_or_program : 'Unspecified Dept';
+const getRole = (prof) => prof.role && prof.role !== 'Not specified' ? prof.role : 'Unspecified Role';
 
 const getOffice = (prof) => prof.room || prof.room_or_location || 'TBA';
 
@@ -47,6 +45,17 @@ export default function FacultySchedules({ faculty = [] }) {
         [faculty]
     );
 
+    useEffect(() => {
+        if (selectedProf) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [selectedProf]);
+
     const processedFaculty = useMemo(() => {
         const q = searchTerm.trim().toLowerCase();
         return faculty.filter((prof) => {
@@ -56,6 +65,7 @@ export default function FacultySchedules({ faculty = [] }) {
             const haystack = [
                 prof.name,
                 getProgram(prof),
+                getRole(prof),
                 getOffice(prof),
                 ...(prof.weekly_schedule || []).flatMap((b) => [b.course_code, b.section_code, getSubject(b)]),
             ]
@@ -123,12 +133,18 @@ export default function FacultySchedules({ faculty = [] }) {
                                     <div>
                                         <div className="flex items-center gap-4 mb-4">
                                             {/* Light Background Profile Avatar */}
-                                            <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-black text-xl shrink-0 shadow-sm">
-                                                {(prof.name || 'U').charAt(0)}
-                                            </div>
+                                            {prof.user?.profile_picture ? (
+                                                <img src={`/storage/${prof.user.profile_picture}`} alt={prof.name} className="w-14 h-14 rounded-full object-cover shadow-sm border border-slate-200 shrink-0" />
+                                            ) : (
+                                                <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-black text-xl shrink-0 shadow-sm">
+                                                    {(prof.name || 'U').charAt(0)}
+                                                </div>
+                                            )}
                                             <div className="overflow-hidden">
                                                 <h4 className="font-bold text-slate-900 text-base truncate">{prof.name}</h4>
-                                                <p className="text-xs font-bold text-yellow-600 truncate uppercase tracking-wide mt-0.5">{getProgram(prof)}</p>
+                                                <p className="text-xs font-bold text-yellow-600 truncate uppercase tracking-wide mt-0.5">
+                                                    {getRole(prof)} <span className="text-slate-300 mx-1">•</span> {getProgram(prof)}
+                                                </p>
                                             </div>
                                         </div>
 
@@ -198,13 +214,17 @@ export default function FacultySchedules({ faculty = [] }) {
                         <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 bg-white shrink-0">
                             <div className="flex items-center gap-4 min-w-0">
                                 {/* Light Background Profile Avatar (Modal Header) */}
-                                <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-black text-lg shrink-0 shadow-sm">
-                                    {(selectedProf.name || 'U').charAt(0)}
-                                </div>
+                                {selectedProf.user?.profile_picture ? (
+                                    <img src={`/storage/${selectedProf.user.profile_picture}`} alt={selectedProf.name} className="w-12 h-12 rounded-full object-cover shadow-sm border border-slate-200 shrink-0" />
+                                ) : (
+                                    <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-black text-lg shrink-0 shadow-sm">
+                                        {(selectedProf.name || 'U').charAt(0)}
+                                    </div>
+                                )}
                                 <div className="min-w-0">
                                     <h3 className="font-bold text-slate-900 text-lg truncate">{selectedProf.name}</h3>
                                     <p className="text-xs font-bold text-yellow-600 uppercase tracking-wide truncate">
-                                        {getProgram(selectedProf)} <span className="text-slate-300 mx-1">•</span> {getOffice(selectedProf)}
+                                        {getRole(selectedProf)} <span className="text-slate-300 mx-1">•</span> {getProgram(selectedProf)} <span className="text-slate-300 mx-1">•</span> {getOffice(selectedProf)}
                                     </p>
                                 </div>
                             </div>

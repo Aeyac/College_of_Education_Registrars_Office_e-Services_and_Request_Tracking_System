@@ -33,12 +33,19 @@ export default function UserLayout({ children }) {
     });
 
     const userName = auth?.user?.first_name ? `${auth.user.first_name} ${auth.user.last_name}` : auth?.user?.name || 'Juan Dela Cruz';
-    const displayRole = auth?.role || (auth?.user?.user_type === 'alumni' ? `Alumni Batch ${auth?.user?.batch_year || ''}`.trim() : 'Student');
+    const isFaculty = auth?.user?.user_type === 'faculty';
+    const displayRole = auth?.role || (auth?.user?.user_type === 'alumni' ? `Alumni Batch ${auth?.user?.batch_year || ''}`.trim() : isFaculty ? 'Faculty' : 'Student');
     const userAvatar = auth?.user?.profile_picture
         ? <img src={`/storage/${auth.user.profile_picture}`} alt="Profile" className="w-full h-full object-cover rounded-full" />
         : (auth?.user?.first_name ? `${auth.user.first_name.charAt(0)}${auth.user.last_name?.charAt(0) || ''}` : 'U');
 
-    const menuItems = [
+    const menuItems = isFaculty ? [
+        { name: 'Dashboard', link: '/faculty/dashboard', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1m-6 0h6" /> },
+        { name: 'My Schedule', link: '/faculty/schedule', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /> },
+        { name: 'Announcements', link: '/faculty/announcements', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /> },
+        { divider: true },
+        { name: 'Profile Settings', link: '/profile', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /> },
+    ] : [
         { name: 'Dashboard', link: '/user/dashboard', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1m-6 0h6" /> },
         { name: 'My Requests', link: '/user/requests', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /> },
         { name: 'Faculty Schedules', link: '/user/faculty', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /> },

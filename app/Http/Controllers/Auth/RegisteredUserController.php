@@ -42,7 +42,7 @@ class RegisteredUserController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): \Symfony\Component\HttpFoundation\Response
     {
         $request->merge(['email' => Str::lower(trim((string) $request->input('email')))]);
 
@@ -59,7 +59,7 @@ class RegisteredUserController extends Controller
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => $emailRules,
-            'user_type' => ['required', Rule::in(['student', 'alumni'])],
+            'user_type' => ['required', Rule::in(['student', 'alumni', 'faculty'])],
             'student_number' => [
                 Rule::requiredIf($isStudent),
                 'nullable',
@@ -78,7 +78,7 @@ class RegisteredUserController extends Controller
                     }
                 },
             ],
-            'course_id' => ['required', 'exists:courses,id'],
+            'course_id' => [$request->input('user_type') === 'faculty' ? 'nullable' : 'required', 'exists:courses,id'],
             // The major must belong to the selected course.
             'major_id' => [
                 'nullable',
@@ -111,7 +111,7 @@ class RegisteredUserController extends Controller
         $otp = random_int(100000, 999999);
 
         // Everything is saved together, or nothing is (no half-created accounts).
-        [$user, $verification] = DB::transaction(function () use ($validated, $request, $isStudent, $otp) {
+        [$user, $verification] = DB::transaction(function () use ($validated, $request, $isStudent, $isAlumni, $otp) {
             $user = User::create([
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
@@ -133,11 +133,19 @@ class RegisteredUserController extends Controller
             $user->assignRole($validated['user_type']);
 
             $verification = null;
-            if (!$isStudent) {
+            if ($isAlumni) {
                 $verification = AlumniVerification::create([
                     'user_id' => $user->id,
                     'path' => $request->file('proof')->store('alumni-proofs', 'private'),
                     'status' => 'pending',
+                ]);
+            } elseif ($validated['user_type'] === 'faculty') {
+                $user->facultyProfile()->create([
+                    'name' => $validated['first_name'] . ' ' . $validated['last_name'],
+                    'role' => 'Not specified',
+                    'department_or_program' => 'Not specified',
+                    'room_or_location' => 'Not specified',
+                    'weekly_schedule' => [],
                 ]);
             }
 
@@ -162,7 +170,7 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('verification.notice');
+        return Inertia::location(route('verification.notice'));
     }
 
     private function academicYear(): int

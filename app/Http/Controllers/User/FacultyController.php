@@ -13,17 +13,19 @@ class FacultyController extends Controller
     {
         $this->authorize('viewAny', Faculty::class);
 
-        $faculty = Faculty::where('is_active', true)
+        $faculty = Faculty::with('user:id,profile_picture')
+            ->where('is_active', true)
             ->orderBy('name')
             ->get()
             ->map(fn (Faculty $prof) => [
                 'id' => $prof->id,
+                'user' => $prof->user,
                 'name' => $prof->name,
                 'department_or_program' => $prof->department_or_program,
                 'room_or_location' => $prof->room_or_location,
                 'weekly_schedule' => $prof->weekly_schedule,
                 'current_status' => $prof->current_status,
-                'role' => $prof->department_or_program,
+                'role' => $prof->role,
                 'room' => $prof->room_or_location,
                 'hours' => $prof->formattedConsultationHours(),
             ]);

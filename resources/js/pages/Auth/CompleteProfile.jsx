@@ -59,6 +59,7 @@ export default function CompleteProfile({ courses = [] }) {
                         >
                             <option value="student">Current Student</option>
                             <option value="alumni">Alumni / Graduate</option>
+                            <option value="faculty">Faculty Member</option>
                         </select>
                     </div>
 
@@ -77,36 +78,40 @@ export default function CompleteProfile({ courses = [] }) {
                         </div>
                     )}
 
-                    {/* Course */}
-                    <div>
-                        <InputLabel value="Course" className="text-slate-800 font-semibold mb-1.5" />
-                        <select 
-                            value={data.course_id} 
-                            onChange={handleCourseChange} 
-                            className="w-full px-4 py-3 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer"
-                            required
-                        >
-                            <option value="" disabled>Select your course</option>
-                            {safeCourses.map(course => <option key={course.id} value={course.id}>{course.label}</option>)}
-                        </select>
-                        <InputError message={errors.course_id} className="mt-2 text-red-600 text-xs" />
-                    </div>
+                    {data.user_type !== 'faculty' && (
+                        <>
+                            {/* Course */}
+                            <div>
+                                <InputLabel value="Course" className="text-slate-800 font-semibold mb-1.5" />
+                                <select 
+                                    value={data.course_id} 
+                                    onChange={handleCourseChange} 
+                                    className="w-full px-4 py-3 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer"
+                                    required
+                                >
+                                    <option value="" disabled>Select your course</option>
+                                    {safeCourses.map(course => <option key={course.id} value={course.id}>{course.label}</option>)}
+                                </select>
+                                <InputError message={errors.course_id} className="mt-2 text-red-600 text-xs" />
+                            </div>
 
-                    {/* Major */}
-                    <div>
-                        <InputLabel value="Major" className="text-slate-800 font-semibold mb-1.5" />
-                        <select 
-                            value={data.major_id} 
-                            onChange={e => setData('major_id', e.target.value)} 
-                            className="w-full px-4 py-3 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer disabled:bg-slate-100 disabled:text-slate-500"
-                            required={availableMajors.length > 0} 
-                            disabled={availableMajors.length === 0}
-                        >
-                            <option value="" disabled>{data.course_id === '' ? 'Select a course first' : availableMajors.length > 0 ? 'Select major' : 'No major for this course'}</option>
-                            {availableMajors.map(major => <option key={major.id} value={major.id}>{major.label}</option>)}
-                        </select>
-                        <InputError message={errors.major_id} className="mt-2 text-red-600 text-xs" />
-                    </div>
+                            {/* Major */}
+                            <div>
+                                <InputLabel value="Major" className="text-slate-800 font-semibold mb-1.5" />
+                                <select 
+                                    value={data.major_id} 
+                                    onChange={e => setData('major_id', e.target.value)} 
+                                    className="w-full px-4 py-3 border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm text-sm text-slate-900 bg-white cursor-pointer disabled:bg-slate-100 disabled:text-slate-500"
+                                    required={availableMajors.length > 0} 
+                                    disabled={availableMajors.length === 0}
+                                >
+                                    <option value="" disabled>{data.course_id === '' ? 'Select a course first' : availableMajors.length > 0 ? 'Select major' : 'No major for this course'}</option>
+                                    {availableMajors.map(major => <option key={major.id} value={major.id}>{major.label}</option>)}
+                                </select>
+                                <InputError message={errors.major_id} className="mt-2 text-red-600 text-xs" />
+                            </div>
+                        </>
+                    )}
 
                     {/* Final Conditional Select */}
                     {data.user_type === 'alumni' ? (
@@ -123,7 +128,7 @@ export default function CompleteProfile({ courses = [] }) {
                             />
                             <InputError message={errors.batch_year} className="mt-2 text-red-600 text-xs" />
                         </div>
-                    ) : (
+                    ) : data.user_type === 'student' ? (
                         <div>
                             <InputLabel value="Year Level" className="text-slate-800 font-semibold mb-1.5" />
                             <select 
@@ -142,7 +147,7 @@ export default function CompleteProfile({ courses = [] }) {
                             </select>
                             <InputError message={errors.year_level} className="mt-2 text-red-600 text-xs" />
                         </div>
-                    )}
+                    ) : null}
 
                     {/* Password Fields */}
                     <div>
@@ -180,7 +185,7 @@ export default function CompleteProfile({ courses = [] }) {
                     </button>
                     
                     <div className="text-center mt-4">
-                        <Link href={route('logout')} method="post" as="button" className="text-sm font-semibold text-slate-400 hover:text-slate-700 transition-colors">
+                        <Link href={route('logout')} method="post" as="button" type="button" className="text-sm font-semibold text-slate-400 hover:text-slate-700 transition-colors">
                             Cancel & Logout
                         </Link>
                     </div>

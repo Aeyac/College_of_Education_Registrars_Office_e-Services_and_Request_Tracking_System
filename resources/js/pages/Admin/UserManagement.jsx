@@ -49,7 +49,9 @@ const RoleBadge = memo(function RoleBadge({ type }) {
             ? 'bg-slate-800 text-white border-slate-700'
             : type === 'alumni'
                 ? 'bg-blue-50 text-blue-700 border-blue-200'
-                : 'bg-amber-50 text-amber-700 border-amber-200';
+                : type === 'faculty'
+                    ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200';
     return (
         <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${cls}`}>
             {type}
@@ -335,6 +337,7 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
                             <option value="all">All Roles</option>
                             <option value="student">Student</option>
                             <option value="alumni">Alumni</option>
+                            <option value="faculty">Faculty</option>
                             <option value="admin">Admin</option>
                         </select>
 
@@ -495,6 +498,7 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
                                         >
                                             <option value="student">Student</option>
                                             <option value="alumni">Alumni</option>
+                                            <option value="faculty">Faculty</option>
                                             <option value="admin">Administrator</option>
                                         </select>
                                     </Field>
@@ -511,7 +515,7 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
                                     )}
                                 </div>
 
-                                {data.user_type !== 'admin' && (
+                                {!['admin', 'faculty'].includes(data.user_type) && (
                                     <>
                                         <Field label="Course" error={errors.course_id}>
                                             <select value={data.course_id} onChange={handleCourseChange} className={inputCls} required>
