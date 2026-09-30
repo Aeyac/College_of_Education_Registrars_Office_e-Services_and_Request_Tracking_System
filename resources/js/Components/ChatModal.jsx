@@ -8,8 +8,6 @@ export default function ChatModal({ inquiry, onClose, basePath, onResolve }) {
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
     const replyForm = useForm({ message: '', parent_id: null, attachment: null });
-    console.log(inquiry)
-
 
     useEffect(() => {
         if (!inquiry) return;
