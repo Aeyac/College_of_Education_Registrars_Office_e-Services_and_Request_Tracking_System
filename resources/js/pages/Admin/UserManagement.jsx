@@ -1,22 +1,89 @@
-import { Head, useForm, router } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
+import { Head, useForm, router, usePage } from '@inertiajs/react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import Pagination from '@/Components/Pagination';
 import Swal from 'sweetalert2';
 
-export default function UserManagement({ users = [], courses = [] }) {
-    // --- Filter & Sort States ---
-    const [searchTerm, setSearchTerm] = useState('');
-    const [typeFilter, setTypeFilter] = useState('all');
-    const [courseFilter, setCourseFilter] = useState('all');
-    const [sortField, setSortField] = useState('name');
-    const [sortDirection, setSortDirection] = useState('asc');
-    
+const PAGE_PROPS = ['users', 'filters'];
+
+const SORT_LABELS = {
+    student_id: 'Student ID',
+    name: 'Name',
+    user_type: 'Type',
+    course: 'Course & Major',
+};
+
+const inputCls = 'w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-400 focus:border-yellow-400';
+
+// Created once instead of on every render
+const MySwal = Swal.mixin({
+    customClass: {
+        popup: 'rounded-[2rem] shadow-2xl border border-slate-100 bg-white pb-4',
+        title: 'text-slate-900 font-extrabold text-2xl pt-4',
+        htmlContainer: 'text-slate-500 text-sm font-medium',
+        confirmButton: 'bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold rounded-xl px-8 py-3.5 mx-2 shadow-md outline-none',
+        cancelButton: 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl px-8 py-3.5 mx-2 outline-none',
+        icon: 'border-0 scale-125 mt-6',
+    },
+    buttonsStyling: false,
+});
+
+const svgIcon = (color, path) =>
+    `<svg class="w-12 h-12 ${color} mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${path}" /></svg>`;
+
+const ICON_OK = svgIcon('text-yellow-500', 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z');
+const ICON_TRASH = svgIcon('text-red-500', 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16');
+const ICON_CHECK = svgIcon('text-emerald-500', 'M5 13l4 4L19 7');
+
+const Field = ({ label, error, children }) => (
+    <div>
+        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">{label}</label>
+        {children}
+        {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+    </div>
+);
+
+const RoleBadge = memo(function RoleBadge({ type }) {
+    const cls =
+        type === 'admin'
+            ? 'bg-slate-800 text-white border-slate-700'
+            : type === 'alumni'
+                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                : 'bg-amber-50 text-amber-700 border-amber-200';
+    return (
+        <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${cls}`}>
+            {type}
+        </span>
+    );
+});
+
+export default function UserManagement({ users, courses = [], filters = {} }) {
+    const { url, props: pageProps } = usePage();
+    const rows = users?.data ?? [];
+
+    // Current page path without query string, e.g. "/admin/users"
+    const basePath = useMemo(() => url.split('?')[0].replace(/\/+$/, ''), [url]);
+
+    const current = {
+        q: filters.q ?? '',
+        type: filters.type ?? 'all',
+        course: filters.course ?? 'all',
+        sort: filters.sort ?? 'name',
+        dir: filters.dir ?? 'asc',
+    };
+
+    // Always holds the latest server-applied filters, so timers never use stale values
+    const currentRef = useRef(current);
+    currentRef.current = current;
+
+    const [searchTerm, setSearchTerm] = useState(current.q);
+    const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    
-    const { data, setData, post, put, processing, reset } = useForm({ 
-        id: null, 
-        first_name: '', 
-        last_name: '', 
+
+    const { data, setData, post, put, processing, reset, errors, clearErrors } = useForm({
+        id: null,
+        first_name: '',
+        last_name: '',
         email: '',
         contact_number: '',
         user_type: 'student',
@@ -25,148 +92,136 @@ export default function UserManagement({ users = [], courses = [] }) {
         major_id: '',
         year_level: '',
         batch_year: '',
-        password: ''
+        password: '',
     });
 
     const selectedCourse = courses.find((c) => c.id === Number(data.course_id));
     const availableMajors = selectedCourse?.majors ?? [];
 
-    const handleCourseChange = (e) => {
-        setData(prev => ({ ...prev, course_id: e.target.value, major_id: null }));
+    // ---------- Server-side filtering / sorting ----------
+    const applyFilters = (overrides = {}) => {
+        const next = { ...currentRef.current, q: searchTerm.trim(), ...overrides };
+
+        const params = {};
+        if (next.q) params.q = next.q;
+        if (next.type !== 'all') params.type = next.type;
+        if (next.course !== 'all') params.course = next.course;
+        if (next.sort !== 'name' || next.dir !== 'asc') {
+            params.sort = next.sort;
+            params.dir = next.dir;
+        }
+
+        router.get(basePath, params, {
+            only: PAGE_PROPS, // skips re-sending courses
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onStart: () => setLoading(true),
+            onFinish: () => setLoading(false),
+        });
     };
 
+    // Debounced search: only fires when the text differs from what's already applied
+    useEffect(() => {
+        if (searchTerm.trim() === currentRef.current.q) return;
+        const timer = setTimeout(() => {
+            if (searchTerm.trim() !== currentRef.current.q) applyFilters();
+        }, 350);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchTerm]);
+
     const handleSort = (field) => {
-        if (sortField === field) {
-            setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+        if (current.sort === field) {
+            applyFilters({ dir: current.dir === 'asc' ? 'desc' : 'asc' });
         } else {
-            setSortField(field);
-            setSortDirection('asc');
+            applyFilters({ sort: field, dir: 'asc' });
         }
     };
 
-    const processedUsers = useMemo(() => {
-        return users
-            .filter((u) => {
-                const searchLower = searchTerm.toLowerCase();
-                const matchesSearch =
-                    !searchTerm ||
-                    `${u.first_name || ''} ${u.last_name || ''}`.toLowerCase().includes(searchLower) ||
-                    (u.student_id && u.student_id.toLowerCase().includes(searchLower)) ||
-                    (u.email && u.email.toLowerCase().includes(searchLower)) ||
-                    (u.course && u.course.toLowerCase().includes(searchLower)) ||
-                    (u.major && u.major.toLowerCase().includes(searchLower));
-
-                const matchesType = typeFilter === 'all' || u.user_type === typeFilter;
-                
-                const matchesCourse = 
-                    courseFilter === 'all' || 
-                    String(u.course_id) === String(courseFilter) || 
-                    u.course === courseFilter;
-
-                return matchesSearch && matchesType && matchesCourse;
-            })
-            .sort((a, b) => {
-                let aVal = '';
-                let bVal = '';
-
-                switch (sortField) {
-                    case 'student_id':
-                        aVal = a.student_id || '';
-                        bVal = b.student_id || '';
-                        break;
-                    case 'name':
-                        aVal = `${a.last_name || ''} ${a.first_name || ''}`.trim();
-                        bVal = `${b.last_name || ''} ${b.first_name || ''}`.trim();
-                        break;
-                    case 'user_type':
-                        aVal = a.user_type || '';
-                        bVal = b.user_type || '';
-                        break;
-                    case 'course':
-                        aVal = `${a.course || ''} ${a.major || ''}`.trim();
-                        bVal = `${b.course || ''} ${b.major || ''}`.trim();
-                        break;
-                    default:
-                        aVal = a.id || 0;
-                        bVal = b.id || 0;
-                }
-
-                if (typeof aVal === 'string' && typeof bVal === 'string') {
-                    const comp = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' });
-                    return sortDirection === 'asc' ? comp : -comp;
-                }
-
-                return sortDirection === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
-            });
-    }, [users, searchTerm, typeFilter, courseFilter, sortField, sortDirection]);
+    const hasActiveFilters = searchTerm !== '' || current.type !== 'all' || current.course !== 'all';
 
     const resetFilters = () => {
         setSearchTerm('');
-        setTypeFilter('all');
-        setCourseFilter('all');
-        setSortField('name');
-        setSortDirection('asc');
+        applyFilters({ q: '', type: 'all', course: 'all', sort: 'name', dir: 'asc' });
     };
 
-    const hasActiveFilters = searchTerm !== '' || typeFilter !== 'all' || courseFilter !== 'all';
+    // ---------- Form handlers ----------
+    const closeModal = () => {
+        setIsModalOpen(false);
+        reset();
+        clearErrors();
+    };
 
-    const MySwal = Swal.mixin({
-        customClass: {
-            popup: 'rounded-[2rem] shadow-2xl border border-slate-100 bg-white pb-4',
-            title: 'text-slate-900 font-extrabold text-2xl pt-4',
-            htmlContainer: 'text-slate-500 text-sm font-medium',
-            confirmButton: 'bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold rounded-xl px-8 py-3.5 mx-2 shadow-md outline-none',
-            cancelButton: 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl px-8 py-3.5 mx-2 outline-none',
-            icon: 'border-0 scale-125 mt-6'
-        },
-        buttonsStyling: false
-    });
+    // Close the modal with Escape
+    useEffect(() => {
+        if (!isModalOpen) return;
+        const onKey = (e) => e.key === 'Escape' && closeModal();
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isModalOpen]);
+
+    const handleCourseChange = (e) => {
+        setData((prev) => ({ ...prev, course_id: e.target.value, major_id: '' }));
+    };
 
     const handleSave = (e) => {
         e.preventDefault();
         const isEditing = !!data.id;
 
-        const onSuccessCallback = () => {
-            setIsModalOpen(false); 
-            reset();
+        const onSuccess = () => {
+            closeModal();
             MySwal.fire({
                 title: isEditing ? 'Updated!' : 'Added!',
-                text: isEditing ? 'User profile updated directly in the database.' : 'New user registered successfully.',
-                iconHtml: '<svg class="w-12 h-12 text-yellow-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+                text: isEditing ? 'User profile updated successfully.' : 'New user registered successfully.',
+                iconHtml: ICON_OK,
                 timer: 2000,
-                showConfirmButton: false
+                showConfirmButton: false,
             });
         };
 
         if (isEditing) {
-            put(`/admin/users/${data.id}`, { onSuccess: onSuccessCallback, preserveScroll: true });
+            put(`/admin/users/${data.id}`, { onSuccess, preserveScroll: true });
         } else {
-            post('/admin/users', { onSuccess: onSuccessCallback, preserveScroll: true });
+            post('/admin/users', { onSuccess, preserveScroll: true });
         }
     };
 
     const confirmDelete = (id) => {
         MySwal.fire({
-            title: 'Delete User?',
-            text: "This action cannot be undone. The user will be permanently removed from the database.",
-            iconHtml: '<svg class="w-12 h-12 text-red-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>',
+            title: 'Deactivate User?',
+            text: 'The account will be deactivated and can no longer sign in. Their records are kept.',
+            iconHtml: ICON_TRASH,
             showCancelButton: true,
-            confirmButtonText: 'Yes, Delete',
+            confirmButtonText: 'Yes, Deactivate',
             cancelButtonText: 'Cancel',
-            reverseButtons: true
+            reverseButtons: true,
         }).then((result) => {
-            if (result.isConfirmed) {
-                router.delete(`/admin/users/${id}`, { 
-                    preserveScroll: true,
-                    onSuccess: () => {
-                        MySwal.fire({ title: 'Deleted!', text: 'User has been permanently removed from the database.', iconHtml: '<svg class="w-12 h-12 text-emerald-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>', timer: 2500, showConfirmButton: false });
-                    }
-                });
-            }
+            if (!result.isConfirmed) return;
+
+            router.delete(`/admin/users/${id}`, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    // The controller refuses self-deactivation with a validation error
+                    if (pageProps.errors?.delete) return;
+                    MySwal.fire({
+                        title: 'Deactivated!',
+                        text: 'User account has been deactivated.',
+                        iconHtml: ICON_CHECK,
+                        timer: 2500,
+                        showConfirmButton: false,
+                    });
+                },
+                onError: (errs) => {
+                    MySwal.fire({ title: 'Could not deactivate', text: errs.delete || 'Something went wrong.', icon: 'error' });
+                },
+            });
         });
     };
 
     const openEditModal = (user) => {
+        clearErrors();
         setData({
             id: user.id,
             first_name: user.first_name || '',
@@ -179,64 +234,103 @@ export default function UserManagement({ users = [], courses = [] }) {
             major_id: user.major_id || '',
             year_level: user.year_level || '',
             batch_year: user.batch_year || '',
-            password: ''
+            password: '',
         });
         setIsModalOpen(true);
     };
 
+    const openAddModal = () => {
+        reset();
+        clearErrors();
+        setIsModalOpen(true);
+    };
+
+    // ---------- Render helpers ----------
     const renderSortIndicator = (field) => {
-        const isActive = sortField === field;
+        const isActive = current.sort === field;
         return (
-            <span className={`inline-flex ml-1.5 transition-transform duration-200 ${isActive ? 'text-slate-900 font-black' : 'text-slate-300 group-hover:text-slate-400'}`}>
-                {isActive && sortDirection === 'desc' ? '↑' : '↓'}
+            <span className={`inline-flex ml-1.5 ${isActive ? 'text-slate-900 font-black' : 'text-slate-300 group-hover:text-slate-400'}`}>
+                {isActive ? (current.dir === 'asc' ? '↑' : '↓') : '↕'}
             </span>
         );
     };
 
+    const SortTh = ({ field }) => (
+        <th
+            scope="col"
+            aria-sort={current.sort === field ? (current.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+            onClick={() => handleSort(field)}
+            className="py-4 px-6 text-xs font-bold text-slate-500 uppercase cursor-pointer hover:bg-slate-100/70 transition-colors group"
+        >
+            <div className="flex items-center">
+                {SORT_LABELS[field]} {renderSortIndicator(field)}
+            </div>
+        </th>
+    );
+
+    const ActionButtons = ({ u }) => (
+        <>
+            <button onClick={() => openEditModal(u)} className="text-slate-700 font-bold px-3.5 py-1.5 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 text-xs transition-colors">
+                Edit
+            </button>
+            <button onClick={() => confirmDelete(u.id)} className="text-red-600 font-bold px-3.5 py-1.5 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 text-xs transition-colors">
+                Delete
+            </button>
+        </>
+    );
+
+    const selectCls =
+        'bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold rounded-2xl px-4 py-3 focus:ring-yellow-400 focus:border-yellow-400 outline-none shadow-sm cursor-pointer';
+
     return (
         <AdminLayout>
             <Head title="User Management" />
-            <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl flex flex-col sm:flex-row justify-between items-center gap-4">
+
+            <div className="p-4 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">User Management</h2>
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">User Management</h2>
                     <p className="text-xs text-slate-500 mt-1">Manage all registered students, alumni, and admins.</p>
                 </div>
-                <button onClick={() => { reset(); setIsModalOpen(true); }} className="w-full sm:w-auto px-6 py-2.5 bg-yellow-400 text-slate-900 font-bold rounded-xl shadow-md hover:bg-yellow-500 transition-colors">
+                <button onClick={openAddModal} className="w-full sm:w-auto px-6 py-2.5 bg-yellow-400 text-slate-900 font-bold rounded-xl shadow-md hover:bg-yellow-500 transition-colors">
                     + Add User
                 </button>
             </div>
-            
-            <div className="p-6 sm:p-8 space-y-4">
+
+            <div className="p-4 sm:p-8 space-y-4">
+                {/* Filters */}
                 <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
                     <div className="relative flex-1">
-                        <input 
-                            type="text" 
+                        <input
+                            type="search"
+                            aria-label="Search users"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search by ID, name, email, course, or major..." 
-                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-11 pr-4 text-sm focus:ring-yellow-400 focus:border-yellow-400 outline-none shadow-sm transition-all" 
+                            placeholder="Search by ID, name, email, course, or major..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-11 pr-4 text-sm focus:ring-yellow-400 focus:border-yellow-400 outline-none shadow-sm transition-all"
                         />
-                        <svg className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
 
                     <div className="flex flex-wrap sm:flex-nowrap gap-2.5">
-                        <select 
-                            value={courseFilter} 
-                            onChange={(e) => setCourseFilter(e.target.value)}
-                            className="bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold rounded-2xl px-4 py-3 focus:ring-yellow-400 focus:border-yellow-400 outline-none shadow-sm flex-1 sm:flex-none cursor-pointer"
+                        <select
+                            aria-label="Filter by course"
+                            value={current.course}
+                            onChange={(e) => applyFilters({ course: e.target.value })}
+                            className={`${selectCls} flex-1 sm:flex-none min-w-0 sm:max-w-[16rem]`}
                         >
                             <option value="all">All Courses</option>
-                            {courses.map(c => (
+                            {courses.map((c) => (
                                 <option key={c.id} value={c.id}>{c.label || c.name || `Course #${c.id}`}</option>
                             ))}
                         </select>
 
-                        <select 
-                            value={typeFilter} 
-                            onChange={(e) => setTypeFilter(e.target.value)}
-                            className="bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold rounded-2xl px-4 py-3 focus:ring-yellow-400 focus:border-yellow-400 outline-none shadow-sm flex-1 sm:flex-none cursor-pointer"
+                        <select
+                            aria-label="Filter by role"
+                            value={current.type}
+                            onChange={(e) => applyFilters({ type: e.target.value })}
+                            className={`${selectCls} flex-1 sm:flex-none`}
                         >
                             <option value="all">All Roles</option>
                             <option value="student">Student</option>
@@ -245,7 +339,7 @@ export default function UserManagement({ users = [], courses = [] }) {
                         </select>
 
                         {hasActiveFilters && (
-                            <button 
+                            <button
                                 onClick={resetFilters}
                                 className="px-4 py-3 text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-colors whitespace-nowrap"
                                 title="Reset all filters"
@@ -256,166 +350,221 @@ export default function UserManagement({ users = [], courses = [] }) {
                     </div>
                 </div>
 
-                <div className="flex justify-between items-center text-xs font-semibold text-slate-400 px-1">
-                    <span>Showing {processedUsers.length} of {users.length} users</span>
-                    <span>Sorted by <strong className="text-slate-700 capitalize">{sortField.replace('_', ' ')}</strong> ({sortDirection.toUpperCase()})</span>
+                {/* Mobile sort control (the table headers are hidden on phones) */}
+                <div className="flex md:hidden gap-2">
+                    <select
+                        aria-label="Sort by"
+                        value={current.sort}
+                        onChange={(e) => applyFilters({ sort: e.target.value, dir: 'asc' })}
+                        className={`${selectCls} flex-1 py-2.5`}
+                    >
+                        {Object.entries(SORT_LABELS).map(([k, v]) => (
+                            <option key={k} value={k}>Sort: {v}</option>
+                        ))}
+                    </select>
+                    <button
+                        onClick={() => applyFilters({ dir: current.dir === 'asc' ? 'desc' : 'asc' })}
+                        className="px-4 py-2.5 text-sm font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm"
+                        aria-label="Toggle sort direction"
+                    >
+                        {current.dir === 'asc' ? '↑ A-Z' : '↓ Z-A'}
+                    </button>
                 </div>
 
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto pb-2">
-                        <table className="w-full text-left min-w-[900px]">
-                            <thead className="bg-slate-50 border-b border-slate-100 select-none">
-                                <tr>
-                                    <th 
-                                        onClick={() => handleSort('student_id')}
-                                        className="py-4 px-6 text-xs font-bold text-slate-500 uppercase cursor-pointer hover:bg-slate-100/70 transition-colors group"
-                                    >
-                                        <div className="flex items-center">
-                                            Student ID {renderSortIndicator('student_id')}
-                                        </div>
-                                    </th>
-                                    <th 
-                                        onClick={() => handleSort('name')}
-                                        className="py-4 px-6 text-xs font-bold text-slate-500 uppercase cursor-pointer hover:bg-slate-100/70 transition-colors group"
-                                    >
-                                        <div className="flex items-center">
-                                            Name {renderSortIndicator('name')}
-                                        </div>
-                                    </th>
-                                    <th 
-                                        onClick={() => handleSort('user_type')}
-                                        className="py-4 px-6 text-xs font-bold text-slate-500 uppercase cursor-pointer hover:bg-slate-100/70 transition-colors group"
-                                    >
-                                        <div className="flex items-center">
-                                            Type {renderSortIndicator('user_type')}
-                                        </div>
-                                    </th>
-                                    <th 
-                                        onClick={() => handleSort('course')}
-                                        className="py-4 px-6 text-xs font-bold text-slate-500 uppercase cursor-pointer hover:bg-slate-100/70 transition-colors group"
-                                    >
-                                        <div className="flex items-center">
-                                            Course & Major {renderSortIndicator('course')}
-                                        </div>
-                                    </th>
-                                    <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {processedUsers.length > 0 ? processedUsers.map((u) => (
-                                    <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
-                                        <td className="py-4 px-6 text-sm font-bold text-slate-900 whitespace-nowrap">{u.student_id || 'N/A'}</td>
-                                        <td className="py-4 px-6 text-sm font-medium text-slate-700 whitespace-nowrap">
-                                            <div className="font-semibold text-slate-900">{u.first_name} {u.last_name}</div>
-                                            {u.email && <div className="text-xs text-slate-400 font-normal">{u.email}</div>}
-                                        </td>
-                                        <td className="py-4 px-6 whitespace-nowrap">
-                                            <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
-                                                u.user_type === 'admin' 
-                                                    ? 'bg-slate-800 text-white border-slate-700' 
-                                                    : u.user_type === 'alumni' 
-                                                        ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                                                        : 'bg-amber-50 text-amber-700 border-amber-200'
-                                            }`}>
-                                                {u.user_type}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-6 text-sm text-slate-600 whitespace-nowrap">
-                                            <span className="font-medium text-slate-800">{u.course || 'N/A'}</span>
-                                            {u.major && <span className="block text-[10px] uppercase font-bold text-slate-400 mt-0.5">{u.major}</span>}
-                                        </td>
-                                        <td className="py-4 px-6 text-right whitespace-nowrap">
-                                            <button onClick={() => openEditModal(u)} className="text-slate-700 font-bold px-3.5 py-1.5 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 mr-2 text-xs transition-colors">Edit</button>
-                                            <button onClick={() => confirmDelete(u.id)} className="text-red-600 font-bold px-3.5 py-1.5 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 text-xs transition-colors">Delete</button>
-                                        </td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan="5" className="py-12 text-center text-slate-400 text-sm">
-                                            <div className="font-semibold text-slate-600">No users match your criteria</div>
-                                            <p className="text-xs mt-1 text-slate-400">Try adjusting your search filters or clearing the search query.</p>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                    <div className={`transition-opacity duration-150 ${loading ? 'opacity-50 pointer-events-none' : ''}`} aria-busy={loading}>
+                        {rows.length === 0 ? (
+                            <div className="py-12 text-center text-slate-400 text-sm px-4">
+                                <div className="font-semibold text-slate-600">No users match your criteria</div>
+                                <p className="text-xs mt-1 text-slate-400">Try adjusting your search filters or clearing the search query.</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Mobile: stacked cards */}
+                                <ul className="md:hidden divide-y divide-slate-100">
+                                    {rows.map((u) => (
+                                        <li key={u.id} className="p-4 space-y-2.5">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-bold text-slate-900 truncate">{u.first_name} {u.last_name}</p>
+                                                    {u.email && <p className="text-xs text-slate-400 truncate">{u.email}</p>}
+                                                </div>
+                                                <RoleBadge type={u.user_type} />
+                                            </div>
+                                            <div className="text-xs text-slate-600">
+                                                <span className="font-bold text-slate-900">{u.student_id || 'N/A'}</span>
+                                                <span className="mx-1.5 text-slate-300">•</span>
+                                                <span className="font-medium">{u.course || 'N/A'}</span>
+                                                {u.major && <span className="block text-[10px] uppercase font-bold text-slate-400 mt-0.5">{u.major}</span>}
+                                            </div>
+                                            <div className="flex gap-2 pt-1">
+                                                <ActionButtons u={u} />
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                {/* Tablet and up: table */}
+                                <div className="hidden md:block overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-slate-50 border-b border-slate-100 select-none">
+                                            <tr>
+                                                <SortTh field="student_id" />
+                                                <SortTh field="name" />
+                                                <SortTh field="user_type" />
+                                                <SortTh field="course" />
+                                                <th scope="col" className="py-4 px-6 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {rows.map((u) => (
+                                                <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
+                                                    <td className="py-4 px-6 text-sm font-bold text-slate-900 whitespace-nowrap">{u.student_id || 'N/A'}</td>
+                                                    <td className="py-4 px-6 text-sm font-medium text-slate-700">
+                                                        <div className="font-semibold text-slate-900">{u.first_name} {u.last_name}</div>
+                                                        {u.email && <div className="text-xs text-slate-400 font-normal break-all">{u.email}</div>}
+                                                    </td>
+                                                    <td className="py-4 px-6 whitespace-nowrap"><RoleBadge type={u.user_type} /></td>
+                                                    <td className="py-4 px-6 text-sm text-slate-600">
+                                                        <span className="font-medium text-slate-800">{u.course || 'N/A'}</span>
+                                                        {u.major && <span className="block text-[10px] uppercase font-bold text-slate-400 mt-0.5">{u.major}</span>}
+                                                    </td>
+                                                    <td className="py-4 px-6 text-right whitespace-nowrap">
+                                                        <div className="inline-flex gap-2"><ActionButtons u={u} /></div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </>
+                        )}
                     </div>
+
+                    <Pagination
+                        links={users?.links ?? []}
+                        from={users?.from}
+                        to={users?.to}
+                        total={users?.total}
+                        noun="users"
+                        only={PAGE_PROPS}
+                        className="px-4 sm:px-6 py-4"
+                    />
                 </div>
             </div>
 
             {isModalOpen && (
-                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+                <div
+                    className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onMouseDown={(e) => e.target === e.currentTarget && closeModal()}
+                >
+                    <div role="dialog" aria-modal="true" className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 shrink-0 bg-slate-50">
                             <h3 className="font-bold text-slate-900 text-lg">{data.id ? 'Edit User Profile' : 'Register New User'}</h3>
-                            <button type="button" onClick={() => { setIsModalOpen(false); reset(); }} className="p-2 bg-white rounded-full text-slate-500 hover:text-slate-800 shadow-sm"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                            <button type="button" aria-label="Close" onClick={closeModal} className="p-2 bg-white rounded-full text-slate-500 hover:text-slate-800 shadow-sm">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
                         </div>
-                        <div className="overflow-y-auto p-6">
+
+                        <div className="overflow-y-auto p-4 sm:p-6">
                             <form onSubmit={handleSave} className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">First Name</label><input type="text" value={data.first_name} onChange={e => setData('first_name', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required/></div>
-                                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Last Name</label><input type="text" value={data.last_name} onChange={e => setData('last_name', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required/></div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <Field label="First Name" error={errors.first_name}>
+                                        <input type="text" value={data.first_name} onChange={(e) => setData('first_name', e.target.value)} className={inputCls} required />
+                                    </Field>
+                                    <Field label="Last Name" error={errors.last_name}>
+                                        <input type="text" value={data.last_name} onChange={(e) => setData('last_name', e.target.value)} className={inputCls} required />
+                                    </Field>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Email Address</label><input type="email" value={data.email} onChange={e => setData('email', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required/></div>
-                                    <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Contact Number</label><input type="text" value={data.contact_number} onChange={e => setData('contact_number', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" /></div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <Field label="Email Address" error={errors.email}>
+                                        <input type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} className={inputCls} required />
+                                    </Field>
+                                    <Field label="Contact Number" error={errors.contact_number}>
+                                        <input type="text" value={data.contact_number} onChange={(e) => setData('contact_number', e.target.value)} className={inputCls} />
+                                    </Field>
                                 </div>
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Account Type</label>
-                                        <select value={data.user_type} onChange={e => setData(prev => ({...prev, user_type: e.target.value, student_number: '', year_level: '', batch_year: '', course_id: '', major_id: ''}))} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500">
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <Field label="Account Type" error={errors.user_type}>
+                                        <select
+                                            value={data.user_type}
+                                            onChange={(e) => setData((prev) => ({ ...prev, user_type: e.target.value, student_number: '', year_level: '', batch_year: '', course_id: '', major_id: '' }))}
+                                            className={inputCls}
+                                        >
                                             <option value="student">Student</option>
                                             <option value="alumni">Alumni</option>
                                             <option value="admin">Administrator</option>
                                         </select>
-                                    </div>
-                                    {data.user_type === 'student' ? (
-                                        <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Student Number</label><input type="text" value={data.student_number} onChange={e => setData('student_number', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required/></div>
-                                    ) : data.user_type === 'alumni' ? (
-                                        <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Batch Year</label><input type="number" value={data.batch_year} onChange={e => setData('batch_year', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required/></div>
-                                    ) : (
-                                        <div></div>
+                                    </Field>
+
+                                    {data.user_type === 'student' && (
+                                        <Field label="Student Number" error={errors.student_number}>
+                                            <input type="text" value={data.student_number} onChange={(e) => setData('student_number', e.target.value)} className={inputCls} required />
+                                        </Field>
+                                    )}
+                                    {data.user_type === 'alumni' && (
+                                        <Field label="Batch Year" error={errors.batch_year}>
+                                            <input type="number" value={data.batch_year} onChange={(e) => setData('batch_year', e.target.value)} className={inputCls} required />
+                                        </Field>
                                     )}
                                 </div>
 
                                 {data.user_type !== 'admin' && (
                                     <>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Course</label>
-                                            <select value={data.course_id} onChange={handleCourseChange} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required>
+                                        <Field label="Course" error={errors.course_id}>
+                                            <select value={data.course_id} onChange={handleCourseChange} className={inputCls} required>
                                                 <option value="" disabled>Select course</option>
-                                                {courses.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                                                {courses.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                                             </select>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Major</label>
-                                                <select value={data.major_id || ''} onChange={e => setData('major_id', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500 disabled:bg-slate-100" disabled={availableMajors.length === 0} required={availableMajors.length > 0}>
+                                        </Field>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <Field label="Major" error={errors.major_id}>
+                                                <select
+                                                    value={data.major_id || ''}
+                                                    onChange={(e) => setData('major_id', e.target.value)}
+                                                    className={`${inputCls} disabled:bg-slate-100`}
+                                                    disabled={availableMajors.length === 0}
+                                                    required={availableMajors.length > 0}
+                                                >
                                                     <option value="" disabled>{availableMajors.length > 0 ? 'Select major' : 'No major for this course'}</option>
-                                                    {availableMajors.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+                                                    {availableMajors.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
                                                 </select>
-                                            </div>
+                                            </Field>
+
                                             {data.user_type === 'student' && (
-                                                <div>
-                                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Year Level</label>
-                                                    <select value={data.year_level} onChange={e => setData('year_level', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" required>
+                                                <Field label="Year Level" error={errors.year_level}>
+                                                    <select value={data.year_level} onChange={(e) => setData('year_level', e.target.value)} className={inputCls} required>
                                                         <option value="" disabled>Select year</option>
-                                                        {[1,2,3,4,5].map(y => <option key={y} value={y}>{y}</option>)}
+                                                        {[1, 2, 3, 4, 5].map((y) => <option key={y} value={y}>{y}</option>)}
                                                     </select>
-                                                </div>
+                                                </Field>
                                             )}
                                         </div>
                                     </>
                                 )}
 
                                 <div className="border-t border-slate-100 pt-4 mt-2">
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">{data.id ? 'Change Password (Optional)' : 'Password'}</label>
-                                    <input type="password" value={data.password} onChange={e => setData('password', e.target.value)} className="w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-500" placeholder={data.id ? 'Leave blank to keep current' : 'Create password'} required={!data.id} />
+                                    <Field label={data.id ? 'Change Password (Optional)' : 'Password'} error={errors.password}>
+                                        <input
+                                            type="password"
+                                            value={data.password}
+                                            onChange={(e) => setData('password', e.target.value)}
+                                            className={inputCls}
+                                            placeholder={data.id ? 'Leave blank to keep current' : 'Create password (min. 8 characters)'}
+                                            autoComplete="new-password"
+                                            required={!data.id}
+                                        />
+                                    </Field>
                                 </div>
+
                                 <div className="pt-2 flex gap-3">
-                                    <button type="button" onClick={() => { setIsModalOpen(false); reset(); }} className="flex-1 py-3.5 bg-slate-100 font-bold rounded-xl text-sm hover:bg-slate-200 transition-colors">Cancel</button>
-                                    <button type="submit" disabled={processing} className="flex-1 py-3.5 bg-yellow-400 font-bold rounded-xl text-sm hover:bg-yellow-500 shadow-md transition-colors">
+                                    <button type="button" onClick={closeModal} className="flex-1 py-3.5 bg-slate-100 font-bold rounded-xl text-sm hover:bg-slate-200 transition-colors">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" disabled={processing} className="flex-1 py-3.5 bg-yellow-400 font-bold rounded-xl text-sm hover:bg-yellow-500 shadow-md transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
                                         {processing ? 'Saving...' : 'Save User'}
                                     </button>
                                 </div>

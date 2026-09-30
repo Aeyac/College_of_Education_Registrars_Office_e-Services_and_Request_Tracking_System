@@ -22,33 +22,106 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    public function loadUsers()
-    {
-        $users = User::with(['course', 'major'])
-            ->whereIn('user_type', ['student', 'alumni', 'admin'])
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(fn($u) => [
-                'id' => $u->id,
-                'student_id' => $u->student_number,
-                'first_name' => $u->first_name,
-                'last_name' => $u->last_name,
-                'email' => $u->email,
-                'contact_number' => $u->contact_number,
-                'user_type' => $u->user_type,
-                'course' => $u->course ? $u->course->label : null,
-                'course_id' => $u->course_id,
-                'major' => $u->major ? $u->major->label : null,
-                'major_id' => $u->major_id,
-                'year_level' => $u->year_level,
-                'batch_year' => $u->batch_year,
-            ]);
+    private const PER_PAGE = 15;
 
-        $courses = Course::with('majors')->where('is_active', true)->orderBy('sort_order')->get();
+    // Whitelist: the sort key comes from the URL, so never trust it directly
+    private const SORTS = ['student_id', 'name', 'user_type', 'course'];
+
+    public function loadUsers(Request $request)
+    {
+        $q = trim((string) $request->query('q', ''));
+
+        $type = in_array($request->query('type'), ['student', 'alumni', 'admin'], true)
+            ? $request->query('type')
+            : 'all';
+
+        $course = ctype_digit((string) $request->query('course', ''))
+            ? (string) $request->query('course')
+            : 'all';
+
+        $sort = in_array($request->query('sort'), self::SORTS, true) ? $request->query('sort') : 'name';
+        $dir = $request->query('dir') === 'desc' ? 'desc' : 'asc';
+
+        $query = User::with(['course:id,label', 'major:id,label'])
+            ->whereIn('user_type', ['student', 'alumni', 'admin']);
+
+        if ($q !== '') {
+            $like = '%' . addcslashes($q, '\\%_') . '%';
+
+            $query->where(function ($w) use ($like) {
+                $w->where('first_name', 'like', $like)
+                    ->orWhere('last_name', 'like', $like)
+                    ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", [$like])
+                    ->orWhere('student_number', 'like', $like)
+                    ->orWhere('email', 'like', $like)
+                    ->orWhereHas('course', fn($c) => $c->where('label', 'like', $like))
+                    ->orWhereHas('major', fn($m) => $m->where('label', 'like', $like));
+            });
+        }
+
+        if ($type !== 'all') {
+            $query->where('user_type', $type);
+        }
+
+        if ($course !== 'all') {
+            $query->where('course_id', (int) $course);
+        }
+
+        switch ($sort) {
+            case 'student_id':
+                $query->orderBy('student_number', $dir);
+                break;
+            case 'user_type':
+                $query->orderBy('user_type', $dir);
+                break;
+            case 'course':
+                $query->orderBy(
+                    Course::select('label')->whereColumn('courses.id', 'users.course_id'),
+                    $dir
+                );
+                break;
+            default:
+                $query->orderBy('last_name', $dir)->orderBy('first_name', $dir);
+        }
+
+        // Stable tiebreaker so rows don't jump between pages
+        $query->orderByDesc('id');
+
+        $users = $query->paginate(self::PER_PAGE)->withQueryString();
+
+        // After deleting the last row on a page, go to the last valid page
+        if ($users->isEmpty() && $users->currentPage() > 1) {
+            return redirect()->to(
+                $request->url() . '?' . http_build_query(array_merge($request->query(), ['page' => $users->lastPage()]))
+            );
+        }
+
+        $users->through(fn($u) => [
+            'id' => $u->id,
+            'student_id' => $u->student_number,
+            'first_name' => $u->first_name,
+            'last_name' => $u->last_name,
+            'email' => $u->email,
+            'contact_number' => $u->contact_number,
+            'user_type' => $u->user_type,
+            'course' => $u->course?->label,
+            'course_id' => $u->course_id,
+            'major' => $u->major?->label,
+            'major_id' => $u->major_id,
+            'year_level' => $u->year_level,
+            'batch_year' => $u->batch_year,
+        ]);
 
         return Inertia::render('Admin/UserManagement', [
             'users' => $users,
-            'courses' => $courses
+            'courses' => fn() => Course::with('majors')->where('is_active', true)->orderBy('sort_order')->get(),
+            'filters' => [
+                'q' => $q,
+                'type' => $type,
+                'course' => $course,
+                'sort' => $sort,
+                'dir' => $dir,
+            ],
         ]);
     }
 
@@ -110,12 +183,15 @@ class UserController extends Controller
     // currently in used
     public function destroyUser($id)
     {
+        // Stops an admin from locking themselves out
+        if ((int) $id === (int) auth()->id()) {
+            return back()->withErrors(['delete' => 'You cannot deactivate your own account.']);
+        }
+
         $user = User::findOrFail($id);
-        $user->delete(); // soft delete only / records remains 
+        $user->delete(); // soft delete only / records remains
         return back()->with('success', 'User account deactivated.');
     }
-
-
 
     // not yet used
     public function permanentlyDeleteUser($id)

@@ -1,10 +1,28 @@
 import { Head, useForm, router } from '@inertiajs/react';
-import { useState, useMemo, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import Pagination from '@/Components/Pagination';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 
 const MAX_FILES = 5;
+const RELOAD_ONLY = ['faculty', 'filters'];
+const SEARCH_DEBOUNCE_MS = 350;
+
+const MySwal = Swal.mixin({
+    customClass: {
+        popup: 'rounded-[2rem] shadow-2xl border border-slate-100 bg-white pb-4',
+        title: 'text-slate-900 font-extrabold text-2xl pt-4',
+        htmlContainer: 'text-slate-500 text-sm font-medium',
+        confirmButton: 'bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold rounded-xl px-8 py-3.5 mx-2 shadow-md transition-colors outline-none',
+        cancelButton: 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl px-8 py-3.5 mx-2 transition-colors outline-none'
+    },
+    buttonsStyling: false
+});
+
+// Drops empty values so URLs stay short and the server sees only real filters.
+const cleanParams = params =>
+    Object.fromEntries(Object.entries(params).filter(([, v]) => v !== '' && v !== 'all' && v != null));
 
 const getProgram = (prof) => {
     const value = [prof.department_or_program, prof.role].find((v) => v && v !== 'Not specified');
@@ -19,10 +37,14 @@ const getCourses = (schedule = []) => [
     ...new Set(schedule.filter((b) => !isConsultation(b)).map((b) => b.course_code).filter(Boolean)),
 ];
 
-export default function FacultySchedules({ faculty = [] }) {
+export default function FacultySchedules({ faculty, departments = [], filters: rawFilters }) {
+    const filters = rawFilters ?? {};
+    const rows = faculty?.data ?? [];
+
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [deptFilter, setDeptFilter] = useState('all');
+    const [searchTerm, setSearchTerm] = useState(filters.search ?? '');
+    const [deptFilter, setDeptFilter] = useState(filters.department ?? 'all');
+    const [loading, setLoading] = useState(false);
 
     const [isExtracting, setIsExtracting] = useState(false);
     const fileInputRef = useRef(null);
@@ -44,41 +66,28 @@ export default function FacultySchedules({ faculty = [] }) {
         weekly_schedule: []
     });
 
-    const MySwal = Swal.mixin({
-        customClass: {
-            popup: 'rounded-[2rem] shadow-2xl border border-slate-100 bg-white pb-4',
-            title: 'text-slate-900 font-extrabold text-2xl pt-4',
-            htmlContainer: 'text-slate-500 text-sm font-medium',
-            confirmButton: 'bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold rounded-xl px-8 py-3.5 mx-2 shadow-md transition-colors outline-none',
-            cancelButton: 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl px-8 py-3.5 mx-2 transition-colors outline-none'
-        },
-        buttonsStyling: false
-    });
+    // Apply filters once the inputs differ from what the server last returned.
+    useEffect(() => {
+        const applied = { search: filters.search ?? '', department: filters.department ?? 'all' };
+        if (searchTerm === applied.search && deptFilter === applied.department) return;
 
-    const computedDepartments = useMemo(
-        () => [...new Set(faculty.map(getProgram).filter((d) => d !== 'Unspecified'))],
-        [faculty]
-    );
-
-    const processedFaculty = useMemo(() => {
-        const q = searchTerm.trim().toLowerCase();
-        return faculty.filter((prof) => {
-            if (deptFilter !== 'all' && getProgram(prof) !== deptFilter) return false;
-            if (!q) return true;
-
-            const haystack = [
-                prof.name,
-                getProgram(prof),
-                getOffice(prof),
-                ...(prof.weekly_schedule || []).flatMap((b) => [b.course_code, b.section_code]),
-            ]
-                .filter(Boolean)
-                .join(' ')
-                .toLowerCase();
-
-            return haystack.includes(q);
-        });
-    }, [faculty, searchTerm, deptFilter]);
+        const delay = searchTerm !== applied.search ? SEARCH_DEBOUNCE_MS : 0;
+        const timer = setTimeout(() => {
+            router.get(
+                window.location.pathname,
+                cleanParams({ search: searchTerm.trim(), department: deptFilter }),
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                    only: RELOAD_ONLY,
+                    onStart: () => setLoading(true),
+                    onFinish: () => setLoading(false),
+                }
+            );
+        }, delay);
+        return () => clearTimeout(timer);
+    }, [searchTerm, deptFilter]);
 
     // Loads one queued extraction result into the form for review/editing.
     const loadQueueItem = (item) => {
@@ -188,7 +197,7 @@ export default function FacultySchedules({ faculty = [] }) {
 
     const updateScheduleBlock = (index, field, value) => {
         const newSchedule = [...(data.weekly_schedule || [])];
-        newSchedule[index][field] = value;
+        newSchedule[index] = { ...newSchedule[index], [field]: value };
         setData('weekly_schedule', newSchedule);
     };
 
@@ -279,12 +288,16 @@ export default function FacultySchedules({ faculty = [] }) {
         <AdminLayout>
             <Head title="Faculty Schedules" />
 
-            <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                <div>
+            <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-6">
+                <div className="min-w-0">
                     <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Faculty Schedules</h2>
-                    <p className="text-xs text-slate-500 mt-1">Manage consultation hours for CED professors.</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                        Manage consultation hours for CED professors. Scan up to {MAX_FILES} schedule files at once, or add one manually.
+                    </p>
                 </div>
-                <div className="flex gap-3 w-full sm:w-auto">
+
+                {/* Added items-stretch and h-full to lock uniform button height */}
+                <div className="grid grid-cols-2 gap-3 w-full lg:w-auto lg:flex lg:items-stretch lg:shrink-0">
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -293,17 +306,36 @@ export default function FacultySchedules({ faculty = [] }) {
                         multiple
                         onChange={handleFileUpload}
                     />
+
                     <button
+                        type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isExtracting}
-                        className="w-full sm:w-auto px-6 py-3 bg-slate-900 text-white font-bold rounded-xl shadow-md hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                        title={`Upload up to ${MAX_FILES} schedule files (PNG, JPG, or PDF)`}
+                        className="h-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-800 text-sm font-bold leading-none rounded-xl shadow-sm hover:bg-slate-50 transition-colors whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        {isExtracting ? 'AI is Scanning...' : `Upload/Scan Schedules (up to ${MAX_FILES})`}
+                        {isExtracting ? (
+                            <svg className="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                            </svg>
+                        ) : (
+                            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                        )}
+                        <span>{isExtracting ? 'Scanning...' : 'Scan Schedules'}</span>
                     </button>
 
-                    <button onClick={() => { reset(); clearErrors(); setExtractionQueue([]); setQueuePosition(0); setIsModalOpen(true); }} className="w-full sm:w-auto px-6 py-3 bg-yellow-400 text-slate-900 font-bold rounded-xl shadow-md hover:bg-yellow-500 transition-colors flex items-center justify-center gap-2">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-                        Manual Add
+                    <button
+                        type="button"
+                        onClick={() => { reset(); clearErrors(); setExtractionQueue([]); setQueuePosition(0); setIsModalOpen(true); }}
+                        className="h-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-yellow-400 text-slate-900 text-sm font-bold leading-none rounded-xl shadow-sm hover:bg-yellow-500 transition-colors whitespace-nowrap"
+                    >
+                        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>Manual Add</span>
                     </button>
                 </div>
             </div>
@@ -315,6 +347,7 @@ export default function FacultySchedules({ faculty = [] }) {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            aria-label="Search faculty"
                             placeholder="Search by professor name, course, or room..."
                             className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all shadow-sm"
                         />
@@ -322,14 +355,14 @@ export default function FacultySchedules({ faculty = [] }) {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
-                    <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className="w-full lg:w-64 bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all shadow-sm">
+                    <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} aria-label="Filter by department" className="w-full lg:w-64 bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all shadow-sm">
                         <option value="all">All Departments</option>
-                        {computedDepartments.map((dept, i) => <option key={i} value={dept}>{dept}</option>)}
+                        {departments.map((dept) => <option key={dept} value={dept}>{dept}</option>)}
                     </select>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {processedFaculty.length > 0 ? processedFaculty.map((prof) => {
+                <div aria-busy={loading} className={`grid grid-cols-1 md:grid-cols-2 gap-6 transition-opacity ${loading ? 'opacity-60' : ''}`}>
+                    {rows.length > 0 ? rows.map((prof) => {
                         const courses = getCourses(prof.weekly_schedule);
                         const classCount = (prof.weekly_schedule || []).filter((b) => !isConsultation(b)).length;
 
@@ -381,7 +414,6 @@ export default function FacultySchedules({ faculty = [] }) {
                                     </div>
                                 </div>
 
-                                {/* keep your existing Edit / Remove buttons block here, unchanged */}
                                 <div className="flex gap-3 mt-5">
                                     <button onClick={() => { setExtractionQueue([]); setQueuePosition(0); setData(prof); clearErrors(); setIsModalOpen(true); }} className="flex-1 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 transition-colors shadow-sm">Edit</button>
                                     <button onClick={() => confirmDelete(prof.id)} className="flex-1 py-2.5 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors shadow-sm">Remove</button>
@@ -397,6 +429,16 @@ export default function FacultySchedules({ faculty = [] }) {
                         </div>
                     )}
                 </div>
+
+                <Pagination
+                    links={faculty?.links}
+                    from={faculty?.from}
+                    to={faculty?.to}
+                    total={faculty?.total}
+                    noun="faculty"
+                    only={RELOAD_ONLY}
+                    className="mt-6 px-6 py-4 rounded-2xl border"
+                />
             </div>
 
             {isModalOpen && (

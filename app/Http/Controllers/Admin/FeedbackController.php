@@ -9,41 +9,98 @@ use Inertia\Inertia;
 
 class FeedbackController extends Controller
 {
-    private function scopedFeedback(Request $request)
-    {
-        $query = Feedback::with(['user', 'request.service'])->latest();
+    private const PER_PAGE = 10;
 
-        if ($request->filled('ids')) {
-            $ids = array_filter(explode(',', $request->query('ids')), 'is_numeric');
-            $query->whereIn('id', $ids);
+    /**
+     * Shared by the table and both exports, so an export always
+     * matches what the admin sees on screen.
+     */
+    private function filteredQuery(Request $request)
+    {
+        $search = trim((string) $request->query('q', ''));
+        $rating = $request->query('rating');
+
+        $query = Feedback::with(['user', 'request.service'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
+
+        if ($search !== '') {
+            $like = '%' . addcslashes($search, '\\%_') . '%';
+
+            $query->where(function ($q) use ($like) {
+                $q->where('comments', 'like', $like)
+                    ->orWhere('request_id', 'like', $like)
+                    ->orWhereHas('user', function ($u) use ($like) {
+                        $u->where('first_name', 'like', $like)
+                            ->orWhere('last_name', 'like', $like)
+                            ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", [$like]);
+                    })
+                    ->orWhereHas('request.service', fn($s) => $s->where('label', 'like', $like));
+            });
         }
 
-        return $query->get();
+        if (in_array((string) $rating, ['1', '2', '3', '4', '5'], true)) {
+            $query->where('rating', (int) $rating);
+        }
+
+        return $query;
+    }
+
+    private function studentName($fb): string
+    {
+        return $fb->user ? trim($fb->user->first_name . ' ' . $fb->user->last_name) : 'Unknown';
+    }
+
+    private function docType($fb): string
+    {
+        return $fb->request && $fb->request->service ? $fb->request->service->label : 'N/A';
+    }
+
+    private function formatDate($fb): string
+    {
+        return $fb->created_at
+            ? $fb->created_at->timezone('Asia/Manila')->format('M d, Y h:i A')
+            : 'N/A';
+    }
+
+    /** Stops Excel from executing cells that start with = + - @ */
+    private function csvSafe($value): string
+    {
+        $value = (string) $value;
+
+        return $value !== '' && in_array($value[0], ['=', '+', '-', '@'], true)
+            ? "'" . $value
+            : $value;
     }
 
     public function index(Request $request)
     {
-        $feedbacks = $this->scopedFeedback($request)->map(function ($fb) {
-            return [
+        $feedbacks = $this->filteredQuery($request)
+            ->paginate(self::PER_PAGE)
+            ->withQueryString()
+            ->through(fn($fb) => [
                 'id' => $fb->id,
-                'student_name' => $fb->user ? $fb->user->first_name . ' ' . $fb->user->last_name : 'Unknown',
+                'student_name' => $this->studentName($fb),
                 'tracking_id' => $fb->request_id,
-                'document_type' => $fb->request && $fb->request->service ? $fb->request->service->label : 'N/A',
-                'rating' => $fb->rating,
+                'document_type' => $this->docType($fb),
+                'rating' => (int) $fb->rating,
                 'comments' => $fb->comments,
-                'created_at' => $fb->created_at ? $fb->created_at->format('M d, Y h:i A') : 'N/A',
-            ];
-        });
+                'created_at' => $this->formatDate($fb),
+            ]);
 
         return Inertia::render('Admin/Feedback', [
-            'feedbacks' => $feedbacks
+            'feedbacks' => $feedbacks,
+            'filters' => [
+                'q' => trim((string) $request->query('q', '')),
+                'rating' => $request->query('rating', 'all') ?: 'all',
+            ],
         ]);
     }
 
     public function exportExcel(Request $request)
     {
         $filename = 'CED_Feedback_Report_' . date('Y-m-d') . '.csv';
-        $feedbacks = $this->scopedFeedback($request);
+        $query = $this->filteredQuery($request);
 
         if (auth()->check()) {
             activity()
@@ -52,42 +109,35 @@ class FeedbackController extends Controller
                 ->log('Exported student feedback to CSV');
         }
 
-        $headers = [
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
-        ];
-
-        $callback = function () use ($feedbacks) {
+        return response()->streamDownload(function () use ($query) {
             $file = fopen('php://output', 'w');
+
+            // UTF-8 BOM so Excel reads special characters correctly
+            fwrite($file, "\xEF\xBB\xBF");
             fputcsv($file, ['Date Submitted', 'Student Name', 'Tracking ID', 'Document Type', 'Rating', 'Comments']);
 
-            foreach ($feedbacks as $fb) {
-                $studentName = $fb->user ? $fb->user->first_name . ' ' . $fb->user->last_name : 'Unknown';
-                $docType = $fb->request && $fb->request->service ? $fb->request->service->label : 'N/A';
-                $date = $fb->created_at ? $fb->created_at->timezone('Asia/Manila')->format('M d, Y h:i A') : 'N/A';
-                
+            // lazy() reads in chunks with eager loading, so memory stays flat
+            foreach ($query->lazy(500) as $fb) {
                 fputcsv($file, [
-                    '="' . $date . '"',
-                    $studentName,
+                    '="' . $this->formatDate($fb) . '"',
+                    $this->csvSafe($this->studentName($fb)),
                     $fb->request_id,
-                    $docType,
+                    $this->csvSafe($this->docType($fb)),
                     $fb->rating,
-                    $fb->comments
+                    $this->csvSafe($fb->comments),
                 ]);
             }
-            fclose($file);
-        };
 
-        return response()->stream($callback, 200, $headers);
+            fclose($file);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+        ]);
     }
 
     public function exportPdf(Request $request)
     {
-        $feedbacks = $this->scopedFeedback($request);
-        $isFiltered = $request->filled('ids');
+        $feedbacks = $this->filteredQuery($request)->get();
 
         if (auth()->check()) {
             activity()
@@ -112,6 +162,8 @@ class FeedbackController extends Controller
             .header-title p { margin: 4px 0 0; color: #0284c7; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
             .header-meta { text-align: right; font-size: 11px; color: #64748b; }
             table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; font-size: 12px; }
+            thead { display: table-header-group; }
+            tr { page-break-inside: avoid; }
             th { background-color: #f1f5f9; color: #334155; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; padding: 10px 12px; border-bottom: 2px solid #cbd5e1; text-align: left; }
             td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: top; }
             tbody tr:nth-child(even) { background-color: #f8fafc; }
@@ -130,11 +182,10 @@ class FeedbackController extends Controller
             </div>
             <div class="header-meta">
                 <strong>Exported On:</strong><br>
-                ' . $exportTimestamp . '
+                ' . e($exportTimestamp) . '
             </div>
-        </div>';
-
-        $html .= '<table>
+        </div>
+        <table>
             <thead>
                 <tr>
                     <th>Date</th>
@@ -146,23 +197,18 @@ class FeedbackController extends Controller
             </thead>
             <tbody>';
 
-        if ($feedbacks->count() > 0) {
+        if ($feedbacks->isNotEmpty()) {
             foreach ($feedbacks as $fb) {
-                $studentName = $fb->user ? $fb->user->first_name . ' ' . $fb->user->last_name : 'Unknown';
-                $docType = $fb->request && $fb->request->service ? $fb->request->service->label : 'N/A';
-                $date = $fb->created_at ? $fb->created_at->timezone('Asia/Manila')->format('M d, Y h:i A') : 'N/A';
-                
-                $ratingClass = 'rating-low';
-                if ($fb->rating >= 4) $ratingClass = 'rating-high';
-                elseif ($fb->rating == 3) $ratingClass = 'rating-mid';
+                $ratingClass = $fb->rating >= 4 ? 'rating-high' : ($fb->rating == 3 ? 'rating-mid' : 'rating-low');
 
-                $html .= "<tr>
-                <td style=\"white-space: nowrap;\">{$date}</td>
-                <td><strong>{$studentName}</strong></td>
-                <td><code style=\"color: #0f172a;\">#{$fb->request_id}</code><br><span style=\"font-size: 10px; color: #64748b;\">{$docType}</span></td>
-                <td><span class=\"rating-badge {$ratingClass}\">{$fb->rating} / 5</span></td>
-                <td>{$fb->comments}</td>
-            </tr>";
+                // Everything user-supplied goes through e() to prevent HTML injection
+                $html .= '<tr>
+                <td style="white-space: nowrap;">' . e($this->formatDate($fb)) . '</td>
+                <td><strong>' . e($this->studentName($fb)) . '</strong></td>
+                <td><code style="color: #0f172a;">#' . e($fb->request_id) . '</code><br><span style="font-size: 10px; color: #64748b;">' . e($this->docType($fb)) . '</span></td>
+                <td><span class="rating-badge ' . $ratingClass . '">' . e($fb->rating) . ' / 5</span></td>
+                <td>' . e($fb->comments) . '</td>
+            </tr>';
             }
         } else {
             $html .= '<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 24px;">No feedback found.</td></tr>';

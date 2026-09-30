@@ -18,35 +18,81 @@ class InquiryController extends Controller
     /**
      * Display all inquiries for the admin.
      */
+    private const PER_PAGE = 10;
+
     public function inquiries(Request $request)
     {
-        $inquiries = Inquiry::with([
-            'user',
-            'messages.user',
-            'messages.parent.user',
-        ])
-            ->latest('updated_at')
-            ->get()
-            ->map(fn($inquiry) => [
-                'id' => $inquiry->id,
-                'student_name' => $inquiry->user
-                    ? $inquiry->user->first_name . ' ' . $inquiry->user->last_name
-                    : 'Unknown',
-                'email' => $inquiry->user->email ?? 'N/A',
-                'subject' => $inquiry->subject,
-                'status' => $inquiry->status,
-                'is_read' => $inquiry->is_read_by_admin,
-                'date' => $inquiry->created_at->timezone('Asia/Manila')->format('M d, Y h:i A'),
-                'messages' => InquiryMessageResource::collection(
-                    $inquiry->messages
-                )->resolve(),
-            ]);
+        $filters = [
+            'search' => trim((string) $request->query('search', '')),
+            'status' => $request->query('status', 'all'),
+        ];
+        if (!in_array($filters['status'], ['all', 'open', 'pending', 'resolved', 'closed'], true)) {
+            $filters['status'] = 'all';
+        }
 
-        $openId = $request->integer('open');
+        // Notification redirect: ?open={id}. Reset to a view where the row is guaranteed visible.
+        $target = ($openId = $request->integer('open')) ? Inquiry::find($openId) : null;
+        if ($target) {
+            $filters = ['search' => '', 'status' => 'all'];
+        }
+
+        $query = Inquiry::query()
+            ->when($filters['status'] !== 'all', fn($q) => $q->where('status', $filters['status']))
+            ->when($filters['search'] !== '', function ($q) use ($filters) {
+                // Every word must match the subject or the student's name or email
+                foreach (preg_split('/\s+/', $filters['search']) as $term) {
+                    $like = '%' . addcslashes($term, '%_\\') . '%';
+                    $q->where(fn($w) => $w
+                        ->where('subject', 'like', $like)
+                        ->orWhereHas('user', fn($u) => $u
+                            ->where('first_name', 'like', $like)
+                            ->orWhere('last_name', 'like', $like)
+                            ->orWhere('email', 'like', $like)));
+                }
+            });
+
+        // Newest first, so the page holding the target is the count of newer rows / per page
+        $page = $target
+            ? intdiv(
+                (clone $query)->where(fn($q) => $q
+                    ->where('created_at', '>', $target->created_at)
+                    ->orWhere(fn($q2) => $q2
+                        ->where('created_at', $target->created_at)
+                        ->where('id', '>', $target->id)))->count(),
+                self::PER_PAGE
+            ) + 1
+            : null;
+
+        $paginator = $query
+            ->with(['user', 'messages.user', 'messages.parent.user'])
+            ->latest()
+            ->latest('id') // tie-breaker so rows never repeat across pages
+            ->paginate(self::PER_PAGE, ['*'], 'page', $page)
+            ->onEachSide(1)
+            ->appends($request->except('open'));
+
+        // Deleting the last row of a page leaves it empty, so jump to the new last page.
+        if ($paginator->isEmpty() && $paginator->currentPage() > 1) {
+            return redirect()->to($request->fullUrlWithQuery(['page' => $paginator->lastPage()]));
+        }
+
+        $paginator->through(fn($inquiry) => [
+            'id' => $inquiry->id,
+            'student_name' => $inquiry->user
+                ? $inquiry->user->first_name . ' ' . $inquiry->user->last_name
+                : 'Unknown',
+            'email' => $inquiry->user->email ?? 'N/A',
+            'subject' => $inquiry->subject,
+            'status' => $inquiry->status,
+            'is_read' => $inquiry->is_read_by_admin,
+            'date' => $inquiry->created_at->timezone('Asia/Manila')->format('M d, Y h:i A'),
+            'messages' => InquiryMessageResource::collection($inquiry->messages)->resolve(),
+        ]);
 
         return Inertia::render('Admin/Inquiries', [
-            'inquiries' => $inquiries,
-            'focus' => $openId ? ['id' => $openId, 'token' => (string) Str::uuid()] : null,
+            'inquiries' => $paginator,
+            'filters' => $filters,
+            'focus' => $target ? ['id' => $target->id, 'token' => (string) Str::uuid()] : null,
         ]);
     }
 

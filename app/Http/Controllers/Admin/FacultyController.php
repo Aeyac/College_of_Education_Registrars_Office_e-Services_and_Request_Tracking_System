@@ -12,22 +12,56 @@ use Throwable;
 
 class FacultyController extends Controller
 {
-    public function loadFaculty()
-    {
-        $faculty = Faculty::orderBy('name', 'asc')->get()->map(function ($prof) {
-            return [
-                'id' => $prof->id,
-                'name' => $prof->name,
-                'department_or_program' => $prof->department_or_program,
-                'room_or_location' => $prof->room_or_location,
-                'weekly_schedule' => $prof->weekly_schedule,
-                'current_status' => $prof->current_status,
-                'role' => $prof->department_or_program,
-                'room' => $prof->room_or_location,
-            ];
-        });
+    private const PER_PAGE = 10;
 
-        return Inertia::render('Admin/Faculty', ['faculty' => $faculty]);
+    public function loadFaculty(Request $request)
+    {
+        $filters = [
+            'search' => trim((string) $request->query('search', '')),
+            'department' => (string) $request->query('department', 'all'),
+        ];
+
+        $paginator = Faculty::query()
+            ->select(['id', 'name', 'department_or_program', 'room_or_location', 'weekly_schedule'])
+            ->when($filters['department'] !== 'all', fn($q) => $q->where('department_or_program', $filters['department']))
+            ->when($filters['search'] !== '', function ($q) use ($filters) {
+                $like = '%' . addcslashes($filters['search'], '%_\\') . '%';
+                $q->where(fn($w) => $w
+                    ->where('name', 'like', $like)
+                    ->orWhere('department_or_program', 'like', $like)
+                    ->orWhere('room_or_location', 'like', $like)
+                    ->orWhere('weekly_schedule', 'like', $like)); // course and section codes
+            })
+            ->orderBy('name')
+            ->orderBy('id') // tie-breaker so rows never repeat across pages
+            ->paginate(self::PER_PAGE)
+            ->onEachSide(1)
+            ->withQueryString();
+
+        // Deleting the last row of a page leaves it empty, so jump to the new last page.
+        if ($paginator->isEmpty() && $paginator->currentPage() > 1) {
+            return redirect()->to($request->fullUrlWithQuery(['page' => $paginator->lastPage()]));
+        }
+
+        $paginator->through(fn($prof) => [
+            'id' => $prof->id,
+            'name' => $prof->name,
+            'department_or_program' => $prof->department_or_program,
+            'room_or_location' => $prof->room_or_location,
+            'weekly_schedule' => $prof->weekly_schedule,
+        ]);
+
+        return Inertia::render('Admin/Faculty', [
+            'faculty' => $paginator,
+            'filters' => $filters,
+            // Lazy: skipped on partial reloads (search, paging) that don't ask for it
+            'departments' => fn() => Faculty::query()
+                ->whereNotNull('department_or_program')
+                ->where('department_or_program', '!=', 'Not specified')
+                ->distinct()
+                ->orderBy('department_or_program')
+                ->pluck('department_or_program'),
+        ]);
     }
 
     public function extractSchedule(Request $request, ScheduleExtractorContract $extractor)
