@@ -12,8 +12,8 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
     return (
         <Layout user={auth.user}>
             <Head title="Profile Settings" />
-            
-            <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl">
+
+            <div className="p-6 sm:p-8 border-b border-slate-100 bg-white/90 backdrop-blur-md rounded-t-3xl">
                 <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Profile Settings</h2>
                 <p className="text-xs text-slate-500 mt-1">Manage your account information, email address, and security settings.</p>
             </div>

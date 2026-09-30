@@ -32,6 +32,7 @@ class RequestStatusChanged extends Notification implements ShouldQueue
             'status_code' => $this->certRequest->status->code,
             'status_label' => $this->certRequest->status->label,
             'message' => $this->messageFor($this->certRequest->status->code, $notifiable),
+            'link' => $this->linkFor($notifiable),
         ];
     }
 
@@ -43,6 +44,7 @@ class RequestStatusChanged extends Notification implements ShouldQueue
             'status_code' => $this->certRequest->status->code,
             'status_label' => $this->certRequest->status->label,
             'message' => $this->messageFor($this->certRequest->status->code, $notifiable),
+            'link' => $this->linkFor($notifiable),
         ]);
     }
 
@@ -67,6 +69,16 @@ class RequestStatusChanged extends Notification implements ShouldQueue
             ]);
     }
 
+    protected function linkFor(object $notifiable): string
+    {
+        $id = $this->certRequest->id;
+
+        if (method_exists($notifiable, 'isAdmin') && $notifiable->isAdmin()) {
+            return "/admin/requests?open={$id}";
+        }
+
+        return route('user.dashboard', ['open' => $id], absolute: false);
+    }
 
     protected function messageFor(string $statusCode, object $notifiable): string
     {

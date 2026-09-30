@@ -6,7 +6,7 @@ export default function InfoPageLayout({ title, description, children }) {
         <UserLayout >
             <Head title={title} />
 
-            <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl">
+            <div className="p-6 sm:p-8 border-b border-slate-100 bg-white/90 backdrop-blur-md rounded-t-3xl">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-slate-50 rounded-full border border-slate-200 flex items-center justify-center shrink-0">
                         <img src="/images/cedlogo.png" alt="CED" className="w-8 h-8 rounded-full" />

@@ -12,7 +12,7 @@ export default function Announcements({ announcements = [] }) {
         <UserLayout>
             <Head title="Announcements" />
 
-            <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl">
+            <div className="p-6 sm:p-8 border-b border-slate-100 bg-white/90 backdrop-blur-md rounded-t-3xl">
                 <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Registrar Announcements</h2>
                 <p className="text-xs text-slate-500 mt-1">Official updates and deadlines from the College of Education.</p>
             </div>

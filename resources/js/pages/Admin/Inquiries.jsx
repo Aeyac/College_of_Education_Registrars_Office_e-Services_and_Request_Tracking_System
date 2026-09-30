@@ -1,10 +1,13 @@
 import { Head, router } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ChatModal from '@/Components/ChatModal';
 import Swal from 'sweetalert2';
 
-export default function ManageInquiries({ inquiries = [] }) {
+const OPEN_THREAD_ON_REDIRECT = true; // false = only scroll to the row and blink it
+
+export default function ManageInquiries({ inquiries = [], focus = null }) {
+    const [highlightId, setHighlightId] = useState(null);
     const [selectedInquiryId, setSelectedInquiryId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -47,6 +50,36 @@ export default function ManageInquiries({ inquiries = [] }) {
             router.put(`/admin/inquiries/${inq.id}/read`, {}, { preserveScroll: true, preserveState: true });
         }
     };
+
+    useEffect(() => {
+        if (!focus) return;
+
+        // Strip ?open so a refresh doesn't replay it
+        const url = new URL(window.location.href);
+        url.searchParams.delete('open');
+        window.history.replaceState(window.history.state, '', url);
+
+        const inq = inquiries.find(i => i.id === focus.id);
+        if (!inq) return;
+
+        // Make sure filters can't hide the target row
+        setSearchTerm('');
+        setStatusFilter('all');
+
+        if (OPEN_THREAD_ON_REDIRECT) {
+            openThread(inq); // also marks it as read
+            return;
+        }
+
+        setHighlightId(inq.id);
+        const timer = setTimeout(() => setHighlightId(null), 3500);
+        return () => clearTimeout(timer);
+    }, [focus]);
+
+    useEffect(() => {
+        if (highlightId == null) return;
+        document.getElementById(`inquiry-row-${highlightId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, [highlightId]);
 
     const toggleReadStatus = (inq) => {
         const action = inq.is_read ? 'unread' : 'read';
@@ -124,8 +157,8 @@ export default function ManageInquiries({ inquiries = [] }) {
                                     filteredInquiries.map((inq) => (
                                         <tr
                                             key={inq.id}
-                                            className={`transition-colors ${!inq.is_read ? 'bg-blue-50/50 border-l-4 border-l-blue-500' : 'hover:bg-slate-50 border-l-4 border-l-transparent'
-                                                }`}
+                                            id={`inquiry-row-${inq.id}`}
+                                            className={`transition-colors ${highlightId === inq.id ? 'row-blink ' : ''}${!inq.is_read ? 'bg-blue-50/50 border-l-4 border-l-blue-500' : 'hover:bg-slate-50 border-l-4 border-l-transparent'}`}
                                         >
                                             <td className="py-4 px-6 text-sm text-slate-600 whitespace-nowrap">{inq.date}</td>
                                             <td className="py-4 px-6 text-sm font-medium text-slate-700 whitespace-nowrap">

@@ -6,6 +6,7 @@ import RequestDocumentModal from '@/Components/RequestDocumentModal';
 import ComplianceModal from '@/Components/ComplianceModal';
 import Swal from 'sweetalert2';
 import SoftCopyViewerModal from '@/Components/SoftCopyViewerModal';
+import Pagination from '@/Components/Pagination';
 
 const LOCKED_STATUSES = new Set(['cancelled_returned', 'cancelled', 'released', 'rejected']);
 const STATUS_FILTER_OPTIONS = [
@@ -156,6 +157,8 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
     const [docTypeFilter, setDocTypeFilter] = useState('all');
     const [softCopyRequest, setSoftCopyRequest] = useState(null);
 
+    const RELOAD_ONLY = ['requests', 'showingArchived', 'statusFilter'];
+
     const requestList = requests?.data ?? [];
     const paginationLinks = requests?.meta?.links ?? requests?.links ?? [];
     const fromCount = requests?.meta?.from || requests?.from;
@@ -225,16 +228,15 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
         <UserLayout>
             <Head title="My Requests" />
 
-            <div className="p-4 sm:p-6 lg:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-10 rounded-t-3xl flex flex-col lg:flex-row justify-between lg:items-center gap-4">
-                <div className="min-w-0">
-                    <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex flex-wrap items-center gap-2">
-                        My Requests
-                        {showingArchived && <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full uppercase tracking-wider">Archived</span>}
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                        {showingArchived ? 'Viewing archived requests. Restore any of these to bring them back to your active list.' : 'Track and manage your official document requests.'}
-                    </p>
-                </div>
+            <div className="p-4 sm:p-6 lg:p-8 border-b border-slate-100 bg-white rounded-t-3xl flex flex-col lg:flex-row justify-between lg:items-center gap-4">    <div className="min-w-0">
+                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex flex-wrap items-center gap-2">
+                    My Requests
+                    {showingArchived && <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full uppercase tracking-wider">Archived</span>}
+                </h2>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    {showingArchived ? 'Viewing archived requests. Restore any of these to bring them back to your active list.' : 'Track and manage your official document requests.'}
+                </p>
+            </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center gap-2.5 w-full lg:w-auto">
                     <ActionButton variant="secondary" onClick={toggleArchivedView} icon={showingArchived ? ICONS.back : ICONS.archive} className="w-full lg:w-auto">
@@ -411,21 +413,14 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
                 </ul>
 
                 {/* Pagination Controls */}
-                {paginationLinks.length > 3 && (
-                    <nav aria-label="Pagination" className="flex flex-wrap justify-center gap-2 mt-8">
-                        {paginationLinks.map((link, i) => (
-                            <Link
-                                key={i}
-                                href={link.url || '#'}
-                                preserveScroll
-                                preserveState
-                                aria-current={link.active ? 'page' : undefined}
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                                className={`px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 ${link.active ? 'bg-yellow-400 text-slate-900' : link.url ? 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' : 'bg-white border border-slate-100 text-slate-400 cursor-not-allowed'}`}
-                            />
-                        ))}
-                    </nav>
-                )}
+                <Pagination
+                    links={requests?.links}
+                    from={requests?.from}
+                    to={requests?.to}
+                    total={requests?.total}
+                    noun="requests"
+                    only={RELOAD_ONLY}
+                />
             </div>
 
             {/* Modals */}

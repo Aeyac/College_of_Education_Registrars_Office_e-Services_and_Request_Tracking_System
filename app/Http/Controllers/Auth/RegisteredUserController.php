@@ -20,6 +20,8 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Notifications\AlumniVerificationSubmitted;
+use Illuminate\Support\Facades\Notification;
 
 class RegisteredUserController extends Controller
 {
@@ -52,7 +54,6 @@ class RegisteredUserController extends Controller
         if ($isStudent) {
             $emailRules[] = 'regex:/@clsu2?\.edu\.ph$/';
         }
-
 
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
@@ -110,7 +111,7 @@ class RegisteredUserController extends Controller
         $otp = random_int(100000, 999999);
 
         // Everything is saved together, or nothing is (no half-created accounts).
-        $user = DB::transaction(function () use ($validated, $request, $isStudent, $otp) {
+        [$user, $verification] = DB::transaction(function () use ($validated, $request, $isStudent, $otp) {
             $user = User::create([
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
@@ -129,21 +130,33 @@ class RegisteredUserController extends Controller
                 'otp_expires_at' => now()->addMinutes(self::OTP_TTL_MINUTES),
             ]);
 
-
             $user->assignRole($validated['user_type']);
 
+            $verification = null;
             if (!$isStudent) {
-                AlumniVerification::create([
+                $verification = AlumniVerification::create([
                     'user_id' => $user->id,
                     'path' => $request->file('proof')->store('alumni-proofs', 'private'),
                     'status' => 'pending',
                 ]);
             }
 
-            return $user;
+            return [$user, $verification];
         });
 
         Mail::to($user->email)->send(new OtpMail($otp));
+
+        // Alert admins about the new alumni proof. Registration still succeeds if this fails.
+        if ($verification) {
+            try {
+                Notification::send(
+                    User::role('admin')->get(),
+                    new AlumniVerificationSubmitted($verification->load('user'))
+                );
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
         event(new Registered($user));
 

@@ -4,11 +4,12 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { Icon } from '@/Components/Icon';
 import Swal from 'sweetalert2';
 
-const LOCKED_STATUSES = new Set(['cancelled', 'released', 'rejected']);
 const NOTE_REQ_STATUSES = new Set(['rejected', 'for_compliance']);
 const OUTPUT_REQUIRED_STATUSES = new Set(['ready_for_release', 'released']);
 const RELOAD_ONLY = ['requests', 'filters', 'showingArchived'];
+const LOCKED_STATUSES = new Set(['cancelled', 'released', 'rejected']);
 const SEARCH_DEBOUNCE_MS = 350;
+const OPEN_MODAL_ON_REDIRECT = false; // true = also open the modal
 
 const ICONS = {
     close: 'M6 18L18 6M6 6l12 12',
@@ -172,17 +173,19 @@ function DocumentPreviewModal({ doc, onClose }) {
     );
 }
 
-export default function ManageRequests({ requests, services = [], filters = {}, showingArchived = false }) {
+export default function ManageRequests({ requests, services = [], filters = {}, showingArchived = false, focus = null }) {
     const rows = requests?.data ?? [];
 
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [previewDoc, setPreviewDoc] = useState(null);
+
     const [searchTerm, setSearchTerm] = useState(filters.search ?? '');
     const [statusFilter, setStatusFilter] = useState(filters.status ?? 'all');
     const [serviceFilter, setServiceFilter] = useState(String(filters.service ?? 'all'));
     const [loading, setLoading] = useState(false);
     const [exporting, setExporting] = useState(null);
     const [archiving, setArchiving] = useState(null);
+    const [highlightId, setHighlightId] = useState(null);
 
     const { data, setData, post, processing, reset, errors } = useForm({
         _method: 'put',
@@ -244,6 +247,27 @@ export default function ManageRequests({ requests, services = [], filters = {}, 
         setSelectedRequest(req);
         setData('status_code', req.status_code || code);
     };
+
+    useEffect(() => {
+        if (!focus) return;
+
+        // Strip ?open so a refresh doesn't replay it
+        const url = new URL(window.location.href);
+        url.searchParams.delete('open');
+        window.history.replaceState(window.history.state, '', url);
+
+        const req = rows.find(r => r.id === focus.id);
+        if (!req) return;
+
+        setHighlightId(req.id);
+        requestAnimationFrame(() =>
+            document.getElementById(`request-row-${req.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        );
+        if (OPEN_MODAL_ON_REDIRECT) handleSelect(req, 'processing');
+
+        const timer = setTimeout(() => setHighlightId(null), 3500);
+        return () => clearTimeout(timer);
+    }, [focus]);
 
     const handleUpdate = e => {
         e.preventDefault();
@@ -409,7 +433,11 @@ export default function ManageRequests({ requests, services = [], filters = {}, 
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {rows.length > 0 ? rows.map(req => (
-                                    <tr key={req.id} className="hover:bg-slate-50 transition-colors">
+                                    <tr
+                                        key={req.id}
+                                        id={`request-row-${req.id}`}
+                                        className={`hover:bg-slate-50 transition-colors ${highlightId === req.id ? 'row-blink' : ''}`}
+                                    >
                                         <td className="py-4 px-6 text-sm font-bold text-slate-900 whitespace-nowrap">{req.created_at}</td>
                                         <td className="py-4 px-6 text-sm font-bold text-slate-500 whitespace-nowrap">#{req.id}</td>
                                         <td className="py-4 px-6 text-sm font-medium text-slate-700 whitespace-nowrap">{req.student_name}</td>

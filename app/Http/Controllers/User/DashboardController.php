@@ -34,7 +34,7 @@ class DashboardController extends Controller
             'inquiries' => Inquiry::where('user_id', auth()->id())->where('status', 'open')->count(),
         ];
 
-        $recentRequests = $query->latest()->take(3)->get();
+        $recentRequests = $query->latest()->take(5)->get();
 
         return Inertia::render('User/Dashboard', [
             'userRole' => auth()->user()->displaySubtitle(),

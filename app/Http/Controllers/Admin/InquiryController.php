@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Admin;
-
+use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\InquiryMessageResource;
 use App\Models\Inquiry;
@@ -18,7 +18,7 @@ class InquiryController extends Controller
     /**
      * Display all inquiries for the admin.
      */
-    public function inquiries()
+    public function inquiries(Request $request)
     {
         $inquiries = Inquiry::with([
             'user',
@@ -42,8 +42,11 @@ class InquiryController extends Controller
                 )->resolve(),
             ]);
 
+        $openId = $request->integer('open');
+
         return Inertia::render('Admin/Inquiries', [
             'inquiries' => $inquiries,
+            'focus' => $openId ? ['id' => $openId, 'token' => (string) Str::uuid()] : null,
         ]);
     }
 
@@ -171,7 +174,7 @@ class InquiryController extends Controller
         Inquiry::where('user_id', auth()->id())->findOrFail($id)->update(['is_read_by_user' => true]);
         return back();
     }
-    
+
     /**
      * Mark an inquiry as read by the admin.
      */

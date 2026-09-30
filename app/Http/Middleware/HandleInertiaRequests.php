@@ -34,13 +34,11 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
                 'role' => $request->user()?->user_type,
-                // Fetch the latest 10 notifications (both read and unread)
-                'notifications' => $request->user() 
-                    ? $request->user()->notifications()->latest()->take(10)->get() 
+                'notifications' => fn() => $request->user()
+                    ? $request->user()->notifications()->latest()->take(10)->get()
                     : [],
-                // Pass the exact count of unread notifications for the red badge
-                'unreadNotificationsCount' => $request->user() 
-                    ? $request->user()->unreadNotifications()->count() 
+                'unreadNotificationsCount' => fn() => $request->user()
+                    ? $request->user()->unreadNotifications()->count()
                     : 0,
             ],
         ];

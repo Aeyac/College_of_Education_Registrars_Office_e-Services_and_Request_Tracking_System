@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Notifications\RequestStatusChanged;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Str;
+
 class RequestController extends Controller
 {
 
@@ -25,7 +27,33 @@ class RequestController extends Controller
             'archived' => $request->boolean('archived'),
         ];
 
-        $paginator = CertificateRequest::filterForAdmin($filters)
+        // Notification redirect: ?open={id}
+        $target = ($openId = $request->integer('open'))
+            ? CertificateRequest::find($openId)
+            : null;
+
+        if ($target) {
+            // Show the view (active or archived) that actually contains the row
+            $filters['archived'] = $target->isArchived('admin');
+        }
+
+        $query = CertificateRequest::filterForAdmin($filters);
+
+        // Jump to the page containing the target, unless a page was explicitly requested
+        $page = null;
+        if ($target && !$request->has('page')) {
+            $ahead = (clone $query)->where(
+                fn($q) => $q
+                    ->where('created_at', '>', $target->created_at)
+                    ->orWhere(fn($q2) => $q2
+                        ->where('created_at', $target->created_at)
+                        ->where('id', '>', $target->id))
+            )->count();
+
+            $page = intdiv($ahead, 10) + 1;
+        }
+
+        $paginator = $query
             ->with([
                 'user:id,first_name,last_name',
                 'status:id,code,label',
@@ -35,9 +63,9 @@ class RequestController extends Controller
             ])
             ->latest()
             ->latest('id') // tie-breaker so rows never repeat across pages
-            ->paginate(10)
+            ->paginate(10, ['*'], 'page', $page)
             ->onEachSide(1)
-            ->withQueryString();
+            ->appends($request->except('open')); // keeps ?open out of pagination links
 
         // Archiving the last row of a page leaves it empty, so jump to the new last page.
         if ($paginator->isEmpty() && $paginator->currentPage() > 1) {
@@ -74,9 +102,10 @@ class RequestController extends Controller
             'services' => RequestService::orderBy('sort_order')->get(['id', 'label']),
             'filters' => $filters,
             'showingArchived' => $filters['archived'],
+            'focus' => $target ? ['id' => $target->id, 'token' => (string) Str::uuid()] : null,
         ]);
     }
-
+    
     public function updateRequest(Request $request, $id)
     {
         $certRequest = CertificateRequest::findOrFail($id);

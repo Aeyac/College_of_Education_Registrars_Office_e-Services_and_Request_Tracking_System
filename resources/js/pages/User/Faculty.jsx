@@ -75,7 +75,7 @@ export default function FacultySchedules({ faculty = [] }) {
         <UserLayout>
             <Head title="Faculty Schedules" />
 
-            <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div className="p-6 sm:p-8 border-b border-slate-100 bg-white/90 backdrop-blur-md rounded-t-3xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
                     <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Faculty Schedules</h2>
                     <p className="text-xs text-slate-500 mt-1">View courses, class schedules, and consultation hours of CED professors.</p>

@@ -12,7 +12,9 @@ class InquiryReplied extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(protected Inquiry $inquiry) {}
+    public function __construct(protected Inquiry $inquiry)
+    {
+    }
 
     public function via(object $notifiable): array
     {
@@ -39,6 +41,7 @@ class InquiryReplied extends Notification implements ShouldQueue
             'message' => 'Admin replied to: ' . $this->inquiry->subject,
             'status_code' => 'released',
             'status_label' => 'Resolved',
+            'link' => route('user.dashboard', absolute: false),
         ];
     }
 }

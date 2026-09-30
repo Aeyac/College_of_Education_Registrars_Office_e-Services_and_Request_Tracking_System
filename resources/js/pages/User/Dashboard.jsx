@@ -36,7 +36,7 @@ function Modal({ title, onClose, maxWidth = 'max-w-md', children }) {
     return (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
             <div className={`bg-white w-full ${maxWidth} rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[92dvh]`}>
-                <div className="px-4 sm:px-6 py-4 sm:py-5 flex justify-between items-center border-b border-slate-100 shrink-0 gap-3">
+                <div className="px-4 sm:px-6 py-4 flex justify-between items-center border-b border-slate-100 shrink-0 gap-3">
                     <h3 className="font-bold text-slate-900 text-base sm:text-lg truncate">{title}</h3>
                     <button onClick={onClose} className="p-2 bg-slate-100 rounded-full text-slate-500 hover:text-slate-800 transition-colors shrink-0" aria-label="Close">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d={ICON_PATHS.close} /></svg>
@@ -51,32 +51,38 @@ function Modal({ title, onClose, maxWidth = 'max-w-md', children }) {
 function StatCard({ iconPath, iconBg, iconColor, value, label, href }) {
     const Component = href ? Link : 'div';
     return (
-        <Component href={href} className="bg-white border border-slate-200 p-5 sm:p-6 rounded-2xl shadow-sm flex flex-col items-center justify-center hover:border-yellow-300 hover:shadow-md transition-all cursor-pointer min-w-0">
-            <div className={`w-8 h-8 rounded-full ${iconBg} flex items-center justify-center mb-3 shrink-0`}>
+        <Component href={href} className="bg-white border border-slate-200 px-4 py-4 sm:px-5 sm:py-5 rounded-2xl shadow-sm flex items-center gap-4 hover:border-yellow-300 hover:shadow-md transition-all cursor-pointer min-w-0">
+            <div className={`w-9 h-9 rounded-full ${iconBg} flex items-center justify-center shrink-0`}>
                 <svg className={`w-4 h-4 ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d={iconPath} /></svg>
             </div>
-            <h3 className="text-2xl font-black text-slate-900">{value || 0}</h3>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1 text-center">{label}</p>
+            <div className="min-w-0">
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 leading-none">{value || 0}</h3>
+                <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1 truncate">{label}</p>
+            </div>
         </Component>
     );
 }
 
 function QuickActionButton({ iconPath, name, onClick }) {
     return (
-        <button onClick={onClick} className="flex flex-col items-center gap-3 group min-w-[76px] sm:min-w-[80px] shrink-0 outline-none">
-            <div className="w-14 h-14 bg-white border border-slate-100 shadow-sm rounded-2xl flex items-center justify-center group-hover:border-yellow-400 group-hover:bg-yellow-50 transition-all group-focus-visible:ring-2 ring-yellow-400">
-                <svg className="w-6 h-6 text-slate-600 group-hover:text-slate-900 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={iconPath} /></svg>
+        <button onClick={onClick} className="flex items-center gap-3 group min-w-0 w-full sm:w-auto outline-none text-left">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 bg-white border border-slate-100 shadow-sm rounded-xl flex items-center justify-center group-hover:border-yellow-400 group-hover:bg-yellow-50 transition-all group-focus-visible:ring-2 ring-yellow-400 shrink-0">
+                <svg className="w-5 h-5 text-slate-600 group-hover:text-slate-900 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={iconPath} />
+                </svg>
             </div>
-            <span className="text-[10px] font-bold text-slate-700 text-center leading-tight group-hover:text-slate-900 transition-colors">{name}</span>
+            <span className="min-w-0 text-[11px] font-bold leading-tight text-slate-700 sm:whitespace-nowrap group-hover:text-slate-900 transition-colors">
+                {name}
+            </span>
         </button>
     );
 }
 
 function RequestRow({ request, onTrack }) {
     return (
-        <div className="flex items-center justify-between gap-3 p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-yellow-200 transition-all min-w-0">
+        <div className="flex items-center justify-between gap-3 p-3.5 sm:p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-yellow-200 transition-all min-w-0">
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shrink-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shrink-0">
                     <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={ICON_PATHS.newRequest} /></svg>
                 </div>
                 <div className="min-w-0">
@@ -84,7 +90,6 @@ function RequestRow({ request, onTrack }) {
                     <p className="text-[11px] font-medium text-slate-400 mt-0.5 truncate">#{request.id} • {request.created_at}</p>
                 </div>
             </div>
-
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <span className={`hidden sm:inline-block px-3 py-1.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${getStatusStyle(request.status)}`}>{request.status}</span>
                 <button onClick={() => onTrack(request)} className="text-yellow-700 hover:text-yellow-800 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm whitespace-nowrap">Track</button>
@@ -97,6 +102,7 @@ export default function UserDashboard({ auth, requests = [], stats, services = [
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
     const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
     const [trackingRequest, setTrackingRequest] = useState(null);
+
     const quickActions = [
         { name: 'New Request', iconPath: ICON_PATHS.newRequest, action: () => setIsRequestModalOpen(true) },
         { name: 'Submit Inquiry', iconPath: ICON_PATHS.inquiry, action: () => router.visit('/user/inquiries') },
@@ -108,33 +114,45 @@ export default function UserDashboard({ auth, requests = [], stats, services = [
         <UserLayout>
             <Head title="Dashboard" />
 
-            <div className="p-4 sm:p-6 lg:p-8 pb-4 border-b border-slate-100 bg-white/90 backdrop-blur-md sticky top-0 z-10">
-                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Dashboard</h2>
-                <p className="text-xs text-slate-500 mt-1">Welcome back, {auth?.user?.first_name || 'Student'}!</p>
+            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 border-b border-slate-100 bg-white rounded-t-3xl">
+                <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Dashboard</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Welcome back, {auth?.user?.first_name || 'Student'}!</p>
             </div>
 
-            <div className="p-4 sm:p-6 lg:p-8 min-w-0">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10">
+            <div className="p-4 sm:p-6 lg:p-8 min-w-0 space-y-6">
+
+                {/* Stats */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <StatCard href="/user/requests?status=pending" iconPath={ICON_PATHS.clock} iconBg="bg-yellow-50" iconColor="text-yellow-600" value={stats?.pending} label="Pending Requests" />
                     <StatCard href="/user/requests?status=completed" iconPath={ICON_PATHS.check} iconBg="bg-emerald-50" iconColor="text-emerald-600" value={stats?.completed} label="Completed Requests" />
                     <StatCard href="/user/inquiries" iconPath={ICON_PATHS.inquiry} iconBg="bg-purple-50" iconColor="text-purple-600" value={stats?.inquiries} label="Open Inquiries" />
                 </div>
 
-                <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Quick Actions</h2>
-                <div className="flex justify-start items-center gap-4 sm:gap-6 overflow-x-auto mb-8 sm:mb-10 pb-4 custom-scrollbar">
-                    {quickActions.map((action) => <QuickActionButton key={action.name} {...action} onClick={action.action} />)}
+                {/* Quick Actions */}
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-x-6">
+                    <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0">
+                        Quick Actions
+                    </h2>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-3 w-full sm:w-auto sm:flex sm:flex-wrap sm:items-center sm:gap-x-5">
+                        {quickActions.map(action => (
+                            <QuickActionButton key={action.name} {...action} onClick={action.action} />
+                        ))}
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 min-w-0">
+                {/* Main Content */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6 items-start">
+
+                    {/* Recent Requests */}
                     <div className="lg:col-span-2 min-w-0">
-                        <div className="flex justify-between items-end gap-3 mb-4">
-                            <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">My Recent Requests</h2>
-                            {requests.length > 0 && <Link href="/user/requests" className="text-[11px] font-bold text-yellow-600 hover:text-yellow-700 transition-colors shrink-0">View All</Link>}
+                        <div className="flex justify-between items-center gap-3 mb-3">
+                            <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">My Recent Requests</h2>
+                            {requests.length > 0 && <Link href="/user/requests" className="text-[10px] font-bold text-yellow-600 hover:text-yellow-700 transition-colors shrink-0">View All</Link>}
                         </div>
 
-                        <div className="space-y-3">
-                            {requests.length > 0 ? requests.map((req) => <RequestRow key={req.id} request={req} onTrack={setTrackingRequest} />) : (
-                                <div className="text-center py-10 bg-slate-50 border border-slate-100 rounded-2xl">
+                        <div className="space-y-2.5">
+                            {requests.length > 0 ? requests.map(req => <RequestRow key={req.id} request={req} onTrack={setTrackingRequest} />) : (
+                                <div className="text-center py-8 bg-slate-50 border border-slate-100 rounded-2xl">
                                     <p className="text-sm font-bold text-slate-700">No requests yet.</p>
                                     <p className="text-xs text-slate-500 mt-1">Submit a new request to get started.</p>
                                 </div>
@@ -142,52 +160,51 @@ export default function UserDashboard({ auth, requests = [], stats, services = [
                         </div>
                     </div>
 
-                    <div className="space-y-6 sm:space-y-8 min-w-0">
+                    {/* Right Column */}
+                    <div className="space-y-5 min-w-0">
+
+                        {/* Notifications */}
                         <div>
-                            <div className="flex justify-between items-end gap-3 mb-4">
-                                <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Announcements</h2>
-                                <Link href="/user/announcements" className="text-[11px] font-bold text-yellow-600 hover:text-yellow-700 transition-colors shrink-0">View All</Link>
+                            <div className="flex justify-between items-center mb-3">
+                                <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Latest Notifications</h2>
                             </div>
-                            <div className="space-y-3 min-w-0">
-                                {announcements?.length > 0 ? announcements.map((ann) => (
-                                    <div
-                                        key={ann.id}
-                                        className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col gap-1 hover:border-yellow-300 hover:shadow-md transition-all cursor-pointer min-w-0 overflow-hidden"
-                                        onClick={() => router.visit('/user/announcements')}
-                                    >
+
+                            <div className="space-y-2.5">
+                                {auth?.notifications?.length > 0 ? auth.notifications.slice(0, 3).map(notif => (
+                                    <div key={notif.id} className={`p-3.5 bg-white border rounded-2xl shadow-sm flex flex-col gap-1 transition-colors ${!notif.read_at ? 'border-amber-200 bg-amber-50' : 'border-slate-100'}`}>
+                                        <p className={`text-xs ${!notif.read_at ? 'font-bold text-amber-900' : 'text-slate-700'}`}>{notif.data.message}</p>
+                                        <span className="text-[10px] text-slate-400">{new Date(notif.created_at).toLocaleString()}</span>
+                                    </div>
+                                )) : (
+                                    <div className="text-center py-5 bg-slate-50 border border-slate-100 rounded-2xl">
+                                        <p className="text-xs text-slate-500">No new notifications.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Announcements */}
+                        <div>
+                            <div className="flex justify-between items-center gap-3 mb-3">
+                                <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Announcements</h2>
+                                <Link href="/user/announcements" className="text-[10px] font-bold text-yellow-600 hover:text-yellow-700 transition-colors shrink-0">View All</Link>
+                            </div>
+
+                            <div className="space-y-2.5">
+                                {announcements?.length > 0 ? announcements.map(ann => (
+                                    <div key={ann.id} className="p-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col gap-1 hover:border-yellow-300 hover:shadow-md transition-all cursor-pointer min-w-0 overflow-hidden" onClick={() => router.visit('/user/announcements')}>
                                         <h3 className="font-bold text-sm text-slate-900 truncate">{ann.title}</h3>
-                                        <div
-                                            className="text-xs text-slate-500 line-clamp-2 break-words min-w-0 overflow-hidden [&_p]:inline [&_p]:m-0"
-                                            dangerouslySetInnerHTML={{ __html: ann.content }}
-                                        />
+                                        <div className="text-xs text-slate-500 line-clamp-2 break-words min-w-0 overflow-hidden [&_p]:inline [&_p]:m-0" dangerouslySetInnerHTML={{ __html: ann.content }} />
                                         <span className="text-[10px] font-medium text-slate-400 mt-1">{ann.date}</span>
                                     </div>
                                 )) : (
-                                    <div className="text-center py-6 bg-slate-50 border border-slate-100 rounded-2xl">
+                                    <div className="text-center py-5 bg-slate-50 border border-slate-100 rounded-2xl">
                                         <p className="text-xs text-slate-500">No recent announcements.</p>
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        <div>
-                            <div className="flex justify-between items-end mb-4">
-                                <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Latest Notifications</h2>
-                            </div>
-
-                            <div className="space-y-3">
-                                {auth?.notifications?.length > 0 ? auth.notifications.slice(0, 3).map((notif) => (
-                                    <div key={notif.id} className={`p-4 bg-white border rounded-2xl shadow-sm flex flex-col gap-1 transition-colors ${!notif.read_at ? 'border-amber-200 bg-amber-50' : 'border-slate-100'}`}>
-                                        <p className={`text-xs ${!notif.read_at ? 'font-bold text-amber-900' : 'text-slate-700'}`}>{notif.data.message}</p>
-                                        <span className="text-[10px] text-slate-400">{new Date(notif.created_at).toLocaleString()}</span>
-                                    </div>
-                                )) : (
-                                    <div className="text-center py-6 bg-slate-50 border border-slate-100 rounded-2xl">
-                                        <p className="text-xs text-slate-500">No new notifications.</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -226,12 +243,10 @@ export default function UserDashboard({ auth, requests = [], stats, services = [
                 <Modal title="Academic Calendar" onClose={() => setIsCalendarModalOpen(false)} maxWidth="max-w-4xl">
                     <div className="p-4 sm:p-6">
                         <p className="text-sm text-slate-500 mb-6 text-center">Review the official academic calendar for the current school year.</p>
-
                         <div className="w-full h-[55vh] sm:h-[70vh] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 shadow-inner mb-6 relative">
                             <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm font-medium z-0">Loading Calendar...</div>
                             <iframe src="/downloads/Academic-Calendar-for-SY-2026-27-Official V6.pdf" title="Academic Calendar" className="w-full h-full relative z-10" />
                         </div>
-
                         <div className="flex flex-col-reverse sm:flex-row gap-3">
                             <button type="button" onClick={() => setIsCalendarModalOpen(false)} className="flex-1 py-3.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm transition-colors hover:bg-slate-200">Close</button>
                             <a href="/downloads/Academic-Calendar-for-SY-2026-27-Official V6.pdf" download="Academic-Calendar-for-SY-2026-27-Official V6.pdf" className="flex-[2] py-3.5 bg-yellow-400 text-slate-900 font-bold rounded-xl shadow-md transition-colors hover:bg-yellow-500 text-sm flex items-center justify-center gap-2">

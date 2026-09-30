@@ -77,7 +77,7 @@ export default function Faq() {
         <UserLayout>
             <Head title="Help Center" />
 
-            <div className="w-full min-w-0 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl">
+            <div className="w-full min-w-0 border-b border-slate-100 bg-white/90 backdrop-blur-md rounded-t-3xl">
                 <div className="px-4 sm:px-6 lg:px-8 py-5 sm:py-6 min-w-0">
                     <Eyebrow>CED E-Services</Eyebrow>
                     <h1 className="mt-1.5 text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight break-words">Help Center</h1>

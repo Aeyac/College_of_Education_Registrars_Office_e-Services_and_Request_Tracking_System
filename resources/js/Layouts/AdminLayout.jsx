@@ -61,19 +61,12 @@ export default function AdminLayout({ children }) {
     };
 
     const markSingleAsRead = (notif) => {
-        const goToLink = () => {
-            if (notif.data.link) router.visit(notif.data.link);
-            setIsNotifOpen(false);
-        };
+        setIsNotifOpen(false);
 
         if (!notif.read_at) {
-            router.post(`/admin/notifications/${notif.id}/mark-as-read`, {}, {
-                preserveScroll: true,
-                preserveState: true,
-                onSuccess: goToLink
-            });
-        } else {
-            goToLink();
+            router.post(`/admin/notifications/${notif.id}/mark-as-read`);
+        } else if (notif.data.link) {
+            router.visit(notif.data.link);
         }
     };
 

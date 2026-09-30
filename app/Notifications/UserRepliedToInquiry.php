@@ -12,7 +12,9 @@ class UserRepliedToInquiry extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(protected Inquiry $inquiry) {}
+    public function __construct(protected Inquiry $inquiry)
+    {
+    }
 
     public function via(object $notifiable): array
     {
@@ -22,11 +24,12 @@ class UserRepliedToInquiry extends Notification implements ShouldQueue
     public function toDatabase(object $notifiable): array
     {
         return [
+            'inquiry_id' => $this->inquiry->id,
             'service_label' => 'Inquiry Reply',
             'message' => 'User replied to: ' . $this->inquiry->subject,
             'status_code' => 'new',
             'status_label' => 'Unread',
-            'link' => '/admin/inquiries',
+            'link' => '/admin/inquiries?open=' . $this->inquiry->id,
         ];
     }
 }

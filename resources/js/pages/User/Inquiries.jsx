@@ -68,7 +68,7 @@ export default function MyInquiries({ inquiries = [] }) {
     return (
         <UserLayout>
             <Head title="My Inquiries" />
-            <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md rounded-t-3xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div className="p-6 sm:p-8 border-b border-slate-100 bg-white/90 backdrop-blur-md rounded-t-3xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
                     <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">My Inquiries</h2>
                     <p className="text-xs text-slate-500 mt-1">Message the CED Registrar's Office directly.</p>
