@@ -1,11 +1,12 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
 use App\Models\Faq;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class HomeController extends Controller
 {
@@ -22,10 +23,11 @@ class HomeController extends Controller
             ->latest()
             ->take(3)
             ->get()
-            ->map(fn($ann) => [
+            ->map(fn ($ann) => [
                 'id' => $ann->id,
                 'title' => $ann->title,
                 'content' => $ann->body,
+                'attachments' => $ann->attachments,
                 'date' => $ann->created_at->format('F d, Y'),
             ]);
 

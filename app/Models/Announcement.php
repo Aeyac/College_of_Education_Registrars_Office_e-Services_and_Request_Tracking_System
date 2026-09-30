@@ -9,13 +9,14 @@ class Announcement extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'body', 'posted_by', 'published_at', 'expires_at'];
+    protected $fillable = ['title', 'body', 'attachments', 'posted_by', 'published_at', 'expires_at'];
 
     protected function casts(): array
     {
         return [
             'published_at' => 'datetime',
             'expires_at' => 'datetime',
+            'attachments' => 'array',
         ];
     }
 

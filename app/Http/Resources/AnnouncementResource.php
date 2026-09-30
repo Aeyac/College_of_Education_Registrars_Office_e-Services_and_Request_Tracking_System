@@ -12,6 +12,7 @@ class AnnouncementResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'content' => $this->body,
+            'attachments' => $this->attachments,
             'date' => $this->created_at->format('M d, Y'),
         ];
     }
