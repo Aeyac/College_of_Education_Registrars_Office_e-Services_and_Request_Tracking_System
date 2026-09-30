@@ -2,12 +2,11 @@ import InfoPageLayout from '@/Components/InfoPageLayout';
 import Section from '@/Components/Section';
 import Bullet from '@/Components/Bullet';
 
-export default function Terms({ userRole }) {
+export default function Terms({ }) {
     return (
         <InfoPageLayout
             title="Terms of Service"
             description="Rules and guidelines for using the CED E-Services platform."
-            userRole={userRole}
         >
             <div className="text-slate-600 leading-relaxed">
                 <p className="text-lg text-slate-700 mb-10">

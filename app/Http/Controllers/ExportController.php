@@ -12,16 +12,26 @@ class ExportController extends Controller
      * currently-visible (filtered/searched) table rows. Falls back to
      * every request when no ids param is present.
      */
+    private function csvSafe(string $value): string
+    {
+        return preg_match('/^[=+\-@\t\r]/', $value) ? "'" . $value : $value;
+    }
+
     private function scopedRequests(Request $request)
     {
-        $query = CertificateRequest::with(['user', 'status', 'service'])->latest();
+        return CertificateRequest::filterForAdmin($request->query())
+            ->with(['user', 'status', 'service'])
+            ->latest()
+            ->latest('id')
+            ->get();
+    }
 
-        if ($request->filled('ids')) {
-            $ids = array_filter(explode(',', $request->query('ids')), 'is_numeric');
-            $query->whereIn('id', $ids);
-        }
-
-        return $query->get();
+    private function hasFilters(Request $request): bool
+    {
+        return trim((string) $request->query('search', '')) !== ''
+            || !in_array($request->query('status', 'all'), ['', 'all'], true)
+            || $request->filled('service')
+            || $request->boolean('archived');
     }
 
     public function exportExcel(Request $request)
@@ -52,11 +62,11 @@ class ExportController extends Controller
                 fputcsv($file, [
                     '="' . $r->created_at->timezone('Asia/Manila')->format('M d, Y h:i A') . '"',
                     $r->id,
-                    $r->user ? $r->user->first_name . ' ' . $r->user->last_name : 'Unknown',
-                    $r->service ? $r->service->label : 'Document',
+                    $this->csvSafe($r->user ? $r->user->first_name . ' ' . $r->user->last_name : 'Unknown'),
+                    $this->csvSafe($r->service ? $r->service->label : 'Document'),
                     $r->delivery_mode === 'hard_copy' ? 'Hard Copy' : 'Soft Copy',
                     $r->status ? $r->status->label : 'Pending',
-                ]);
+                ]); 
             }
             fclose($file);
         };
@@ -67,7 +77,7 @@ class ExportController extends Controller
     public function exportPdf(Request $request)
     {
         $requests = $this->scopedRequests($request);
-        $isFiltered = $request->filled('ids');
+        $isFiltered = $this->hasFilters($request);
 
         if (auth()->check()) {
             activity()
@@ -222,12 +232,12 @@ class ExportController extends Controller
 
         if ($requests->count() > 0) {
             foreach ($requests as $r) {
-                $studentName = $r->user ? $r->user->first_name . ' ' . $r->user->last_name : 'Unknown';
-                $serviceLabel = $r->service ? $r->service->label : 'Document';
+                $studentName = e($r->user ? $r->user->first_name . ' ' . $r->user->last_name : 'Unknown');
+                $serviceLabel = e($r->service ? $r->service->label : 'Document');
+                $statusLabel = e($r->status ? $r->status->label : 'Pending');
                 $isHardCopy = $r->delivery_mode === 'hard_copy';
                 $format = $isHardCopy ? 'Hard Copy' : 'Soft Copy';
                 $badgeClass = $isHardCopy ? 'badge-hard' : 'badge-soft';
-                $statusLabel = $r->status ? $r->status->label : 'Pending';
                 $date = $r->created_at->timezone('Asia/Manila')->format('M d, Y h:i A');
 
                 $html .= "<tr>

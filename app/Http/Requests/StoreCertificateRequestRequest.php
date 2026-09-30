@@ -24,7 +24,12 @@ class StoreCertificateRequestRequest extends FormRequest
                 'date',
                 'after_or_equal:' . now()->addDays(3)->toDateString(),
             ],
-            'requirement_files' => ['nullable', 'array', 'max:5'],
+            'requirement_files' => [
+                Rule::requiredIf(fn() => $this->requiresProof()),
+                'nullable',
+                'array',
+                'max:5',
+            ],
             'requirement_files.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
 
             // Internship-specific fields (Conditionally Required)
@@ -50,10 +55,21 @@ class StoreCertificateRequestRequest extends FormRequest
         ];
     }
 
+    private ?RequestService $resolvedService = null;
+
+    protected function service(): ?RequestService
+    {
+        return $this->resolvedService ??= RequestService::find($this->input('service_id'));
+    }
+
     protected function isInternshipCertificate(): bool
     {
-        $service = RequestService::find($this->input('service_id'));
-        return $service?->code === 'internship_certificate';
+        return $this->service()?->code === 'internship_certificate';
+    }
+
+    protected function requiresProof(): bool
+    {
+        return (bool) $this->service()?->requires_proof;
     }
 
     public function messages(): array
@@ -63,6 +79,7 @@ class StoreCertificateRequestRequest extends FormRequest
             'semester.required' => 'The semester is required for Internship Certificate requests.',
             'school_year.required' => 'The school year is required for Internship Certificate requests.',
             'preferred_claiming_date.after_or_equal' => 'Preferred claiming date must be at least 3 days from today.',
+            'requirement_files.required' => 'Please upload the required proof document for this request.',
         ];
     }
 }

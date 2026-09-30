@@ -1,9 +1,9 @@
 import { Head } from '@inertiajs/react';
 import UserLayout from '@/Layouts/UserLayout';
 
-export default function InfoPageLayout({ title, description, userRole, children }) {
+export default function InfoPageLayout({ title, description, children }) {
     return (
-        <UserLayout userRole={userRole}>
+        <UserLayout >
             <Head title={title} />
 
             <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl">

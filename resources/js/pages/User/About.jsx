@@ -33,72 +33,97 @@ const TEAM = [
     { name: 'Jayveelyn C. Vicente', role: 'Quality Assurance (QA)' },
 ];
 
-export default function About({ userRole }) {
+export default function About() {
     return (
         <InfoPageLayout
             title="About CED E-Services"
             description="Learn more about our mission and digital platform."
-            userRole={userRole}
         >
-            <p className="text-lg text-slate-700 mb-10 leading-relaxed font-medium">
-                Welcome to the <strong className="text-slate-900 font-black">College of Education (CED) E-Services Portal</strong>.
-                Our platform is designed to provide students and alumni with a seamless, efficient, and digital-first
-                approach to academic and registrar services.
-            </p>
 
-            <h3 className="text-xl font-extrabold text-slate-900 mb-4 tracking-tight">Our Mission</h3>
-            <p className="text-slate-600 mb-12 leading-relaxed">
-                We aim to streamline the process of requesting vital academic documents, scheduling faculty
-                consultations, and tracking the progress of your submissions. By digitizing these core processes,
-                we eliminate long queues, reduce paperwork, and empower you to manage your academic journey from
-                anywhere, at any time.
-            </p>
+            {/* Mission Statement */}
+            <div className="mb-14">
+                <p className="text-xs font-bold uppercase tracking-widest text-yellow-700 mb-1">Our Purpose</p>
+                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-4 tracking-tight">Our Mission</h3>
+                <p className="text-slate-600 leading-relaxed max-w-4xl text-sm sm:text-base">
+                    We aim to streamline the process of requesting vital academic documents, scheduling faculty consultations, and tracking the progress of your submissions. By digitizing these core processes, we eliminate long queues, reduce paperwork, and empower you to manage your academic journey from anywhere, at any time.
+                </p>
+            </div>
 
-            <h3 className="text-xl font-extrabold text-slate-900 mb-6 tracking-tight">What We Offer</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
-                {FEATURES.map((feature) => (
-                    <div key={feature.title} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
-                        <div className="w-14 h-14 bg-yellow-50 border border-yellow-100 rounded-2xl flex items-center justify-center text-yellow-600 mb-5 group-hover:scale-110 group-hover:bg-yellow-400 group-hover:text-slate-900 transition-all duration-300">
-                            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d={feature.path} />
-                            </svg>
+            {/* Features Section */}
+            <div className="mb-14">
+                <div className="mb-6">
+                    <p className="text-xs font-bold uppercase tracking-widest text-yellow-700 mb-1">Services</p>
+                    <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">What We Offer</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {FEATURES.map((feature) => (
+                        <div
+                            key={feature.title}
+                            className="group block w-full min-w-0 text-left p-5 sm:p-6 bg-white border border-slate-200 rounded-2xl transition-all duration-200 hover:border-yellow-300 hover:shadow-md cursor-default"
+                        >
+                            <div className="flex items-start gap-4 min-w-0">
+                                <div className="w-12 h-12 shrink-0 rounded-2xl bg-yellow-50 border border-yellow-100 text-yellow-700 flex items-center justify-center group-hover:bg-yellow-100 transition-colors">
+                                    <svg className="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d={feature.path} />
+                                    </svg>
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="text-sm font-extrabold text-slate-900 leading-snug break-words">{feature.title}</h3>
+                                    <p className="mt-1 text-xs text-slate-600 leading-relaxed break-words">{feature.description}</p>
+                                </div>
+                            </div>
                         </div>
-                        <strong className="block text-slate-900 text-lg mb-2 font-extrabold tracking-tight">{feature.title}</strong>
-                        <span className="text-sm text-slate-500 leading-relaxed block font-medium">{feature.description}</span>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
 
-            <h3 className="text-xl font-extrabold text-slate-900 mt-12 mb-6 tracking-tight">Meet the Development Team</h3>
-            <p className="text-slate-600 mb-8 leading-relaxed">
-                The CED E-Services Portal was conceptualized, designed, and brought to life by a dedicated team of
-                aspiring IT professionals. Driven by the goal to modernize academic transactions, this system stands
-                as a testament to their collaboration and technical expertise.
-            </p>
+            {/* Team Section */}
+            <div className="mb-14">
+                <div className="mb-6">
+                    <p className="text-xs font-bold uppercase tracking-widest text-yellow-700 mb-1">Contributors</p>
+                    <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight mb-2">Meet the Development Team</h3>
+                    <p className="text-slate-600 text-xs sm:text-sm leading-relaxed max-w-3xl">
+                        The CED E-Services Portal was conceptualized, designed, and brought to life by a dedicated team of IT professionals driven to modernize academic transactions.
+                    </p>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
-                {TEAM.map((member) => (
-                    <div key={member.name} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-yellow-400 transition-all duration-300 group cursor-default">
-                        <strong className="block text-slate-900 text-base block uppercase font-bold group-hover:text-yellow-600 transition-colors">{member.name}</strong>
-                        <span className={`text-[10px] font-black mt-1.4 block uppercase tracking-widest transition-colors ${member.lead ? 'text-slate-600' : 'text-slate-600 group-hover:text-slate-600'}`}>
-                            {member.role}
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-bold mt-2 block uppercase tracking-widest">
-                            BS Information Technology
-                        </span>
-                        <span className="text-[9px] text-slate-400 font-bold mt-1.2 block tracking-widest">
-                                Major in Software Systems and Web Applications Engineering
-                        </span>
-                    </div>
-                ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {TEAM.map((member) => {
+                        const initials = member.name.split(' ').map(n => n[0]).join('').slice(0, 2);
+                        return (
+                            <div
+                                key={member.name}
+                                className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-yellow-300 transition-all duration-200 group flex flex-col justify-between"
+                            >
+                                <div>
+                                    <h4 className="text-slate-900 text-sm font-extrabold group-hover:text-yellow-700 transition-colors">
+                                        {member.name}
+                                    </h4>
+                                    <p className="text-xs text-yellow-800 font-bold mt-1">
+                                        {member.role}
+                                    </p>
+                                </div>
+
+                                <div className="mt-4 pt-3 border-t border-slate-100">
+                                    <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">
+                                        BS Information Technology
+                                    </p>
+                                    <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">
+                                        Software Systems & Web Applications Engineering
+                                    </p>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
-            <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200 p-8 rounded-3xl shadow-sm relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-2 h-full bg-yellow-400"></div>
-                <h4 className="font-extrabold text-yellow-900 text-xl mb-3 mt-0 tracking-tight">Commitment to Excellence</h4>
-                <p className="text-yellow-800 text-sm leading-relaxed m-0 font-medium">
-                    The CED Registrar's Office remains committed to providing transparent, prompt, and secure services
-                    tailored to the needs of our future educators and esteemed alumni.
+            {/* Commitment Banner */}
+            <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200 p-6 sm:p-8 rounded-3xl shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-2 h-full bg-yellow-400" />
+                <h4 className="font-extrabold text-yellow-950 text-base sm:text-lg mb-2 tracking-tight">Commitment to Excellence</h4>
+                <p className="text-yellow-900 text-xs sm:text-sm leading-relaxed font-medium">
+                    The CED Registrar's Office remains committed to providing transparent, prompt, and secure services tailored to the needs of our future educators and esteemed alumni.
                 </p>
             </div>
         </InfoPageLayout>

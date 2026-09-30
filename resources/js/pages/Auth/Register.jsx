@@ -1,3 +1,4 @@
+import AuthSidePanel from '@/Components/AuthSidePanel';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import LegalModal from '@/Components/LegalModal';
@@ -5,46 +6,35 @@ import TextInput from '@/Components/TextInput';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
-
 const MAX_YEAR_LEVEL = 6; // irregular students can stay up to 6 years
 const ACADEMIC_YEAR_START_MONTH = 6; // June (1 = January ... 12 = December)
 const MIN_BATCH_YEAR = 1900;
-
 const TODAY = new Date();
 const CURRENT_YEAR = TODAY.getFullYear();
 
 // Jan–May still belongs to the academic year that started last June.
-const ACADEMIC_YEAR =
-    TODAY.getMonth() + 1 >= ACADEMIC_YEAR_START_MONTH ? CURRENT_YEAR : CURRENT_YEAR - 1;
-
+const ACADEMIC_YEAR = TODAY.getMonth() + 1 >= ACADEMIC_YEAR_START_MONTH ? CURRENT_YEAR : CURRENT_YEAR - 1;
 const MIN_YEAR = ACADEMIC_YEAR - (MAX_YEAR_LEVEL - 1);
-
 const toYearCode = (year) => String(year % 100).padStart(2, '0');
 const YEAR_CODE_RANGE = `${toYearCode(MIN_YEAR)}–${toYearCode(ACADEMIC_YEAR)}`;
-
 const YEAR_LABELS = { 1: '1st Year', 2: '2nd Year', 3: '3rd Year' };
 
-// "26-1234" -> 1 (Dec 2026 – May 2027), 2 (from June 2027). Null if out of range. 
+// "26-1234" -> 1 (Dec 2026 – May 2027), 2 (from June 2027). Null if out of range.
 const getYearLevel = (studentNumber) => {
     if (studentNumber.length < 2) return null;
-
     const enrollmentYear = 2000 + Number(studentNumber.slice(0, 2));
     const level = ACADEMIC_YEAR - enrollmentYear + 1;
-
     return level >= 1 && level <= MAX_YEAR_LEVEL ? level : null;
 };
 
-const formatYearLevel = (level) => (level ? (YEAR_LABELS[level] ?? `${level}th Year`) : '');
+const formatYearLevel = (level) => level ? (YEAR_LABELS[level] ?? `${level}th Year`) : '';
 
-// Error message for a complete (4-digit) batch year, or null if it's valid / still being typed. 
+// Error message for a complete (4-digit) batch year, or null if it's valid / still being typed.
 const getBatchYearError = (value) => {
     if (value.length < 4) return null;
-
     const year = Number(value);
-
     if (year > CURRENT_YEAR) return `Batch year cannot be in the future (latest: ${CURRENT_YEAR}).`;
     if (year < MIN_BATCH_YEAR) return `Batch year cannot be earlier than ${MIN_BATCH_YEAR}.`;
-
     return null;
 };
 
@@ -56,18 +46,14 @@ const formatStudentNumber = (raw) => {
 // Stored value is "+639171234567"; this only affects what is displayed.
 const formatContactNumber = (value) => {
     const digits = value.replace(/\D/g, '');
-
     if (!digits) return '';
     if (!digits.startsWith('63')) return `+${digits}`;
-
     const rest = digits.slice(2);
     const groups = [rest.slice(0, 3), rest.slice(3, 6), rest.slice(6)].filter(Boolean);
-
     return ['+63', ...groups].join(' ');
 };
 
-const inputClass =
-    'w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900';
+const inputClass = 'w-full border-slate-300 focus:border-yellow-500 focus:ring-yellow-500 rounded-xl shadow-sm py-2.5 text-sm text-slate-900';
 const selectClass = `${inputClass} px-4 bg-white cursor-pointer disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed`;
 const linkButtonClass = 'font-bold text-yellow-700 hover:text-yellow-600 transition-colors';
 
@@ -89,13 +75,10 @@ const ROLES = [
     },
 ];
 
-
 function Icon({ paths, className = 'w-5 h-5' }) {
     return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {paths.map((d) => (
-                <path key={d} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={d} />
-            ))}
+            {paths.map((d) => <path key={d} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={d} />)}
         </svg>
     );
 }
@@ -112,7 +95,6 @@ function Field({ id, label, error, hint, className = '', children }) {
         </div>
     );
 }
-
 
 export default function Register({ courses = [] }) {
     const [step, setStep] = useState(1);
@@ -146,14 +128,8 @@ export default function Register({ courses = [] }) {
     );
 
     const yearLevel = useMemo(() => getYearLevel(data.student_number), [data.student_number]);
-
-    const studentNumberError =
-        data.student_number.length >= 2 && !yearLevel
-            ? `Student number must start with ${YEAR_CODE_RANGE}.`
-            : null;
-
+    const studentNumberError = data.student_number.length >= 2 && !yearLevel ? `Student number must start with ${YEAR_CODE_RANGE}.` : null;
     const batchYearError = useMemo(() => getBatchYearError(data.batch_year), [data.batch_year]);
-
     const agreed = agreedTerms && agreedPrivacy;
 
     const selectUserType = (value) => {
@@ -220,32 +196,12 @@ export default function Register({ courses = [] }) {
             <Head title="Create Your Account" />
 
             {/* Left panel (desktop) */}
-            <div className="hidden lg:flex lg:w-1/2 lg:h-screen lg:sticky lg:top-0 bg-slate-950 relative items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-tr from-yellow-500/20 to-slate-900/90 z-10"></div>
-                <img
-                    src="/images/cedbuilding.jpg"
-                    alt="CED Building"
-                    className="absolute inset-0 w-full h-full object-cover opacity-40 pointer-events-none"
-                />
-                <Link
-                    href="/"
-                    className="absolute top-8 left-8 z-20 flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-yellow-400 transition-colors"
-                >
-                    <Icon paths={ARROW_LEFT} className="w-4 h-4" />
-                    Back to Home
-                </Link>
-                <div className="relative z-20 flex flex-col items-center text-center px-12 max-w-lg">
-                    <img
-                        src="/images/cedlogo.png"
-                        alt="College of Education Logo"
-                        className="w-24 h-24 rounded-full border-4 border-yellow-400 mb-6 shadow-2xl"
-                    />
-                    <h2 className="text-4xl font-extrabold text-white mb-4">Join Us Today!</h2>
-                    <p className="text-slate-300 text-lg max-w-md">
-                        Create your account to access the CED Registrar e-Services Portal and streamline your academic requests.
-                    </p>
-                </div>
-            </div>
+            <AuthSidePanel
+                label="Get Started"
+                title="Your registrar requests,"
+                highlight="made simple."
+                description="Create your CED E-Services account to request documents, track your applications, and schedule appointments, all without the long lines."
+            />
 
             {/* Right panel */}
             <div className="w-full lg:w-1/2 flex flex-col items-center justify-start lg:justify-center p-6 sm:p-12 z-20 bg-white overflow-y-auto">
@@ -256,9 +212,7 @@ export default function Register({ courses = [] }) {
                             <img src="/images/cedlogo.png" alt="Logo" className="w-12 h-12 rounded-full border-2 border-yellow-400 shadow-sm shrink-0" />
                             <span className="font-extrabold text-slate-900 text-xl tracking-tight leading-tight">CED E-Services</span>
                         </div>
-                        <Link href="/" className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors bg-slate-100 px-3 py-1.5 rounded-md">
-                            Back
-                        </Link>
+                        <Link href="/" className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors bg-slate-100 px-3 py-1.5 rounded-md">Back</Link>
                     </div>
 
                     {/* Step 1: role select */}
@@ -277,10 +231,12 @@ export default function Register({ courses = [] }) {
                                         onClick={() => selectUserType(role.value)}
                                         className="group text-left p-6 rounded-2xl border-2 border-slate-200 hover:border-yellow-500 hover:bg-yellow-50/50 transition-colors shadow-sm"
                                     >
-                                        <div className="w-12 h-12 rounded-xl bg-slate-900 text-yellow-400 flex items-center justify-center mb-4 group-hover:bg-yellow-500 group-hover:text-slate-950 transition-colors">
-                                            <Icon paths={role.icon} className="w-6 h-6" />
+                                        <div className="flex items-center mb-4">
+                                            <div className="w-10 h-10 shrink-0 flex items-center justify-center text-yellow-600">
+                                                <Icon paths={role.icon} className="w-5 h-5" />
+                                            </div>
+                                            <h3 className="font-bold text-slate-900 text-lg">{role.title}</h3>
                                         </div>
-                                        <h3 className="font-bold text-slate-900 text-lg mb-1">{role.title}</h3>
                                         <p className="text-slate-500 text-sm">{role.description}</p>
                                     </button>
                                 ))}
@@ -307,9 +263,7 @@ export default function Register({ courses = [] }) {
 
                             <p className="text-center text-sm text-slate-600">
                                 Already have an account?{' '}
-                                <Link href={route('login')} className={linkButtonClass}>
-                                    Log in here
-                                </Link>
+                                <Link href={route('login')} className={linkButtonClass}>Log in here</Link>
                             </p>
                         </>
                     )}
@@ -318,11 +272,7 @@ export default function Register({ courses = [] }) {
                     {step === 2 && (
                         <>
                             <div className="mb-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setStep(1)}
-                                    className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 mb-3 transition-colors"
-                                >
+                                <button type="button" onClick={() => setStep(1)} className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 mb-3 transition-colors">
                                     <Icon paths={ARROW_LEFT} className="w-3.5 h-3.5" />
                                     Change role
                                 </button>
@@ -402,9 +352,7 @@ export default function Register({ courses = [] }) {
                                 <Field id="course_id" label="Course" error={errors.course_id}>
                                     <select id="course_id" value={data.course_id} onChange={handleCourseChange} className={selectClass} required>
                                         <option value="" disabled>Select course</option>
-                                        {courses.map((course) => (
-                                            <option key={course.id} value={course.id}>{course.label}</option>
-                                        ))}
+                                        {courses.map((course) => <option key={course.id} value={course.id}>{course.label}</option>)}
                                     </select>
                                 </Field>
 
@@ -424,9 +372,7 @@ export default function Register({ courses = [] }) {
                                                     ? 'Select major'
                                                     : 'No major for this course'}
                                         </option>
-                                        {availableMajors.map((major) => (
-                                            <option key={major.id} value={major.id}>{major.label}</option>
-                                        ))}
+                                        {availableMajors.map((major) => <option key={major.id} value={major.id}>{major.label}</option>)}
                                     </select>
                                 </Field>
 
@@ -504,7 +450,7 @@ export default function Register({ courses = [] }) {
                                         required
                                     />
                                     <label htmlFor="terms" className="text-slate-600 text-xs sm:text-sm">
-                                        I agree to the{' '}
+                                        I agree to{' '}
                                         <button type="button" onClick={openLegalModal} className={linkButtonClass}>Terms of Service</button>
                                         {' '}and{' '}
                                         <button type="button" onClick={openLegalModal} className={linkButtonClass}>Privacy Policy</button>.

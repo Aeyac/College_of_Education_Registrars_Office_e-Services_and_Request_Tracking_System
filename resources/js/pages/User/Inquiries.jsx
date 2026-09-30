@@ -5,8 +5,7 @@ import ChatModal from '@/Components/ChatModal';
 import Swal from 'sweetalert2';
 import NewInquiryModal from '@/Components/NewInquiryModal';
 
-export default function MyInquiries({ userRole, inquiries = [] }) {
-    // const { auth } = usePage().props;
+export default function MyInquiries({ inquiries = [] }) {
     const [selectedInquiryId, setSelectedInquiryId] = useState(null);
     const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 
@@ -67,7 +66,7 @@ export default function MyInquiries({ userRole, inquiries = [] }) {
     };
 
     return (
-        <UserLayout userRole={userRole}>
+        <UserLayout>
             <Head title="My Inquiries" />
             <div className="p-6 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md rounded-t-3xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>

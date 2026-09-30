@@ -6,6 +6,19 @@ import axios from 'axios';
 
 const MAX_FILES = 5;
 
+const getProgram = (prof) => {
+    const value = [prof.department_or_program, prof.role].find((v) => v && v !== 'Not specified');
+    return value || 'Unspecified';
+};
+
+const getOffice = (prof) => prof.room || prof.room_or_location || 'TBA';
+
+const isConsultation = (block) => block.type === 'consultation';
+
+const getCourses = (schedule = []) => [
+    ...new Set(schedule.filter((b) => !isConsultation(b)).map((b) => b.course_code).filter(Boolean)),
+];
+
 export default function FacultySchedules({ faculty = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -42,21 +55,28 @@ export default function FacultySchedules({ faculty = [] }) {
         buttonsStyling: false
     });
 
-    const computedDepartments = useMemo(() => {
-        return [...new Set(faculty.map(prof => prof.role || prof.department_or_program || '').filter(Boolean))];
-    }, [faculty]);
+    const computedDepartments = useMemo(
+        () => [...new Set(faculty.map(getProgram).filter((d) => d !== 'Unspecified'))],
+        [faculty]
+    );
 
     const processedFaculty = useMemo(() => {
-        return faculty.filter(prof => {
-            const searchLower = searchTerm.toLowerCase();
-            const matchesSearch = !searchTerm ||
-                (prof.name && prof.name.toLowerCase().includes(searchLower)) ||
-                (prof.role && prof.role.toLowerCase().includes(searchLower)) ||
-                (prof.room && prof.room.toLowerCase().includes(searchLower));
+        const q = searchTerm.trim().toLowerCase();
+        return faculty.filter((prof) => {
+            if (deptFilter !== 'all' && getProgram(prof) !== deptFilter) return false;
+            if (!q) return true;
 
-            const matchesDept = deptFilter === 'all' || prof.role === deptFilter || prof.department_or_program === deptFilter;
+            const haystack = [
+                prof.name,
+                getProgram(prof),
+                getOffice(prof),
+                ...(prof.weekly_schedule || []).flatMap((b) => [b.course_code, b.section_code]),
+            ]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
 
-            return matchesSearch && matchesDept;
+            return haystack.includes(q);
         });
     }, [faculty, searchTerm, deptFilter]);
 
@@ -295,7 +315,7 @@ export default function FacultySchedules({ faculty = [] }) {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search by professor name, department, or room..."
+                            placeholder="Search by professor name, course, or room..."
                             className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all shadow-sm"
                         />
                         <svg className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -309,29 +329,66 @@ export default function FacultySchedules({ faculty = [] }) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {processedFaculty.length > 0 ? processedFaculty.map((prof) => (
-                        <div key={prof.id} className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
-                            <div>
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-14 h-14 rounded-full bg-slate-900 text-yellow-400 flex items-center justify-center font-black text-xl shrink-0 shadow-inner">
-                                        {(prof.name || 'U').charAt(0)}
+                    {processedFaculty.length > 0 ? processedFaculty.map((prof) => {
+                        const courses = getCourses(prof.weekly_schedule);
+                        const classCount = (prof.weekly_schedule || []).filter((b) => !isConsultation(b)).length;
+
+                        return (
+                            <div key={prof.id} className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                                <div>
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-black text-xl shrink-0 shadow-sm">
+                                            {(prof.name || 'U').charAt(0)}
+                                        </div>
+                                        <div className="overflow-hidden">
+                                            <h4 className="font-bold text-slate-900 text-base truncate">{prof.name}</h4>
+                                            <p className="text-xs font-bold text-yellow-600 truncate uppercase tracking-wide mt-0.5">{getProgram(prof)}</p>
+                                        </div>
                                     </div>
-                                    <div className="overflow-hidden">
-                                        <h4 className="font-bold text-slate-900 text-base truncate">{prof.name}</h4>
-                                        <p className="text-xs font-bold text-yellow-600 truncate uppercase tracking-wide mt-0.5">{prof.role || prof.department_or_program}</p>
+
+                                    <div className="space-y-3 text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                        <div>
+                                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Courses</p>
+                                            {courses.length > 0 ? (
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {courses.slice(0, 4).map((code) => (
+                                                        <span key={code} className="text-xs font-semibold text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-lg">
+                                                            {code}
+                                                        </span>
+                                                    ))}
+                                                    {courses.length > 4 && (
+                                                        <span className="text-xs font-bold text-yellow-700 bg-yellow-50 border border-yellow-200 px-2 py-1 rounded-lg">
+                                                            +{courses.length - 4} more
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-slate-400">No courses assigned</p>
+                                            )}
+                                        </div>
+                                        <div className="pt-3 border-t border-slate-200/70 space-y-2">
+                                            <p className="flex items-center gap-2 truncate">
+                                                <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                                                <strong className="text-slate-500">Main Office:</strong>
+                                                <span className="font-semibold text-slate-800">{getOffice(prof)}</span>
+                                            </p>
+                                            <p className="flex items-center gap-2 truncate">
+                                                <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                <strong className="text-slate-500">Classes:</strong>
+                                                <span className="font-semibold text-slate-800">{classCount} scheduled</span>
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="space-y-2 text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                    <p className="flex items-center gap-2 truncate"><svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg> <strong className="text-slate-500">Main Office:</strong> <span className="font-semibold text-slate-800">{prof.room || prof.room_or_location}</span></p>
-                                    <p className="flex items-center gap-2 truncate"><svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> <strong className="text-slate-500">Classes:</strong> <span className="font-semibold text-slate-800">{prof.weekly_schedule?.length || 0} scheduled blocks</span></p>
+
+                                {/* keep your existing Edit / Remove buttons block here, unchanged */}
+                                <div className="flex gap-3 mt-5">
+                                    <button onClick={() => { setExtractionQueue([]); setQueuePosition(0); setData(prof); clearErrors(); setIsModalOpen(true); }} className="flex-1 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 transition-colors shadow-sm">Edit</button>
+                                    <button onClick={() => confirmDelete(prof.id)} className="flex-1 py-2.5 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors shadow-sm">Remove</button>
                                 </div>
                             </div>
-                            <div className="flex gap-3 mt-5">
-                                <button onClick={() => { setExtractionQueue([]); setQueuePosition(0); setData(prof); clearErrors(); setIsModalOpen(true); }} className="flex-1 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 transition-colors shadow-sm">Edit</button>
-                                <button onClick={() => confirmDelete(prof.id)} className="flex-1 py-2.5 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors shadow-sm">Remove</button>
-                            </div>
-                        </div>
-                    )) : (
+                        );
+                    }) : (
                         <div className="col-span-full text-center py-16 bg-slate-50 rounded-2xl border border-slate-100">
                             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm border border-slate-100 text-slate-400">
                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -389,8 +446,8 @@ export default function FacultySchedules({ faculty = [] }) {
                                     <div className="md:col-span-2 space-y-4">
                                         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                                             <h4 className="text-sm font-bold text-slate-900">Class Schedule</h4>
-                                            <button type="button" onClick={addScheduleBlock} className="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition-colors border border-emerald-200">
-                                                + Add Class
+                                            <button type="button" onClick={addScheduleBlock} className="text-xs font-bold text-slate-700 bg-yellow-300 hover:bg-yellow-400 px-3 py-1.5 rounded-lg transition-colors border border-yellow-200">
+                                                + Add Schedule
                                             </button>
                                         </div>
 
@@ -487,8 +544,8 @@ export default function FacultySchedules({ faculty = [] }) {
                                             </div>
                                         )}
                                         <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
-                                            <p className="text-xs text-blue-700 leading-relaxed font-medium">
-                                                <strong className="text-blue-900 block mb-0.5">💡 Consultation hours are explicit</strong>
+                                            <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                                                <strong className="text-yellow-900 block mb-0.5">💡 Consultation hours are explicit</strong>
                                                 A free slot on this professor's schedule is just free — it is not automatically shown to students as consultation time. If a block above is a consultation slot, set its type to "Consultation" so students only see hours the professor has actually committed to.
                                             </p>
                                         </div>

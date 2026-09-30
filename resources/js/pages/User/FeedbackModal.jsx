@@ -73,10 +73,10 @@ export default function FeedbackModal({ request, onClose }) {
             >
                 <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden p-6 animate-in zoom-in-95 duration-200">
                     <div className="text-center mb-5">
-                        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center">
-                            <svg className="w-6 h-6 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                            <svg className="w-9 h-9 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h8m-8 4h5m7-2a8 8 0 01-8 8 8.9 8.9 0 01-3.8-.85L4 20l.85-3.2A8.9 8.9 0 013 12a8 8 0 018-8h2a8 8 0 018 8z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17.5 4.5l.35 1.15a1.5 1.5 0 001 1l1.15.35-1.15.35a1.5 1.5 0 00-1 1l-.35 1.15-.35-1.15a1.5 1.5 0 00-1-1L15 7l1.15-.35a1.5 1.5 0 001-1l.35-1.15z" />
                             </svg>
                         </div>
                         <h3 className="font-bold text-slate-900 text-lg">Your Feedback</h3>
@@ -122,8 +122,8 @@ export default function FeedbackModal({ request, onClose }) {
         >
             <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden p-6 animate-in zoom-in-95 duration-200">
                 <div className="text-center mb-5">
-                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
-                        <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                        <svg className="w-10 h-10 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                     </div>

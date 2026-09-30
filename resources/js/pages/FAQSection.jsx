@@ -35,11 +35,10 @@ export default function FAQSection({ faqs = [] }) {
     }, [faqs, searchQuery]);
 
     return (
-        <section id="faq" className="pt-10 pb-20 px-6 md:px-12 bg-slate-50 max-w-4xl mx-auto scroll-mt-20 mb-14 rounded-3xl">
+        <section id="faq" className="pt-10 pb-20 px-6 md:px-12 bg-slate-50 max-w-4xl mx-auto scroll-mt-20 mb-20 mt-20 rounded-3xl">
             <div className="flex flex-col items-center mb-10">
                 <div className="flex items-center gap-3 mb-3">
-                    <div className="w-2 h-7 bg-yellow-400 rounded-full"></div>
-                    <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Frequently Asked Questions</h2>
+                        <h2 className="text-3xl sm:text-3xl font-extrabold text-slate-900 tracking-tight text-center">Frequently Asked Questions </h2>
                 </div>
                 <p className="text-slate-500 text-center text-sm mb-6">Comprehensive guide on academic policies, enrollment, and records.</p>
 

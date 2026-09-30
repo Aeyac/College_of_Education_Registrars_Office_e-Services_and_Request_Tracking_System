@@ -2,12 +2,11 @@ import InfoPageLayout from '@/Components/InfoPageLayout';
 import Section from '@/Components/Section';
 import Bullet from '@/Components/Bullet';
 
-export default function Privacy({ userRole }) {
+export default function Privacy({ }) {
     return (
         <InfoPageLayout
             title="Privacy Policy"
             description="How we collect, use, and protect your information."
-            userRole={userRole}
         >
             <div className="text-slate-600 leading-relaxed">
                 <p className="text-lg text-slate-700 mb-10">

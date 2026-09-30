@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FacultyController;
 use App\Http\Controllers\Admin\FilteredWordController;
 use App\Http\Controllers\Admin\InquiryController as AdminInquiryController;
+use App\Http\Controllers\Admin\RequestDocumentController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\SoftCopyController;
 use App\Http\Controllers\User\InquiryController as UserInquiryController;
@@ -110,6 +111,11 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'loadDashboard'])->name('dashboard');
         Route::get('/requests', [RequestController::class, 'loadRequest'])->name('requests');
         Route::put('/requests/{id}', [RequestController::class, 'updateRequest'])->name('requests.update');
+        Route::get('/requests/{certificateRequest}/documents/{document}', [RequestDocumentController::class, 'show'])
+            ->name('requests.documents.show');
+        Route::get('/requests/{certificateRequest}/documents/{document}/download', [RequestDocumentController::class, 'download'])
+            ->name('requests.documents.download');
+
         Route::get('/alumni', [AlumniController::class, 'loadAlumni'])->name('alumni');
         Route::put('/alumni/{id}', [AlumniController::class, 'updateAlumni'])->name('alumni.update');
         Route::get('/alumni/{id}/proof', [AlumniController::class, 'viewProof'])->name('alumni.proof');

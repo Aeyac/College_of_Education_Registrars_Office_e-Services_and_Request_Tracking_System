@@ -33,6 +33,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
+                'role' => $request->user()?->user_type,
                 // Fetch the latest 10 notifications (both read and unread)
                 'notifications' => $request->user() 
                     ? $request->user()->notifications()->latest()->take(10)->get() 
