@@ -1,3 +1,168 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes row-blink {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+    50% { background-color: #fef9c3; box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.55); }
+}
+
+.row-blink { animation: row-blink 0.9s ease-in-out 3; }
+
+@media (prefers-reduced-motion: reduce) {
+    .row-blink { animation: none; background-color: #fef9c3; }
+}
+
+/* =============
+    SCROLLBAR
+   ============= */
+
+/* Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+    width: 1px;
+    height: 1px;
+}
+
+::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+/* Completely transparent track */
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-track-piece {
+    background: transparent;
+}
+
+/* Sharp, flat yellow thumb */
+::-webkit-scrollbar-thumb {
+    background: #eab308; /* Tailwind yellow-500 */
+    border-radius: 0px; /* Sharp edges */
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #ca8a04;
+}
+
+/* Hide the corner where vertical and horizontal scrollbars meet */
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* Firefox Support */
+html,
+body,
+div,
+main,
+aside {
+    scrollbar-width: thin;
+    scrollbar-color: #eab308 transparent;
+}
+
+/* ==========================================================================
+   HELPER CLASSES
+   ========================================================================== */
+
+/* Inner containers (modals, sidebars, tables) */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #eab308;
+    border-radius: 0px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #ca8a04;
+}
+.custom-scrollbar::-webkit-scrollbar-button {
+    display: none; /* Ensure no arrows in inner containers too */
+}
+
+/* Hide scrollbar completely */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* ==========================================================================
+   QUILL RICH TEXT CONTENT STYLES
+   ========================================================================== */
+.quill-content h1 {
+    font-size: 2em;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+.quill-content h2 {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+.quill-content h3 {
+    font-size: 1.17em;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+.quill-content p {
+    margin-bottom: 1em;
+}
+.quill-content ul {
+    list-style-type: disc;
+    padding-left: 2em;
+    margin-bottom: 1em;
+}
+.quill-content ol {
+    list-style-type: decimal;
+    padding-left: 2em;
+    margin-bottom: 1em;
+}
+.quill-content strong {
+    font-weight: bold;
+}
+.quill-content em {
+    font-style: italic;
+}
+.quill-content a {
+    color: #eab308;
+    text-decoration: underline;
+}
+.quill-content img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1em 0;
+    border-radius: 0.5rem;
+}
+.quill-content blockquote {
+    border-left: 4px solid #eab308;
+    padding-left: 1em;
+    margin-left: 0;
+    margin-bottom: 1em;
+    color: #475569;
+}
+
+/* Customizing the Quill Editor appearance for Admin */
+.ql-toolbar.ql-snow {
+    border: none !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    background-color: #f8fafc;
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
+}
+.ql-container.ql-snow {
+    border: none !important;
+    min-height: 200px;
+}
+/* Recharts Global Fixes */
+.recharts-wrapper,
+.recharts-surface,
+.recharts-layer {
+    outline: none !important;
+}

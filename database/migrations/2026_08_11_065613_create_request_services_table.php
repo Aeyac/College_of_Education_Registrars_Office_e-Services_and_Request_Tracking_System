@@ -9,7 +9,7 @@ return new class extends Migration {
     {
         Schema::create('request_services', function (Blueprint $table) {
             $table->id();
-            $table->string('code')->unique(); // e.g. internship_certificate, cobc_copy
+            $table->string('code')->unique(); // e.g. internship_certificate, copc_copy
             $table->string('label');          // e.g. "Internship / PT Certificate"
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);

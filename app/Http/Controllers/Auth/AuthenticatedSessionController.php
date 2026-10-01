@@ -27,13 +27,27 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request): \Symfony\Component\HttpFoundation\Response
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = $request->user();
+
+        // Check the user_type and redirect accordingly
+        if ($user->user_type === 'admin') {
+            activity()
+                ->causedBy($user)
+                ->event('login')
+                ->log('Admin logged in');
+                
+            return Inertia::location(route('admin.dashboard'));
+        } elseif ($user->user_type === 'faculty') {
+            return Inertia::location(route('faculty.dashboard'));
+        }
+
+        // Default redirect for students/alumni
+        return Inertia::location(route('user.dashboard'));
     }
 
     /**
@@ -41,12 +55,21 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $user = Auth::guard('web')->user();
+        
+        if ($user && $user->user_type === 'admin') {
+            activity()
+                ->causedBy($user)
+                ->event('logout')
+                ->log('Admin logged out');
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/login');
     }
 }

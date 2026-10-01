@@ -13,6 +13,22 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+    'ai_extractor' => [
+        'provider' => env('AI_EXTRACTOR_PROVIDER', 'gemini'),
+    ],
+
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.1-flash-lite'),
+        'base_url' => env('GEMINI_API_BASE', 'https://generativelanguage.googleapis.com/v1beta'),
+    ],
+
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
 
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),

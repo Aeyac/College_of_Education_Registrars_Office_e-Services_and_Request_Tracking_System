@@ -1,0 +1,85 @@
+<?php
+
+namespace App\Http\Requests;
+
+use App\Models\RequestService;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class StoreCertificateRequestRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        // Any authenticated student/alumni can submit a request for themselves.
+        return $this->user() && !$this->user()->isAdmin();
+    }
+
+    public function rules(): array
+    {
+        return [
+            'service_id' => ['required', 'exists:request_services,id'],
+            'purpose' => ['required', 'string', 'max:2000', new \App\Rules\NotProfane],
+            'preferred_claiming_date' => [
+                'required',
+                'date',
+                'after_or_equal:' . now()->addDays(3)->toDateString(),
+            ],
+            'requirement_files' => [
+                Rule::requiredIf(fn() => $this->requiresProof()),
+                'nullable',
+                'array',
+                'max:5',
+            ],
+            'requirement_files.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+
+            // Internship-specific fields (Conditionally Required)
+            'internship_school_or_agency' => [
+                Rule::requiredIf(fn() => $this->isInternshipCertificate()),
+                'nullable',
+                'string',
+                'max:255',
+            ],
+            'grade_level_handled' => ['nullable', 'string', 'max:255'],
+            'semester' => [
+                Rule::requiredIf(fn() => $this->isInternshipCertificate()),
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'school_year' => [
+                Rule::requiredIf(fn() => $this->isInternshipCertificate()),
+                'nullable',
+                'string',
+                'max:20',
+            ],
+        ];
+    }
+
+    private ?RequestService $resolvedService = null;
+
+    protected function service(): ?RequestService
+    {
+        return $this->resolvedService ??= RequestService::find($this->input('service_id'));
+    }
+
+    protected function isInternshipCertificate(): bool
+    {
+        return $this->service()?->code === 'internship_certificate';
+    }
+
+    protected function requiresProof(): bool
+    {
+        return (bool) $this->service()?->requires_proof;
+    }
+
+    public function messages(): array
+    {
+        return [
+            'internship_school_or_agency.required' => 'The internship school/agency is required for Internship Certificate requests.',
+            'semester.required' => 'The semester is required for Internship Certificate requests.',
+            'school_year.required' => 'The school year is required for Internship Certificate requests.',
+            'preferred_claiming_date.after_or_equal' => 'Preferred claiming date must be at least 3 days from today.',
+            'requirement_files.required' => 'Please upload the required proof document for this request.',
+        ];
+    }
+}

@@ -1,0 +1,44 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class CertificateRequestResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'document_type' => $this->service?->label ?? 'Document',
+            'format' => $this->delivery_mode === 'hard_copy' ? 'Hard Copy' : 'Soft Copy',
+            'status' => $this->status?->label ?? 'Pending',
+            'status_code' => $this->status?->code ?? 'submitted',
+            'created_at' => $this->created_at->timezone('Asia/Manila')->format('M d, Y h:i A'),
+            'received_at' => $this->received_at
+                ? $this->received_at->timezone('Asia/Manila')->format('M d, Y h:i A')
+                : null,
+            'student_name' => $this->whenLoaded(
+                'user',
+                fn() =>
+                    $this->user->first_name . ' ' . $this->user->last_name
+            ),
+            // Map the history timeline including the notes and PH timezone
+            'status_history' => $this->whenLoaded('statusHistory', fn() => $this->statusHistory->map(fn($h) => [
+                'status' => $h->toStatus?->label,
+                'note' => $h->note,
+                'date' => $h->created_at->timezone('Asia/Manila')->format('M d, Y h:i A'),
+                'changed_by_id' => $h->changed_by,
+                'changed_by_name' => $h->changedByWithTrashed?->fullName() ?: 'Former admin',
+                'changed_by_role' => $h->changedByWithTrashed?->user_type,
+            ])),
+            'has_feedback' => $this->feedback !== null,
+            'feedback' => $this->feedback,
+            'soft_copy_available' => $this->isSoftCopyAvailableToOwner(),
+            'output_document_name' => $this->isSoftCopyAvailableToOwner()
+                ? $this->outputDocument?->original_name
+                : null,
+        ];
+    }
+}
