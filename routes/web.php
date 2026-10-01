@@ -1,10 +1,37 @@
 <?php
 
+use App\Http\Controllers\Admin\AlumniController;
+use App\Http\Controllers\Admin\AnnouncementController;
+use App\Http\Controllers\Admin\AuditTrailController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\FacultyController;
+use App\Http\Controllers\Admin\FilteredWordController;
+use App\Http\Controllers\Admin\InquiryController as AdminInquiryController;
+use App\Http\Controllers\Admin\RequestDocumentController;
+use App\Http\Controllers\FaqController;
+use App\Http\Controllers\SoftCopyController;
+use App\Http\Controllers\User\InquiryController as UserInquiryController;
+use App\Http\Controllers\Admin\FeedbackController as AdminFeedbackController;
+use App\Http\Controllers\Admin\RequestController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\CertificateRequestController;
+use App\Http\Controllers\ExportController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
+use App\Http\Controllers\User\AlumniVerificationController;
+use App\Http\Controllers\User\FeedbackController;
+use App\Http\Controllers\User\StaticPageController;
+use App\Http\Controllers\HomeController;
+use App\Models\Faq;
+use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\Auth\ProfileCompletionController;
+use App\Http\Controllers\Auth\OtpVerificationController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Foundation\Application;
 use Inertia\Inertia;
 
+// === PUBLIC ROUTES ===
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -13,15 +40,167 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::post('/chat/ask', [\App\Http\Controllers\ChatbotController::class, 'ask'])->name('chat.ask');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// === GOOGLE AUTH ROUTES ===
+Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('google.redirect');
+Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->name('google.callback');
 
+// Profile Completion (Only for logged-in users missing user_type)
 Route::middleware('auth')->group(function () {
+    Route::get('/complete-profile', [ProfileCompletionController::class, 'create'])->name('profile.complete');
+    Route::post('/complete-profile', [ProfileCompletionController::class, 'store'])->name('profile.complete.store');
+});
+
+// === USER ROUTES ===
+Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
+    Route::get('/requests/{certificateRequest}/soft-copy', [SoftCopyController::class, 'show'])
+        ->name('requests.soft-copy.show');
+    Route::get('/requests/{certificateRequest}/soft-copy/download', [SoftCopyController::class, 'download'])
+        ->name('requests.soft-copy.download');
+
+
+    Route::prefix('user')->name('user.')->middleware('role:student|alumni')->group(function () {
+
+        // Reachable even while pending
+        Route::get('/pending-verification', [AlumniVerificationController::class, 'pending'])->name('pending-verification');
+        // Route::post('/verify-alumni', [AlumniVerificationController::class, 'store'])->name('verify-alumni');
+
+        Route::post('/requests/{certificateRequest}/receive', [CertificateRequestController::class, 'markReceived'])
+            ->name('requests.receive');
+        Route::patch('/requests/{certificateRequest}/archive', [CertificateRequestController::class, 'archive'])
+            ->name('requests.archive');
+        Route::patch('/requests/{certificateRequest}/unarchive', [CertificateRequestController::class, 'unarchive'])
+            ->name('requests.unarchive');
+        Route::patch('/requests/{certificateRequest}/cancel', [CertificateRequestController::class, 'cancel'])
+            ->name('requests.cancel');
+        Route::post('/requests/{certificateRequest}/comply', [CertificateRequestController::class, 'comply'])
+            ->name('requests.comply');
+
+        // Everything else requires verified alumni
+        Route::middleware('verified.alumni')->group(function () {
+            Route::get('/dashboard', [App\Http\Controllers\User\DashboardController::class, 'index'])->name('dashboard');
+            Route::get('/requests', [App\Http\Controllers\User\DashboardController::class, 'requests'])->name('requests');
+            Route::post('/requests', [App\Http\Controllers\User\DashboardController::class, 'store'])->name('requests.store');
+
+            Route::get('/faculty', [App\Http\Controllers\User\FacultyController::class, 'index'])->name('faculty');
+            Route::get('/announcements', [App\Http\Controllers\User\AnnouncementController::class, 'index'])->name('announcements');
+            Route::get('/faq', [StaticPageController::class, 'faq'])->name('faq');
+            Route::get('/about', [StaticPageController::class, 'about'])->name('about');
+            Route::get('/privacy-policy', [StaticPageController::class, 'privacy'])->name('privacy');
+            Route::get('/terms-of-service', [StaticPageController::class, 'terms'])->name('terms');
+            Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markNotificationAsRead'])->name('notifications.read.single');
+            
+            Route::get('/inquiries', [UserInquiryController::class, 'index'])->name('inquiries');
+            Route::get('/inquiries/attachment/{id}', [UserInquiryController::class, 'viewAttachment'])->name('inquiries.attachment');
+            Route::post('/inquiries', [UserInquiryController::class, 'store'])->name('inquiries.store');
+            Route::post('/inquiries/{id}/reply', [UserInquiryController::class, 'reply'])->name('inquiries.reply');
+            Route::put('/inquiries/messages/{id}', [UserInquiryController::class, 'updateMessage'])->name('inquiries.messages.edit');
+            Route::delete('/inquiries/messages/{id}', [UserInquiryController::class, 'destroyMessage'])->name('inquiries.messages.destroy');
+            Route::put('/inquiries/{id}/read', [UserInquiryController::class, 'markRead'])->name('inquiries.read');
+            Route::put('/inquiries/{id}/unread', [UserInquiryController::class, 'markUnread'])->name('inquiries.unread');
+            Route::delete('/inquiries/{id}', [UserInquiryController::class, 'destroy'])->name('inquiries.destroy');
+
+            Route::post('/requests/{id}/feedback', [FeedbackController::class, 'storeFeedback'])->name('feedback.store');
+        });
+    });
+
+    // === FACULTY ROUTES ===
+    Route::prefix('faculty')->name('faculty.')->middleware('role:faculty')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\Faculty\DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/schedule', [App\Http\Controllers\Faculty\ScheduleController::class, 'index'])->name('schedule');
+        Route::put('/schedule', [App\Http\Controllers\Faculty\ScheduleController::class, 'update'])->name('schedule.update');
+        Route::post('/schedule/extract', [App\Http\Controllers\Faculty\ScheduleController::class, 'extract'])->name('schedule.extract');
+        Route::get('/announcements', [App\Http\Controllers\User\AnnouncementController::class, 'index'])->name('announcements');
+        Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
+    });
+
+    // === ADMIN ROUTES ===
+    Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'loadDashboard'])->name('dashboard');
+        Route::get('/requests', [RequestController::class, 'loadRequest'])->name('requests');
+        Route::put('/requests/{id}', [RequestController::class, 'updateRequest'])->name('requests.update');
+        Route::get('/requests/{certificateRequest}/documents/{document}', [RequestDocumentController::class, 'show'])
+            ->name('requests.documents.show');
+        Route::get('/requests/{certificateRequest}/documents/{document}/download', [RequestDocumentController::class, 'download'])
+            ->name('requests.documents.download');
+
+        Route::get('/alumni', [AlumniController::class, 'loadAlumni'])->name('alumni');
+        Route::put('/alumni/{id}', [AlumniController::class, 'updateAlumni'])->name('alumni.update');
+        Route::get('/alumni/{id}/proof', [AlumniController::class, 'viewProof'])->name('alumni.proof');
+
+        // Faculty Routes
+        Route::get('/faculty', [FacultyController::class, 'loadFaculty'])->name('faculty');
+        Route::post('/faculty/extract', [FacultyController::class, 'extractSchedule'])->name('faculty.extract'); // Inserted extract route here
+        Route::post('/faculty', [FacultyController::class, 'storeFaculty'])->name('faculty.store');
+        Route::put('/faculty/{id}', [FacultyController::class, 'updateFaculty'])->name('faculty.update');
+        Route::delete('/faculty/{id}', [FacultyController::class, 'destroyFaculty'])->name('faculty.destroy');
+
+        Route::get('/announcements', [AnnouncementController::class, 'loadAnnouncements'])->name('announcements');
+        Route::post('/announcements', [AnnouncementController::class, 'storeAnnouncement'])->name('announcements.store');
+        Route::put('/announcements/{id}', [AnnouncementController::class, 'updateAnnouncement'])->name('announcements.update');
+        Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroyAnnouncement'])->name('announcements.destroy');
+        Route::get('/users', [UserController::class, 'loadUsers'])->name('users');
+        Route::post('/users', [UserController::class, 'storeUser'])->name('users.store');
+        Route::put('/users/{id}', [UserController::class, 'updateUser'])->name('users.update');
+        Route::delete('/users/{id}', [UserController::class, 'destroyUser'])->name('users.destroy');
+
+        Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
+        Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markNotificationAsRead'])->name('notifications.read.single');
+
+        Route::get('/export/excel', [ExportController::class, 'exportExcel'])->name('export.excel');
+        Route::get('/export/pdf', [ExportController::class, 'exportPdf'])->name('export.pdf');
+
+        Route::get('/inquiries', [AdminInquiryController::class, 'inquiries'])->name('inquiries');
+        Route::get('/inquiries/attachment/{id}', [AdminInquiryController::class, 'viewAttachment'])->name('inquiries.attachment');
+        Route::post('/inquiries/{id}/reply', [AdminInquiryController::class, 'replyInquiry'])->name('inquiries.reply');
+        Route::put('/inquiries/{id}/status', [AdminInquiryController::class, 'updateInquiryStatus'])->name('inquiries.status');
+        Route::put('/inquiries/messages/{id}', [AdminInquiryController::class, 'editMessage'])->name('inquiries.messages.edit');
+        Route::delete('/inquiries/messages/{id}', [AdminInquiryController::class, 'deleteMessage'])->name('inquiries.messages.destroy');
+        Route::put('/inquiries/{id}/read', [AdminInquiryController::class, 'markInquiryRead'])->name('inquiries.read');
+        Route::put('/inquiries/{id}/unread', [AdminInquiryController::class, 'markInquiryUnread'])->name('inquiries.unread');
+        Route::delete('/inquiries/{id}', [AdminInquiryController::class, 'deleteInquiry'])->name('inquiries.destroy');
+
+        Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback');
+        Route::get('/feedback/export/excel', [AdminFeedbackController::class, 'exportExcel'])->name('feedback.export.excel');
+        Route::get('/feedback/export/pdf', [AdminFeedbackController::class, 'exportPdf'])->name('feedback.export.pdf');
+
+        Route::get('/filtered-words', [FilteredWordController::class, 'index'])->name('filtered-words');
+        Route::post('/filtered-words', [FilteredWordController::class, 'store'])->name('filtered-words.store');
+        Route::delete('/filtered-words/{id}', [FilteredWordController::class, 'destroy'])->name('filtered-words.destroy');
+
+        Route::patch('/requests/{id}/archive', [RequestController::class, 'archiveRequest'])->name('requests.archive');
+        Route::patch('/requests/{id}/unarchive', [RequestController::class, 'unarchiveRequest'])->name('requests.unarchive');
+
+        Route::get('/audit-trail', [AuditTrailController::class, 'index'])->name('admin.audit-trail');
+
+        Route::get('/faqs', [FaqController::class, 'index'])->name('faqs');
+        Route::post('/faqs', [FaqController::class, 'store'])->name('faqs.store');
+        Route::put('/faqs/{id}', [FaqController::class, 'update'])->name('faqs.update');
+        Route::delete('/faqs/{id}', [FaqController::class, 'destroy'])->name('faqs.destroy');
+    });
+});
+
+// === PROFILE SETTINGS ROUTES ===
+Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__.'/auth.php';
+// === OTP VERIFICATION ROUTES ===
+Route::middleware('auth')->group(function () {
+    Route::get('verify-email', [OtpVerificationController::class, 'notice'])->name('verification.notice');
+    Route::post('verify-email', [OtpVerificationController::class, 'verify'])->name('verification.verify.otp');
+    Route::post('email/verification-notification', [OtpVerificationController::class, 'resend'])->middleware('throttle:6,1')->name('verification.send.otp');
+});
+
+Route::get('/auto-seed', function () {
+    Artisan::call('db:seed', [
+        '--class' => 'CourseAndMajorSeeder'
+    ]);
+    return 'Course and Major Seeder executed successfully!';
+});
+
+require __DIR__ . '/auth.php';

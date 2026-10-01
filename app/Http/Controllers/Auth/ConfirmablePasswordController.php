@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,6 +37,20 @@ class ConfirmablePasswordController extends Controller
 
         $request->session()->put('auth.password_confirmed_at', time());
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended($this->dashboardFor($request->user()));
+    }
+
+    /**
+     * There is no single dashboard route: each role has its own, so naming one
+     * here used to throw a RouteNotFoundException whenever a user confirmed
+     * their password without an intended url in the session.
+     */
+    private function dashboardFor(User $user): string
+    {
+        return match ($user->user_type) {
+            'admin' => route('admin.dashboard'),
+            'faculty' => route('faculty.dashboard'),
+            default => route('user.dashboard'),
+        };
     }
 }

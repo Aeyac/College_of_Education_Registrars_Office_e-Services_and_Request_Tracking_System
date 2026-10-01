@@ -1,0 +1,152 @@
+<?php
+
+namespace App\Http\Controllers\User;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreCertificateRequestRequest;
+use App\Http\Resources\AnnouncementResource;
+use App\Http\Resources\CertificateRequestResource;
+use App\Models\Announcement;
+use App\Models\CertificateRequest;
+use App\Models\RequestDocument;
+use App\Models\RequestService;
+use App\Models\RequestStatus;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
+use App\Models\Inquiry;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class DashboardController extends Controller
+{
+    private const PENDING_STATUS_CODES = ['submitted', 'for_review', 'processing', 'for_compliance'];
+    private const COMPLETED_STATUS_CODES = ['ready_for_release', 'released'];
+    private const DEFAULT_REQUEST_STATUS_CODE = 'submitted';
+
+    public function index(): Response
+    {
+        $query = $this->userRequests();
+
+        $stats = [
+            'pending' => (clone $query)->whereHas('status', fn($q) => $q->whereIn('code', self::PENDING_STATUS_CODES))->count(),
+            'completed' => (clone $query)->whereHas('status', fn($q) => $q->whereIn('code', self::COMPLETED_STATUS_CODES))->count(),
+            'inquiries' => Inquiry::where('user_id', auth()->id())->where('status', 'open')->count(),
+        ];
+
+        $recentRequests = $query->latest()->take(5)->get();
+
+        return Inertia::render('User/Dashboard', [
+            'userRole' => auth()->user()->displaySubtitle(),
+            'isAlumniVerified' => auth()->user()->isVerifiedAlumni(),
+            'stats' => $stats,
+            'requests' => CertificateRequestResource::collection($recentRequests)->resolve(),
+            'announcements' => AnnouncementResource::collection(Announcement::latest()->take(2)->get())->resolve(),
+            'services' => $this->activeServices(),
+        ]);
+    }
+
+    public function requests(\Illuminate\Http\Request $request): Response
+    {
+        $showArchived = $request->boolean('archived');
+        $statusFilter = $request->query('status');
+
+        $paginatedRequests = $this->userRequests()
+            ->when($showArchived, fn($q) => $q->archivedFor('user'), fn($q) => $q->notArchivedFor('user'))
+            ->when($statusFilter === 'pending', fn($q) => $q->whereHas('status', fn($sq) => $sq->whereIn('code', self::PENDING_STATUS_CODES)))
+            ->when($statusFilter === 'completed', fn($q) => $q->whereHas('status', fn($sq) => $sq->whereIn('code', self::COMPLETED_STATUS_CODES)))
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return Inertia::render('User/Requests', [
+            'userRole' => auth()->user()->displaySubtitle(),
+            'isAlumniVerified' => auth()->user()->isVerifiedAlumni(),
+            'requests' => CertificateRequestResource::collection($paginatedRequests),
+            'services' => $this->activeServices(),
+            'showingArchived' => $showArchived,
+            'statusFilter' => $statusFilter,
+        ]);
+    }
+
+    public function store(StoreCertificateRequestRequest $request): RedirectResponse
+    {
+        $data = $request->validated();
+        $service = RequestService::findOrFail($data['service_id']);
+        $status = $this->defaultRequestStatus();
+        $certificateRequest = null;
+
+        DB::transaction(function () use ($request, $data, $service, $status, &$certificateRequest) {
+            $certificateRequest = CertificateRequest::create([
+                'user_id' => $request->user()->id,
+                'service_id' => $service->id,
+                'status_id' => $status->id,
+                'delivery_mode' => $request->delivery_mode,
+                'purpose' => $data['purpose'] ?? null,
+                'preferred_claiming_date' => $data['preferred_claiming_date'] ?? null,
+            ]);
+
+            $certificateRequest->statusHistory()->create([
+                'from_status_id' => null,
+                'to_status_id' => $status->id,
+                'changed_by' => $request->user()->id,
+                'note' => 'Request submitted via portal.',
+            ]);
+
+            // FIX: Only save internship details if the service is actually an Internship Certificate
+            if ($service->isInternshipCertificate()) {
+                $certificateRequest->internshipDetails()->create([
+                    'internship_school_or_agency' => $data['internship_school_or_agency'],
+                    'grade_level_handled' => $data['grade_level_handled'] ?? null,
+                    'semester' => $data['semester'],
+                    'school_year' => $data['school_year'],
+                ]);
+            }
+
+            if ($request->hasFile('requirement_files')) {
+                foreach ($request->file('requirement_files') as $file) {
+                    $path = $file->store('requirements', RequestDocument::DISK);
+                    $certificateRequest->documents()->create([
+                        'type' => RequestDocument::TYPE_REQUIREMENT,
+                        'path' => $path,
+                        'original_name' => $file->getClientOriginalName(),
+                        'size' => $file->getSize(),
+                        'uploaded_by' => $request->user()->id,
+                    ]);
+                }
+            }
+
+            $certificateRequest->load(['service', 'status', 'user']);
+        });
+
+        $request->user()->notify(new \App\Notifications\RequestStatusChanged($certificateRequest));
+        $admins = \App\Models\User::where('user_type', 'admin')->get();
+        Notification::send($admins, new \App\Notifications\RequestStatusChanged($certificateRequest));
+
+        return back()->with('success', 'Request submitted successfully.');
+    }
+
+    private function userRequests()
+    {
+        return CertificateRequest::with(['service', 'status', 'statusHistory.toStatus', 'statusHistory.changedByWithTrashed:id,first_name,last_name,user_type', 'feedback', 'outputDocument'])
+            ->where('user_id', auth()->id());
+    }
+
+    private function defaultRequestStatus(): RequestStatus
+    {
+        return RequestStatus::where('code', self::DEFAULT_REQUEST_STATUS_CODE)->firstOrFail();
+    }
+
+    private function activeServices()
+    {
+        return RequestService::where('is_active', true)
+            ->orderBy('sort_order')
+            ->get(['id', 'code', 'label', 'requires_proof'])
+            ->map(fn(RequestService $service) => [
+                'id' => $service->id,
+                'code' => $service->code,
+                'label' => $service->label,
+                'requires_proof' => (bool) $service->requires_proof,
+            ]);
+    }
+}

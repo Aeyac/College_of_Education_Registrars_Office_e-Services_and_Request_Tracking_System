@@ -2,43 +2,127 @@
 
 namespace App\Models;
 
-use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Carbon;
+use Spatie\Permission\Traits\HasRoles;
 
-/**
- * @property int $id
- * @property string $name
- * @property string $email
- * @property Carbon|null $email_verified_at
- * @property string $password
- * @property string|null $remember_token
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- */
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
-
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable, SoftDeletes;
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    protected $fillable = [
+        'first_name',
+        'last_name',
+        'email',
+        'profile_picture', // Added Field
+        'password',
+        'user_type',
+        'student_number',
+        'google_id',
+        'course_id',
+        'major_id',
+        'year_level',
+        'batch_year',
+        'contact_number',
+        'otp',
+        'otp_expires_at',
+
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function requests()
+    {
+        return $this->hasMany(CertificateRequest::class);
+    }
+
+    public function alumniVerification()
+    {
+        return $this->hasOne(AlumniVerification::class);
+    }
+
+    public function feedback()
+    {
+        return $this->hasMany(Feedback::class);
+    }
+
+    public function major()
+    {
+        return $this->belongsTo(Major::class);
+    }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class);
+    }
+
+    public function fullName(): string
+    {
+        return trim(($this->first_name ?? '').' '.($this->last_name ?? ''));
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->user_type === 'admin';
+    }
+
+    public function isFaculty(): bool
+    {
+        return $this->user_type === 'faculty';
+    }
+
+    /**
+     * @return HasOne<Faculty, $this>
+     */
+    public function facultyProfile(): HasOne
+    {
+        return $this->hasOne(Faculty::class);
+    }
+
+    public function displaySubtitle(): string
+    {
+        $this->loadMissing('course');
+
+        if ($this->user_type === 'alumni') {
+            return 'Alumni   Batch '.($this->batch_year ?? 'N/A');
+        }
+
+        $courseName = $this->course?->label ?? 'College of Education';
+        $yearLevel = $this->year_level;
+
+        $suffix = match ($yearLevel) {
+            1 => 'st',
+            2 => 'nd',
+            3 => 'rd',
+            default => 'th',
+        };
+
+        return $courseName.'   '.($yearLevel ? $yearLevel.$suffix.' Year' : 'N/A');
+    }
+
+    public function isVerifiedAlumni(): bool
+    {
+        if ($this->user_type !== 'alumni') {
+            return false;
+        }
+
+        return AlumniVerification::where('user_id', $this->id)
+            ->where('status', 'verified')
+            ->exists();
     }
 }

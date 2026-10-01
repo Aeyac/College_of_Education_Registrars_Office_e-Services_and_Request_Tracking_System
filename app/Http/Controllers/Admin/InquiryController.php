@@ -1,0 +1,271 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+use Illuminate\Support\Str;
+use App\Http\Controllers\Controller;
+use App\Http\Resources\InquiryMessageResource;
+use App\Models\Inquiry;
+use App\Models\InquiryMessage;
+use App\Notifications\InquiryReplied;
+use App\Rules\NotProfane;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
+
+class InquiryController extends Controller
+{
+    /**
+     * Display all inquiries for the admin.
+     */
+    private const PER_PAGE = 10;
+
+    public function inquiries(Request $request)
+    {
+        $filters = [
+            'search' => trim((string) $request->query('search', '')),
+            'status' => $request->query('status', 'all'),
+        ];
+        if (!in_array($filters['status'], ['all', 'open', 'pending', 'resolved', 'closed'], true)) {
+            $filters['status'] = 'all';
+        }
+
+        // Notification redirect: ?open={id}. Reset to a view where the row is guaranteed visible.
+        $target = ($openId = $request->integer('open')) ? Inquiry::find($openId) : null;
+        if ($target) {
+            $filters = ['search' => '', 'status' => 'all'];
+        }
+
+        $query = Inquiry::query()
+            ->when($filters['status'] !== 'all', fn($q) => $q->where('status', $filters['status']))
+            ->when($filters['search'] !== '', function ($q) use ($filters) {
+                // Every word must match the subject or the student's name or email
+                foreach (preg_split('/\s+/', $filters['search']) as $term) {
+                    $like = '%' . addcslashes($term, '%_\\') . '%';
+                    $q->where(fn($w) => $w
+                        ->where('subject', 'like', $like)
+                        ->orWhereHas('user', fn($u) => $u
+                            ->where('first_name', 'like', $like)
+                            ->orWhere('last_name', 'like', $like)
+                            ->orWhere('email', 'like', $like)));
+                }
+            });
+
+        // Newest first, so the page holding the target is the count of newer rows / per page
+        $page = $target
+            ? intdiv(
+                (clone $query)->where(fn($q) => $q
+                    ->where('created_at', '>', $target->created_at)
+                    ->orWhere(fn($q2) => $q2
+                        ->where('created_at', $target->created_at)
+                        ->where('id', '>', $target->id)))->count(),
+                self::PER_PAGE
+            ) + 1
+            : null;
+
+        $paginator = $query
+            ->with(['user', 'messages.user', 'messages.parent.user'])
+            ->latest()
+            ->latest('id') // tie-breaker so rows never repeat across pages
+            ->paginate(self::PER_PAGE, ['*'], 'page', $page)
+            ->onEachSide(1)
+            ->appends($request->except('open'));
+
+        // Deleting the last row of a page leaves it empty, so jump to the new last page.
+        if ($paginator->isEmpty() && $paginator->currentPage() > 1) {
+            return redirect()->to($request->fullUrlWithQuery(['page' => $paginator->lastPage()]));
+        }
+
+        $paginator->through(fn($inquiry) => [
+            'id' => $inquiry->id,
+            'student_name' => $inquiry->user
+                ? $inquiry->user->first_name . ' ' . $inquiry->user->last_name
+                : 'Unknown',
+            'email' => $inquiry->user->email ?? 'N/A',
+            'subject' => $inquiry->subject,
+            'status' => $inquiry->status,
+            'is_read' => $inquiry->is_read_by_admin,
+            'date' => $inquiry->created_at->timezone('Asia/Manila')->format('M d, Y h:i A'),
+            'messages' => InquiryMessageResource::collection($inquiry->messages)->resolve(),
+        ]);
+
+        return Inertia::render('Admin/Inquiries', [
+            'inquiries' => $paginator,
+            'filters' => $filters,
+            'focus' => $target ? ['id' => $target->id, 'token' => (string) Str::uuid()] : null,
+        ]);
+    }
+
+    /**
+     * Reply to an inquiry.
+     */
+    public function replyInquiry(Request $request, $id): RedirectResponse
+    {
+        $data = $request->validate([
+            'message' => [
+                'required',
+                'string',
+                'max:3000',
+                new NotProfane,
+            ],
+            'parent_id' => [
+                'nullable',
+                'exists:inquiry_messages,id',
+            ],
+            'attachment' => [
+                'nullable',
+                'file',
+                'mimes:jpeg,png,jpg,pdf,docx',
+                'max:10240',
+            ],
+        ]);
+
+        $inquiry = Inquiry::with('user')->findOrFail($id);
+        $path = null;
+        if ($request->hasFile('attachment')) {
+            $path = $request
+                ->file('attachment')
+                ->store('inquiries', 'private');
+        }
+
+        $inquiry->messages()->create([
+            'user_id' => auth()->id(),
+            'message' => $data['message'],
+            'parent_id' => $data['parent_id'] ?? null,
+            'attachment_path' => $path,
+        ]);
+
+        $inquiry->update([
+            'is_read_by_user' => false,
+            'is_read_by_admin' => true,
+        ]);
+
+        if ($inquiry->user) {
+            $inquiry->user->notify(
+                new InquiryReplied($inquiry)
+            );
+        }
+
+        return back()->with(
+            'success',
+            'Reply sent successfully.'
+        );
+    }
+
+    /**
+     * Edit an existing inquiry message.
+     */
+    public function editMessage(
+        Request $request,
+        $id
+    ): RedirectResponse {
+        $data = $request->validate([
+            'message' => [
+                'required',
+                'string',
+                'max:2000',
+                new NotProfane,
+            ],
+        ]);
+
+        $message = InquiryMessage::findOrFail($id);
+        $message->update([
+            'message' => $data['message'],
+            'is_edited' => true,
+        ]);
+
+        return back();
+    }
+
+    /**
+     * Delete an inquiry message.
+     */
+    public function deleteMessage($id): RedirectResponse
+    {
+        $message = InquiryMessage::findOrFail($id);
+        if ($message->inquiry->messages()->count() <= 1) {
+            $message->inquiry->delete();
+        } else {
+            $message->delete();
+        }
+        return back();
+    }
+
+    /**
+     * Update the status of an inquiry.
+     */
+    public function updateInquiryStatus(
+        Request $request,
+        $id
+    ): RedirectResponse {
+        $data = $request->validate([
+            'status' => [
+                'required',
+                'in:open,pending,resolved,closed',
+            ],
+        ]);
+
+        Inquiry::findOrFail($id)->update([
+            'status' => $data['status'],
+        ]);
+
+        return back()->with(
+            'success',
+            'Inquiry status updated.'
+        );
+    }
+
+    public function markRead($id): RedirectResponse
+    {
+        Inquiry::where('user_id', auth()->id())->findOrFail($id)->update(['is_read_by_user' => true]);
+        return back();
+    }
+
+    /**
+     * Mark an inquiry as read by the admin.
+     */
+    public function markInquiryRead($id): RedirectResponse
+    {
+        Inquiry::findOrFail($id)->update([
+            'is_read_by_admin' => true,
+        ]);
+
+        return back();
+    }
+
+    /**
+     * Mark an inquiry as unread by the admin.
+     */
+    public function markInquiryUnread($id): RedirectResponse
+    {
+        Inquiry::findOrFail($id)->update([
+            'is_read_by_admin' => false,
+        ]);
+
+        return back();
+    }
+
+    /**
+     * Delete an entire inquiry.
+     */
+    public function deleteInquiry($id): RedirectResponse
+    {
+        Inquiry::findOrFail($id)->delete();
+        return back()->with(
+            'success',
+            'Inquiry deleted successfully.'
+        );
+    }
+
+
+    public function viewAttachment($id)
+    {
+        $message = InquiryMessage::findOrFail($id);
+
+        if (!$message->attachment_path || !Storage::disk('private')->exists($message->attachment_path)) {
+            abort(404);
+        }
+
+        return Storage::disk('private')->response($message->attachment_path);
+    }
+}
