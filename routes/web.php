@@ -90,6 +90,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
             Route::get('/about', [StaticPageController::class, 'about'])->name('about');
             Route::get('/privacy-policy', [StaticPageController::class, 'privacy'])->name('privacy');
             Route::get('/terms-of-service', [StaticPageController::class, 'terms'])->name('terms');
+            Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
             Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markNotificationAsRead'])->name('notifications.read.single');
             
             Route::get('/inquiries', [UserInquiryController::class, 'index'])->name('inquiries');
@@ -114,6 +115,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::post('/schedule/extract', [App\Http\Controllers\Faculty\ScheduleController::class, 'extract'])->name('schedule.extract');
         Route::get('/announcements', [App\Http\Controllers\User\AnnouncementController::class, 'index'])->name('announcements');
         Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
+        Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markNotificationAsRead'])->name('notifications.read.single');
     });
 
     // === ADMIN ROUTES ===

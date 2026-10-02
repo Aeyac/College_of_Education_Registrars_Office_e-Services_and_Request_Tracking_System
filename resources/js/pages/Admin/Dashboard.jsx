@@ -22,7 +22,7 @@ export default function DashboardOverview({ stats, monthlyProcessed = [], status
         const handleClickOutside = (e) => {
             const wrappers = document.querySelectorAll('.recharts-wrapper');
             const clickedInside = e.target.closest('.recharts-wrapper');
-            
+
             if (!clickedInside) {
                 // Clicked completely outside: hide all tooltips
                 wrappers.forEach(wrapper => {
@@ -57,7 +57,7 @@ export default function DashboardOverview({ stats, monthlyProcessed = [], status
     return (
         <AdminLayout>
             <Head title="Admin Overview" />
-            
+
             <div className="p-6 sm:p-8 space-y-10 bg-[#f8fafc] min-h-screen">
                 <div className="flex justify-between items-end mb-2">
                     <div>
@@ -76,9 +76,21 @@ export default function DashboardOverview({ stats, monthlyProcessed = [], status
                                 <ResponsiveContainer width="100%" height="100%" className="focus:outline-none">
                                     <BarChart data={monthlyProcessed} margin={{ top: 10, right: 10, left: -15, bottom: 0 }} className="focus:outline-none" style={{ outline: 'none' }}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} dy={15} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} />
-                                        <RechartsTooltip 
+                                        <XAxis
+                                            dataKey="month"
+                                            axisLine={false}
+                                            tickLine={false}
+                                            height={50}
+                                            tickMargin={12}
+                                            tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
+                                        />
+                                        <YAxis
+                                            allowDecimals={false}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
+                                        />
+                                        <RechartsTooltip
                                             trigger="click"
                                             cursor={{ stroke: 'none', fill: 'transparent', strokeWidth: 0, opacity: 0 }}
                                             contentStyle={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #f1f5f9', boxShadow: '0 10px 30px -5px rgb(0 0 0 / 0.1)', padding: '14px 20px', outline: 'none' }}
@@ -119,11 +131,11 @@ export default function DashboardOverview({ stats, monthlyProcessed = [], status
                                                     <Cell key={`cell-${index}`} fill={entry.color} style={{ filter: `drop-shadow(0px 4px 6px ${entry.color}40)`, outline: 'none' }} />
                                                 ))}
                                             </Pie>
-                                            <RechartsTooltip 
+                                            <RechartsTooltip
                                                 trigger="click"
-                                                contentStyle={{ backgroundColor: '#ffffff', borderRadius: '14px', border: 'none', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)', padding: '10px 16px', outline: 'none' }} 
-                                                itemStyle={{ fontWeight: 800, fontSize: '15px' }} 
-                                                labelStyle={{ display: 'none' }} 
+                                                contentStyle={{ backgroundColor: '#ffffff', borderRadius: '14px', border: 'none', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)', padding: '10px 16px', outline: 'none' }}
+                                                itemStyle={{ fontWeight: 800, fontSize: '15px' }}
+                                                labelStyle={{ display: 'none' }}
                                             />
                                             <Legend verticalAlign="bottom" height={60} iconType="circle" wrapperStyle={{ fontSize: '12px', color: '#475569', fontWeight: 600, marginTop: '10px' }} />
                                         </PieChart>

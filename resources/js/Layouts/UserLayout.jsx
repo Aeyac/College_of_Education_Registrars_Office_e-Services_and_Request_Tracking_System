@@ -1,12 +1,10 @@
 import { Link, usePage, router } from '@inertiajs/react';
 import { useState, useEffect, useRef } from 'react';
 import Chatbox from '@/Components/Chatbox';
-import openNotification from '@/Utils/openNotification';
 import useLiveRefresh from '@/hooks/useLiveRefresh';
 
 const NOTIFICATION_ONLY = ['auth'];
 
-const markSingleAsRead = notif => openNotification(notif, { onNavigate: () => setIsNotifOpen(false) });
 const timeAgo = d => { const s = Math.round((new Date() - new Date(d)) / 1000); if (s < 60) return 'Just now'; const m = Math.round(s / 60); if (m < 60) return `${m}m ago`; const h = Math.round(m / 60); return h < 24 ? `${h}h ago` : `${Math.round(h / 24)}d ago`; };
 
 export default function UserLayout({ children }) {
@@ -27,7 +25,11 @@ export default function UserLayout({ children }) {
     // unavailable so alerts still arrive without WebSockets.
     useLiveRefresh({ only: NOTIFICATION_ONLY, realtime: true });
 
-    const markAsRead = () => router.post('/user/notifications/mark-as-read', {}, {
+    // This layout is shared by the student/alumni and faculty pages, and each
+    // role has its own notification routes behind its own role middleware.
+    const notifBase = auth?.user?.user_type === 'faculty' ? '/faculty' : '/user';
+
+    const markAsRead = () => router.post(`${notifBase}/notifications/mark-as-read`, {}, {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => setIsNotifOpen(false)
@@ -35,7 +37,7 @@ export default function UserLayout({ children }) {
 
     const markSingleAsRead = notif => {
         setIsNotifOpen(false);
-        if (!notif.read_at) router.post(`/user/notifications/${notif.id}/mark-as-read`);
+        if (!notif.read_at) router.post(`${notifBase}/notifications/${notif.id}/mark-as-read`);
         else if (notif.data?.link) router.visit(notif.data.link);
     };
 

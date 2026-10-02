@@ -197,7 +197,7 @@ export default function AdminLayout({ children }) {
                             <div className="fixed sm:absolute right-2 sm:right-0 top-[60px] sm:top-full mt-0 sm:mt-3 w-[calc(100vw-1rem)] max-w-[360px] bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-slate-100 overflow-hidden z-50">
                                 <div className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-slate-100 bg-slate-50">
                                     <h3 className="font-extrabold text-slate-900 text-sm">System Alerts</h3>
-                                    <button onClick={markAsRead} className="text-[10px] font-bold text-amber-600 whitespace-nowrap">Mark read</button>
+                                    <button onClick={markAsRead} className="text-[10px] font-bold text-amber-600 whitespace-nowrap">Mark all as read</button>
                                 </div>
 
                                 <div className="max-h-[min(350px,60vh)] overflow-y-auto">
