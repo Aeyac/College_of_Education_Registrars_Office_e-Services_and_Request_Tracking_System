@@ -145,6 +145,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::post('/users', [UserController::class, 'storeUser'])->name('users.store');
         Route::put('/users/{id}', [UserController::class, 'updateUser'])->name('users.update');
         Route::delete('/users/{id}', [UserController::class, 'destroyUser'])->name('users.destroy');
+        Route::patch('/users/{id}/restore', [UserController::class, 'restoreUser'])->name('users.restore');
 
         Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
         Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markNotificationAsRead'])->name('notifications.read.single');

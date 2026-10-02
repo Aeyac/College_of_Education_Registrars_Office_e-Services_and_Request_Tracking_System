@@ -1,6 +1,7 @@
 import { Head, useForm, router, usePage } from '@inertiajs/react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { Icon } from '@/Components/Icon';
 import Pagination from '@/Components/Pagination';
 import Swal from 'sweetalert2';
 
@@ -32,8 +33,12 @@ const svgIcon = (color, path) =>
     `<svg class="w-12 h-12 ${color} mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${path}" /></svg>`;
 
 const ICON_OK = svgIcon('text-yellow-500', 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z');
-const ICON_TRASH = svgIcon('text-red-500', 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16');
 const ICON_CHECK = svgIcon('text-emerald-500', 'M5 13l4 4L19 7');
+
+// Icon paths, also reused by the shared <Icon> component
+const BAN_PATH = 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636';
+const RESTORE_PATH = 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15';
+const ICON_OFF = svgIcon('text-red-500', BAN_PATH);
 
 const Field = ({ label, error, children }) => (
     <div>
@@ -72,7 +77,10 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
         course: filters.course ?? 'all',
         sort: filters.sort ?? 'name',
         dir: filters.dir ?? 'asc',
+        deactivated: filters.deactivated ?? 0,
     };
+
+    const showingDeactivated = !!Number(current.deactivated);
 
     // Always holds the latest server-applied filters, so timers never use stale values
     const currentRef = useRef(current);
@@ -81,6 +89,7 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
     const [searchTerm, setSearchTerm] = useState(current.q);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [restoringId, setRestoringId] = useState(null);
 
     const { data, setData, post, put, processing, reset, errors, clearErrors } = useForm({
         id: null,
@@ -112,6 +121,7 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
             params.sort = next.sort;
             params.dir = next.dir;
         }
+        if (Number(next.deactivated)) params.deactivated = 1;
 
         router.get(basePath, params, {
             only: PAGE_PROPS, // skips re-sending courses
@@ -147,6 +157,8 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
         setSearchTerm('');
         applyFilters({ q: '', type: 'all', course: 'all', sort: 'name', dir: 'asc' });
     };
+
+    const toggleDeactivatedView = () => applyFilters({ deactivated: showingDeactivated ? 0 : 1 });
 
     // ---------- Form handlers ----------
     const closeModal = () => {
@@ -190,11 +202,11 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
         }
     };
 
-    const confirmDelete = (id) => {
+    const confirmDeactivate = (id) => {
         MySwal.fire({
             title: 'Deactivate User?',
             text: 'The account will be deactivated and can no longer sign in. Their records are kept.',
-            iconHtml: ICON_TRASH,
+            iconHtml: ICON_OFF,
             showCancelButton: true,
             confirmButtonText: 'Yes, Deactivate',
             cancelButtonText: 'Cancel',
@@ -217,6 +229,38 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
                 },
                 onError: (errs) => {
                     MySwal.fire({ title: 'Could not deactivate', text: errs.delete || 'Something went wrong.', icon: 'error' });
+                },
+            });
+        });
+    };
+
+    const confirmReactivate = (user) => {
+        MySwal.fire({
+            title: 'Reactivate Account?',
+            text: `${user.first_name} ${user.last_name} will be able to sign in again with their existing account.`,
+            iconHtml: ICON_OK,
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Reactivate',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            setRestoringId(user.id);
+            router.patch(`/admin/users/${user.id}/restore`, {}, {
+                preserveScroll: true,
+                onFinish: () => setRestoringId(null),
+                onSuccess: () => {
+                    MySwal.fire({
+                        title: 'Reactivated!',
+                        text: 'User account is active again.',
+                        iconHtml: ICON_CHECK,
+                        timer: 2500,
+                        showConfirmButton: false,
+                    });
+                },
+                onError: () => {
+                    MySwal.fire({ title: 'Could not reactivate', text: 'Something went wrong.', icon: 'error' });
                 },
             });
         });
@@ -270,16 +314,35 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
         </th>
     );
 
-    const ActionButtons = ({ u }) => (
-        <>
-            <button onClick={() => openEditModal(u)} className="text-slate-700 font-bold px-3.5 py-1.5 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 text-xs transition-colors">
-                Edit
-            </button>
-            <button onClick={() => confirmDelete(u.id)} className="text-red-600 font-bold px-3.5 py-1.5 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 text-xs transition-colors">
-                Delete
-            </button>
-        </>
-    );
+    const ActionButtons = ({ u }) => {
+        if (showingDeactivated) {
+            return (
+                <button
+                    onClick={() => confirmReactivate(u)}
+                    disabled={restoringId === u.id}
+                    className="inline-flex items-center gap-1.5 text-emerald-700 font-bold px-3.5 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl hover:bg-emerald-100 text-xs transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                    <Icon path={RESTORE_PATH} className="w-3.5 h-3.5 shrink-0" />
+                    {restoringId === u.id ? 'Restoring...' : 'Reactivate'}
+                </button>
+            );
+        }
+
+        return (
+            <>
+                <button onClick={() => openEditModal(u)} className="text-slate-700 font-bold px-3.5 py-1.5 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 text-xs transition-colors">
+                    Edit
+                </button>
+                <button
+                    onClick={() => confirmDeactivate(u.id)}
+                    className="inline-flex items-center gap-1.5 text-red-600 font-bold px-3.5 py-1.5 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 text-xs transition-colors"
+                >
+                    <Icon path={BAN_PATH} className="w-3.5 h-3.5 shrink-0" />
+                    Deactivate
+                </button>
+            </>
+        );
+    };
 
     const selectCls =
         'bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold rounded-2xl px-4 py-3 focus:ring-yellow-400 focus:border-yellow-400 outline-none shadow-sm cursor-pointer';
@@ -289,13 +352,29 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
             <Head title="User Management" />
 
             <div className="p-4 sm:p-8 border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur-md z-20 rounded-t-3xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                <div>
-                    <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">User Management</h2>
-                    <p className="text-xs text-slate-500 mt-1">Manage all registered students, alumni, and admins.</p>
+                <div className="min-w-0">
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex flex-wrap items-center gap-2">
+                        User Management
+                        {showingDeactivated && <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full uppercase tracking-wider">Deactivated</span>}
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                        {showingDeactivated
+                            ? 'Viewing deactivated accounts. Reactivate any of these to restore sign-in access.'
+                            : 'Manage all registered students, alumni, and admins.'}
+                    </p>
                 </div>
-                <button onClick={openAddModal} className="w-full sm:w-auto px-6 py-2.5 bg-yellow-400 text-slate-900 font-bold rounded-xl shadow-md hover:bg-yellow-500 transition-colors">
-                    + Add User
-                </button>
+                <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
+                    <button
+                        onClick={toggleDeactivatedView}
+                        aria-pressed={showingDeactivated}
+                        className="w-full sm:w-auto px-5 py-2.5 bg-white text-slate-700 font-bold rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors"
+                    >
+                        {showingDeactivated ? 'Back to Active Users' : 'Deactivated Users'}
+                    </button>
+                    <button onClick={openAddModal} className="w-full sm:w-auto px-6 py-2.5 bg-yellow-400 text-slate-900 font-bold rounded-xl shadow-md hover:bg-yellow-500 transition-colors">
+                        + Add User
+                    </button>
+                </div>
             </div>
 
             <div className="p-4 sm:p-8 space-y-4">
@@ -378,8 +457,14 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
                     <div className={`transition-opacity duration-150 ${loading ? 'opacity-50 pointer-events-none' : ''}`} aria-busy={loading}>
                         {rows.length === 0 ? (
                             <div className="py-12 text-center text-slate-400 text-sm px-4">
-                                <div className="font-semibold text-slate-600">No users match your criteria</div>
-                                <p className="text-xs mt-1 text-slate-400">Try adjusting your search filters or clearing the search query.</p>
+                                <div className="font-semibold text-slate-600">
+                                    {showingDeactivated ? 'No deactivated users' : 'No users match your criteria'}
+                                </div>
+                                <p className="text-xs mt-1 text-slate-400">
+                                    {showingDeactivated
+                                        ? 'Accounts you deactivate will appear here and can be reactivated at any time.'
+                                        : 'Try adjusting your search filters or clearing the search query.'}
+                                </p>
                             </div>
                         ) : (
                             <>
@@ -399,6 +484,9 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
                                                 <span className="mx-1.5 text-slate-300">•</span>
                                                 <span className="font-medium">{u.course || 'N/A'}</span>
                                                 {u.major && <span className="block text-[10px] uppercase font-bold text-slate-400 mt-0.5">{u.major}</span>}
+                                                {showingDeactivated && u.deactivated_at && (
+                                                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Deactivated {u.deactivated_at}</span>
+                                                )}
                                             </div>
                                             <div className="flex gap-2 pt-1">
                                                 <ActionButtons u={u} />
@@ -426,6 +514,9 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
                                                     <td className="py-4 px-6 text-sm font-medium text-slate-700">
                                                         <div className="font-semibold text-slate-900">{u.first_name} {u.last_name}</div>
                                                         {u.email && <div className="text-xs text-slate-400 font-normal break-all">{u.email}</div>}
+                                                        {showingDeactivated && u.deactivated_at && (
+                                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-normal">Deactivated {u.deactivated_at}</div>
+                                                        )}
                                                     </td>
                                                     <td className="py-4 px-6 whitespace-nowrap"><RoleBadge type={u.user_type} /></td>
                                                     <td className="py-4 px-6 text-sm text-slate-600">

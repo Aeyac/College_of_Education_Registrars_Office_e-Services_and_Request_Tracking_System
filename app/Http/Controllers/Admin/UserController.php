@@ -42,7 +42,11 @@ class UserController extends Controller
         $sort = in_array($request->query('sort'), self::SORTS, true) ? $request->query('sort') : 'name';
         $dir = $request->query('dir') === 'desc' ? 'desc' : 'asc';
 
-        $query = User::with(['course:id,label', 'major:id,label'])
+        // Deactivated accounts are soft deleted, so the admin list simply switches scope
+        $showingDeactivated = $request->boolean('deactivated');
+
+        $query = ($showingDeactivated ? User::onlyTrashed() : User::query())
+            ->with(['course:id,label', 'major:id,label'])
             ->whereIn('user_type', ['student', 'alumni', 'admin', 'faculty']);
 
         if ($q !== '') {
@@ -110,6 +114,7 @@ class UserController extends Controller
             'major_id' => $u->major_id,
             'year_level' => $u->year_level,
             'batch_year' => $u->batch_year,
+            'deactivated_at' => $u->deleted_at?->toDayDateTimeString(),
         ]);
 
         return Inertia::render('Admin/UserManagement', [
@@ -121,6 +126,7 @@ class UserController extends Controller
                 'course' => $course,
                 'sort' => $sort,
                 'dir' => $dir,
+                'deactivated' => $showingDeactivated,
             ],
         ]);
     }
@@ -209,8 +215,23 @@ class UserController extends Controller
         }
 
         $user = User::findOrFail($id);
+
+        // Stops the last remaining admin from locking everyone out of user management
+        if ($user->isAdmin() && ! User::where('user_type', 'admin')->where('id', '!=', $user->id)->exists()) {
+            return back()->withErrors(['delete' => 'You cannot deactivate the last active admin account.']);
+        }
+
         $user->delete(); // soft delete only / records remains
         return back()->with('success', 'User account deactivated.');
+    }
+
+    public function restoreUser($id)
+    {
+        // Roles and all related records are untouched, so restoring re-grants access
+        $user = User::onlyTrashed()->findOrFail($id);
+        $user->restore();
+
+        return back()->with('success', 'User account reactivated.');
     }
 
     // not yet used
