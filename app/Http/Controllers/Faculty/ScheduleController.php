@@ -27,7 +27,15 @@ class ScheduleController extends Controller
             'room_or_location' => 'required|string|max:255',
         ], ScheduleRules::rules(false)), ScheduleRules::messages());
 
-        $request->user()->facultyProfile()->update($validated);
+        $user = $request->user();
+
+        // Admin-created faculty rows have no user_id, so a faculty login can land
+        // here with no profile at all. updateOrCreate() runs through the model, so
+        // the weekly_schedule array cast is applied, and it seeds name from the
+        // authenticated user exactly like registration and profile completion do.
+        $user->facultyProfile()->updateOrCreate([], array_merge([
+            'name' => trim($user->first_name.' '.$user->last_name),
+        ], $validated));
 
         return back()->with('success', 'Schedule updated successfully.');
     }
