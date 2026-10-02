@@ -85,14 +85,14 @@ class CertificateRequestController extends Controller
     public function comply(CertificateRequest $certificateRequest, \Illuminate\Http\Request $request)
     {
         abort_unless($certificateRequest->user_id === auth()->id(), 403);
-        
+
         if ($certificateRequest->status?->code !== 'for_compliance') {
             return back()->with('error', 'This request does not require compliance.');
         }
 
         $request->validate([
-            'compliance_files' => ['nullable', 'array', 'max:5'],
-            'compliance_files.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'compliance_files' => ['required', 'array', 'min:1', 'max:5'],
+            'compliance_files.*' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ]);
 
         if ($request->hasFile('compliance_files')) {

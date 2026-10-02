@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import UserLayout from '@/Layouts/UserLayout';
 import FeedbackModal from './FeedbackModal';
@@ -161,7 +161,6 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
     useLiveRefresh({ only: RELOAD_ONLY, enabled: !isBusy });
 
     const requestList = requests?.data ?? [];
-    const paginationLinks = requests?.meta?.links ?? requests?.links ?? [];
     const fromCount = requests?.meta?.from || requests?.from;
     const toCount = requests?.meta?.to || requests?.to;
     const totalCount = requests?.meta?.total || requests?.total;
@@ -229,15 +228,16 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
         <UserLayout>
             <Head title="My Requests" />
 
-            <div className="p-4 sm:p-6 lg:p-8 border-b border-slate-100 bg-white rounded-t-3xl flex flex-col lg:flex-row justify-between lg:items-center gap-4">    <div className="min-w-0">
-                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex flex-wrap items-center gap-2">
-                    My Requests
-                    {showingArchived && <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full uppercase tracking-wider">Archived</span>}
-                </h2>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    {showingArchived ? 'Viewing archived requests. Restore any of these to bring them back to your active list.' : 'Track and manage your official document requests.'}
-                </p>
-            </div>
+            <div className="p-4 sm:p-6 lg:p-8 border-b border-slate-100 bg-white rounded-t-3xl flex flex-col lg:flex-row justify-between lg:items-center gap-4">
+                <div className="min-w-0">
+                    <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex flex-wrap items-center gap-2">
+                        My Requests
+                        {showingArchived && <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full uppercase tracking-wider">Archived</span>}
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                        {showingArchived ? 'Viewing archived requests. Restore any of these to bring them back to your active list.' : 'Track and manage your official document requests.'}
+                    </p>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center gap-2.5 w-full lg:w-auto">
                     <ActionButton variant="secondary" onClick={toggleArchivedView} icon={showingArchived ? ICONS.back : ICONS.archive} className="w-full lg:w-auto">
@@ -307,10 +307,15 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
                         const isCompleted = ['ready_for_release', 'released'].includes(status);
                         const hasFeedback = req.has_feedback || Boolean(req.feedback);
                         const isReceived = Boolean(req.received_at);
-                        const canCancel = status === 'submitted' && !req.is_archived;
-                        const needsCompliance = status === 'for_compliance' && !req.is_archived;
-                        const needsReceipt = isCompleted && !isReceived;
-                        const canArchive = !req.is_archived && LOCKED_STATUSES.has(status);
+
+                        // The page knows it is on the archived view, so trust that
+                        // instead of relying only on a flag in the resource.
+                        const isArchived = showingArchived || Boolean(req.is_archived);
+
+                        const canCancel = status === 'submitted' && !isArchived;
+                        const needsCompliance = status === 'for_compliance' && !isArchived;
+                        const needsReceipt = isCompleted && !isReceived && !isArchived;
+                        const canArchive = !isArchived && LOCKED_STATUSES.has(status);
                         const label = `${req.document_type}, request #${req.id}`;
 
                         return (
@@ -321,13 +326,11 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
                                         <Icon d={ICONS.document} className="w-5 h-5" />
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        {/* Document Name and Status Inline */}
                                         <div className="flex flex-wrap items-center gap-2">
                                             <h3 className="font-bold text-[15px] text-slate-900 leading-snug">{req.document_type}</h3>
                                             <StatusBadge label={isReceived ? 'Received' : req.status} />
                                         </div>
 
-                                        {/* De-emphasized Metadata */}
                                         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-slate-400 font-medium mt-1">
                                             <span className="text-slate-500 uppercase tracking-wide">ID: #{req.id}</span>
                                             <span aria-hidden="true">•</span>
@@ -344,7 +347,6 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
 
                                 {/* Bottom Section: Actions */}
                                 <div className="border-t border-slate-100 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                    {/* Primary & Secondary Actions (Left-aligned) */}
                                     <div className="flex flex-wrap items-center gap-2">
                                         {needsReceipt && (
                                             <ActionButton variant="primary" icon={ICONS.check} onClick={() => handleReceive(req)} disabled={receivingId === req.id} aria-busy={receivingId === req.id} aria-label={`Confirm receipt of ${label}`}>
@@ -375,8 +377,8 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
                                         </ActionButton>
                                     </div>
 
-                                    {/* Housekeeping/Destructive Actions (Right-aligned) */}
-                                    {(canCancel || req.is_archived || canArchive) && (
+                                    {/* Housekeeping actions. Archive and Restore never render together. */}
+                                    {(canCancel || isArchived || canArchive) && (
                                         <div className="flex flex-wrap items-center gap-2">
                                             {canCancel && (
                                                 <ActionButton variant="danger" icon={ICONS.close} onClick={() => handleCancel(req.id)} disabled={cancellingId === req.id} aria-busy={cancellingId === req.id} aria-label={`Cancel ${label}`}>
@@ -384,16 +386,16 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
                                                 </ActionButton>
                                             )}
 
-                                            {req.is_archived && (
-                                                <ActionButton variant="ghost" icon={ICONS.refresh} onClick={() => handleUnarchive(req.id)} disabled={archiving === req.id} aria-busy={archiving === req.id} aria-label={`Restore ${label}`}>
+                                            {isArchived ? (
+                                                <ActionButton variant="secondary" icon={ICONS.refresh} onClick={() => handleUnarchive(req.id)} disabled={archiving === req.id} aria-busy={archiving === req.id}  aria-label={`Restore ${label}`}>
                                                     {archiving === req.id ? 'Restoring...' : 'Restore'}
                                                 </ActionButton>
-                                            )}
-
-                                            {canArchive && (
-                                                <ActionButton variant="ghost" icon={ICONS.archive} onClick={() => handleArchive(req.id)} disabled={archiving === req.id} aria-busy={archiving === req.id} aria-label={`Archive ${label}`}>
-                                                    {archiving === req.id ? 'Archiving...' : 'Archive'}
-                                                </ActionButton>
+                                            ) : (
+                                                canArchive && (
+                                                    <ActionButton variant="ghost" icon={ICONS.archive} onClick={() => handleArchive(req.id)} disabled={archiving === req.id} aria-busy={archiving === req.id} aria-label={`Archive ${label}`}>
+                                                        {archiving === req.id ? 'Archiving...' : 'Archive'}
+                                                    </ActionButton>
+                                                )
                                             )}
                                         </div>
                                     )}
@@ -413,7 +415,6 @@ export default function MyRequests({ requests, services = [], auth, isAlumniVeri
                     )}
                 </ul>
 
-                {/* Pagination Controls */}
                 <Pagination
                     links={requests?.links}
                     from={requests?.from}

@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\RequestService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreCertificateRequestRequest extends FormRequest
 {
@@ -16,20 +17,15 @@ class StoreCertificateRequestRequest extends FormRequest
 
     public function rules(): array
     {
+        $proofRules = $this->requiresProof()
+            ? ['required', 'array', 'min:1', 'max:5']
+            : ['nullable', 'array', 'max:5'];
+
         return [
             'service_id' => ['required', 'exists:request_services,id'],
             'purpose' => ['required', 'string', 'max:2000', new \App\Rules\NotProfane],
-            'preferred_claiming_date' => [
-                'required',
-                'date',
-                'after_or_equal:' . now()->addDays(3)->toDateString(),
-            ],
-            'requirement_files' => [
-                Rule::requiredIf(fn() => $this->requiresProof()),
-                'nullable',
-                'array',
-                'max:5',
-            ],
+            'preferred_claiming_date' => ['required', 'date', 'after_or_equal:' . now()->addDays(3)->toDateString()],
+            'requirement_files' => $proofRules,
             'requirement_files.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
 
             // Internship-specific fields (Conditionally Required)
@@ -80,6 +76,17 @@ class StoreCertificateRequestRequest extends FormRequest
             'school_year.required' => 'The school year is required for Internship Certificate requests.',
             'preferred_claiming_date.after_or_equal' => 'Preferred claiming date must be at least 3 days from today.',
             'requirement_files.required' => 'Please upload the required proof document for this request.',
+        ];
+    }
+
+    public function after(): array
+    {
+        return [
+            function (Validator $validator) {
+                if ($this->requiresProof() && !$this->hasFile('requirement_files')) {
+                    $validator->errors()->add('requirement_files', 'Please upload the required proof document for this request.');
+                }
+            },
         ];
     }
 }
