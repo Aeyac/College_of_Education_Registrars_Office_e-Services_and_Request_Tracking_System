@@ -73,13 +73,18 @@ class OtpVerificationController extends Controller
         // Reset attempt counter when resending
         session()->forget('otp_attempts');
 
-        $otp = rand(100000, 999999);
+        $otp = random_int(100000, 999999);
         $user->update([
             'otp' => $otp,
             'otp_expires_at' => now()->addMinutes(10)
         ]);
 
-        Mail::to($user->email)->send(new OtpMail($otp));
+        try {
+            Mail::to($user->email)->send(new OtpMail($otp));
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->with('error', 'We could not send the security code. Please try again.');
+        }
 
         return back()->with('status', 'A new 6-digit security code has been sent to your email address.');
     }

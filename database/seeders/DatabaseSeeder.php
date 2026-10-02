@@ -17,6 +17,10 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
+        $this->call([
+            CourseAndMajorSeeder::class,
+        ]);
+        
         Role::firstOrCreate(['name' => 'student']);
         Role::firstOrCreate(['name' => 'alumni']);
         Role::firstOrCreate(['name' => 'admin']);

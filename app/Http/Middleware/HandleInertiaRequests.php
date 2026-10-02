@@ -41,6 +41,12 @@ class HandleInertiaRequests extends Middleware
                     ? $request->user()->unreadNotifications()->count()
                     : 0,
             ],
+            // Kept as closures so partial reloads (e.g. the notification poll,
+            // which only asks for 'auth') never carry a stale flash.
+            'flash' => [
+                'success' => fn() => $request->session()->get('success'),
+                'error' => fn() => $request->session()->get('error'),
+            ],
         ];
     }
 }

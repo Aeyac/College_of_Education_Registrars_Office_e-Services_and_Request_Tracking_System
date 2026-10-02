@@ -1,11 +1,13 @@
 <?php
 
+use App\Mail\OtpMail;
 use App\Models\AlumniVerification;
 use App\Models\Course;
 use App\Models\Major;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Role;
 
 // The registration rules are date dependent (student number year prefix and
@@ -63,6 +65,33 @@ function validAlumniPayload(array $overrides = []): array
         'user_type' => 'alumni',
         'batch_year' => '2024',
         'course_id' => aCourse('alumni_course')->id,
+        'contact_number' => '+639171234567',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ], $overrides);
+}
+
+function validAdminPayload(array $overrides = []): array
+{
+    return array_merge([
+        'first_name' => 'Rosa',
+        'last_name' => 'Lims',
+        'email' => 'rosa.lims@example.com',
+        'user_type' => 'admin',
+        'contact_number' => '+639171234567',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ], $overrides);
+}
+
+function validFacultyPayload(array $overrides = []): array
+{
+    return array_merge([
+        'first_name' => 'Pedro',
+        'last_name' => 'Reyes',
+        'email' => 'pedro.reyes@example.com',
+        'user_type' => 'faculty',
+        'course_id' => aCourse('faculty_course')->id,
         'contact_number' => '+639171234567',
         'password' => 'password',
         'password_confirmation' => 'password',
@@ -555,4 +584,207 @@ test('non admins cannot edit accounts', function () {
         ->assertForbidden();
 
     $this->assertDatabaseHas('users', ['id' => $target->id, 'first_name' => 'Target']);
+});
+
+// ---------- Security code emailed to accounts added by an admin ----------
+
+test('adding a student emails a security code that matches the stored one', function () {
+    Mail::fake();
+
+    $this->actingAs(managerAccount())
+        ->from('/admin/users')
+        ->post('/admin/users', validStudentPayload())
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('success');
+
+    $user = User::where('email', 'juan.dc@clsu.edu.ph')->firstOrFail();
+
+    expect($user->otp)->not->toBeNull()
+        // otp_expires_at has no cast, so it comes back as a string.
+        ->and(Carbon::parse($user->otp_expires_at)->getTimestamp())->toBe(Carbon::parse('2026-10-15 09:10:00')->getTimestamp())
+        ->and($user->hasVerifiedEmail())->toBeFalse();
+
+    Mail::assertSent(OtpMail::class, function (OtpMail $mail) use ($user) {
+        // otp is a string column, so compare as strings.
+        return $mail->hasTo($user->email) && (string) $mail->otp === (string) $user->otp;
+    });
+});
+
+test('adding an alumni or faculty account also emails a security code', function (string $type) {
+    Mail::fake();
+
+    // Built here rather than in the dataset, because Pest resolves dataset
+    // values eagerly and the payload needs a persisted course.
+    [$payload, $email] = $type === 'alumni'
+        ? [validAlumniPayload(), 'maria.santos@gmail.com']
+        : [validFacultyPayload(), 'pedro.reyes@example.com'];
+
+    $this->actingAs(managerAccount())
+        ->from('/admin/users')
+        ->post('/admin/users', $payload)
+        ->assertSessionHasNoErrors();
+
+    $user = User::where('email', $email)->firstOrFail();
+
+    expect($user->otp)->not->toBeNull()
+        ->and($user->hasVerifiedEmail())->toBeFalse();
+
+    Mail::assertSent(OtpMail::class, fn (OtpMail $mail) => $mail->hasTo($email));
+})->with(['alumni', 'faculty']);
+
+test('adding an admin skips the code and verifies the address immediately', function () {
+    Mail::fake();
+
+    $this->actingAs(managerAccount())
+        ->from('/admin/users')
+        ->post('/admin/users', validAdminPayload())
+        ->assertSessionHasNoErrors();
+
+    $admin = User::where('email', 'rosa.lims@example.com')->firstOrFail();
+
+    // Admins are vouched for, so they must not be stranded behind the
+    // EnsureEmailIsVerified middleware that guards the admin panel.
+    expect($admin->user_type)->toBe('admin')
+        ->and($admin->otp)->toBeNull()
+        ->and($admin->otp_expires_at)->toBeNull()
+        ->and($admin->hasVerifiedEmail())->toBeTrue();
+
+    Mail::assertNothingSent();
+});
+
+test('the account is still created when the security code cannot be emailed', function () {
+    // Scoped to this test so sibling fakes are untouched. The controller calls
+    // Mail::to(...)->send(...), so 'to' is the call that has to blow up.
+    Mail::shouldReceive('to')->once()->andThrow(new RuntimeException('SMTP unavailable'));
+
+    $this->actingAs(managerAccount())
+        ->from('/admin/users')
+        ->post('/admin/users', validStudentPayload())
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('error');
+
+    $user = User::where('email', 'juan.dc@clsu.edu.ph')->firstOrFail();
+
+    expect($user->otp)->not->toBeNull()
+        ->and($user->hasVerifiedEmail())->toBeFalse();
+});
+
+// ---------- Verification when an admin edits an account ----------
+
+test('editing a student to a new address re-sends a code and clears verification', function () {
+    Mail::fake();
+
+    $admin = managerAccount();
+    $student = anEditableStudent(['email_verified_at' => now()]);
+
+    expect($student->otp)->toBeNull();
+
+    $this->actingAs($admin)
+        ->from('/admin/users')
+        ->put("/admin/users/{$student->id}", [
+            'first_name' => 'Juan',
+            'last_name' => 'Dela Cruz',
+            'email' => 'juan.new@clsu.edu.ph',
+            'user_type' => 'student',
+            'student_number' => '25-1234',
+            'course_id' => $student->course_id,
+            'contact_number' => '+639171234567',
+        ])
+        ->assertSessionHasNoErrors();
+
+    $student->refresh();
+
+    expect($student->email)->toBe('juan.new@clsu.edu.ph')
+        ->and($student->hasVerifiedEmail())->toBeFalse()
+        ->and($student->otp)->not->toBeNull();
+
+    Mail::assertSent(OtpMail::class, function (OtpMail $mail) use ($student) {
+        return $mail->hasTo('juan.new@clsu.edu.ph') && (string) $mail->otp === (string) $student->otp;
+    });
+});
+
+test('editing an admin to a new address keeps it verified and sends no code', function () {
+    Mail::fake();
+
+    $admin = managerAccount();
+    $other = User::factory()->create([
+        'email' => 'rosa.lims@example.com',
+        'user_type' => 'admin',
+    ]);
+
+    $this->actingAs($admin)
+        ->from('/admin/users')
+        ->put("/admin/users/{$other->id}", [
+            'first_name' => 'Rosa',
+            'last_name' => 'Lims',
+            'email' => 'rosa.lims2@example.com',
+            'user_type' => 'admin',
+            'contact_number' => '+639171234567',
+        ])
+        ->assertSessionHasNoErrors();
+
+    $other->refresh();
+
+    expect($other->hasVerifiedEmail())->toBeTrue()
+        ->and($other->otp)->toBeNull();
+
+    Mail::assertNothingSent();
+});
+
+test('editing without changing the address leaves verification and the code alone', function () {
+    Mail::fake();
+
+    $admin = managerAccount();
+    $verifiedAt = now()->subDays(3);
+    $student = anEditableStudent([
+        'email_verified_at' => $verifiedAt,
+        'otp' => '424242',
+        'otp_expires_at' => now()->addMinutes(10),
+    ]);
+
+    $this->actingAs($admin)
+        ->from('/admin/users')
+        ->put("/admin/users/{$student->id}", [
+            'first_name' => 'Juan Jr',
+            'last_name' => 'Dela Cruz',
+            // Same address, differing only in case/whitespace
+            'email' => '  Juan.DC@CLSU.edu.ph  ',
+            'user_type' => 'student',
+            'student_number' => '25-1234',
+            'course_id' => $student->course_id,
+            'contact_number' => '+639171234567',
+        ])
+        ->assertSessionHasNoErrors();
+
+    $student->refresh();
+
+    // A name typo must never invalidate an account that is already verified.
+    expect($student->first_name)->toBe('Juan Jr')
+        ->and($student->email_verified_at?->toDateTimeString())->toBe($verifiedAt->toDateTimeString())
+        ->and($student->otp)->toBe('424242');
+
+    Mail::assertNothingSent();
+});
+
+test('editing to a new address reports the email failure but keeps the change', function () {
+    Mail::shouldReceive('to')->once()->andThrow(new RuntimeException('SMTP unavailable'));
+
+    $admin = managerAccount();
+    $student = anEditableStudent(['email_verified_at' => now()]);
+
+    $this->actingAs($admin)
+        ->from('/admin/users')
+        ->put("/admin/users/{$student->id}", [
+            'first_name' => 'Juan',
+            'last_name' => 'Dela Cruz',
+            'email' => 'juan.new@clsu.edu.ph',
+            'user_type' => 'student',
+            'student_number' => '25-1234',
+            'course_id' => $student->course_id,
+            'contact_number' => '+639171234567',
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('error');
+
+    expect($student->refresh()->email)->toBe('juan.new@clsu.edu.ph');
 });

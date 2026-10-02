@@ -256,6 +256,22 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
 
         const onSuccess = () => {
             closeModal();
+
+            // A partial success (e.g. the security code email failed) still
+            // closed the modal, so surface the server's wording instead of the
+            // usual confirmation.
+            if (pageProps.flash?.error) {
+                MySwal.fire({
+                    title: 'Heads up',
+                    text: pageProps.flash.error,
+                    icon: 'warning',
+                    timer: 6000,
+                    showConfirmButton: true,
+                });
+
+                return;
+            }
+
             MySwal.fire({
                 title: isEditing ? 'Updated!' : 'Added!',
                 text: isEditing ? 'User profile updated successfully.' : 'New user registered successfully.',

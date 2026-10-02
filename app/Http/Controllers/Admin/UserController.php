@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\OtpMail;
 use App\Models\AlumniVerification;
 use App\Models\CertificateRequest;
 use App\Models\Course;
@@ -17,6 +18,7 @@ use App\Rules\ValidatesUserAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
 
@@ -26,6 +28,9 @@ class UserController extends Controller
     use ValidatesUserAccount;
 
     private const PER_PAGE = 15;
+
+    // Matches the code lifetime set at registration (RegisteredUserController).
+    private const OTP_TTL_MINUTES = 10;
 
     // Whitelist: the sort key comes from the URL, so never trust it directly
     private const SORTS = ['student_id', 'name', 'user_type', 'course'];
@@ -147,8 +152,13 @@ class UserController extends Controller
 
         $isStudent = $data['user_type'] === 'student';
         $isAlumni = $data['user_type'] === 'alumni';
+        $isAdmin = $data['user_type'] === 'admin';
 
-        DB::transaction(function () use ($data, $request, $isStudent, $isAlumni) {
+        // Admins are vouched for by the staff member creating them, so their
+        // address is trusted without a code. Everyone else must prove it.
+        $otp = $isAdmin ? null : random_int(100000, 999999);
+
+        $user = DB::transaction(function () use ($data, $request, $isStudent, $isAlumni, $isAdmin, $otp) {
             $user = User::create([
                 'first_name' => $data['first_name'],
                 'last_name' => $data['last_name'],
@@ -163,7 +173,14 @@ class UserController extends Controller
                 'major_id' => $data['major_id'] ?? null,
                 'contact_number' => $data['contact_number'],
                 'password' => Hash::make($data['password']),
+                'otp' => $otp,
+                'otp_expires_at' => $otp ? now()->addMinutes(self::OTP_TTL_MINUTES) : null,
             ]);
+
+            // email_verified_at is not mass assignable, so set it explicitly.
+            if ($isAdmin) {
+                $user->markEmailAsVerified();
+            }
 
             if ($data['user_type'] === 'faculty') {
                 $user->facultyProfile()->create([
@@ -190,9 +207,42 @@ class UserController extends Controller
 
             $role = Role::firstOrCreate(['name' => $data['user_type']]);
             $user->assignRole($role);
+
+            return $user;
         });
 
-        return back()->with('success', 'User added successfully.');
+        // Sent after the commit: a mail outage must never undo a valid account.
+        $mailed = $this->sendOtp($user, $otp);
+
+        return back()->with(
+            $mailed ? 'success' : 'error',
+            $mailed
+                ? 'User added successfully.'
+                : 'User added, but the security code email could not be sent. Ask them to click "Resend code" after logging in.'
+        );
+    }
+
+    /**
+     * Mail a freshly issued security code, reporting rather than throwing so a
+     * mail outage cannot undo an account that is already committed.
+     *
+     * @param  int|null  $otp  null when no code is owed, e.g. for an admin
+     */
+    private function sendOtp($user, ?int $otp): bool
+    {
+        if ($otp === null) {
+            return true;
+        }
+
+        try {
+            Mail::to($user->email)->send(new OtpMail($otp));
+
+            return true;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return false;
+        }
     }
 
     public function updateUser(Request $request, $id)
@@ -210,8 +260,14 @@ class UserController extends Controller
 
         $isStudent = $data['user_type'] === 'student';
         $isAlumni = $data['user_type'] === 'alumni';
+        $isAdmin = $data['user_type'] === 'admin';
 
-        DB::transaction(function () use ($data, $request, $user, $isStudent, $isAlumni) {
+        // Changing the address invalidates whatever proof the old one carried.
+        // Unchanged means untouched, so a name typo cannot lock anyone out.
+        $emailChanged = ! hash_equals((string) $user->email, (string) $data['email']);
+        $otp = $emailChanged && ! $isAdmin ? random_int(100000, 999999) : null;
+
+        DB::transaction(function () use ($data, $request, $user, $isStudent, $isAlumni, $isAdmin, $emailChanged, $otp) {
             $payload = [
                 'first_name' => $data['first_name'],
                 'last_name' => $data['last_name'],
@@ -226,6 +282,15 @@ class UserController extends Controller
                 'major_id' => $data['major_id'] ?? null,
                 'contact_number' => $data['contact_number'],
             ];
+
+            if ($emailChanged) {
+                // An admin is vouched for on create, and stays vouched for on a
+                // new address. Everyone else has to verify theirs again.
+                // email_verified_at is not mass assignable, so set it directly.
+                $user->email_verified_at = $isAdmin ? now() : null;
+                $user->otp = $otp;
+                $user->otp_expires_at = $otp ? now()->addMinutes(self::OTP_TTL_MINUTES) : null;
+            }
 
             if ($request->filled('password')) {
                 $payload['password'] = Hash::make($data['password']);
@@ -259,7 +324,14 @@ class UserController extends Controller
             $user->syncRoles([$role]);
         });
 
-        return back()->with('success', 'User updated successfully in the database.');
+        $mailed = $this->sendOtp($user, $otp);
+
+        return back()->with(
+            $mailed ? 'success' : 'error',
+            $mailed
+                ? 'User updated successfully.'
+                : 'User updated, but the security code email could not be sent. Ask them to click "Resend code" after logging in.'
+        );
     }
 
     // currently in used
