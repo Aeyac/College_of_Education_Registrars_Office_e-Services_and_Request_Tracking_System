@@ -7,7 +7,9 @@ use App\Models\CertificateRequest;
 use App\Models\RequestService;
 use App\Models\RequestStatus;
 use App\Models\User;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Spatie\Activitylog\Models\Activity;
@@ -29,7 +31,10 @@ class AuditTrailController extends Controller
                 },
             ])
             ->whereHasMorph('causer', [User::class], function ($q) {
-                $q->where('user_type', 'admin');
+                // A deactivated admin keeps their name on the trail, and their
+                // actions must not disappear from it.
+                $q->withoutGlobalScope(SoftDeletingScope::class)
+                    ->where('user_type', 'admin');
             })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $search = $request->search;
@@ -47,6 +52,10 @@ class AuditTrailController extends Controller
                                 });
                         })
                         ->orWhereHasMorph('subject', '*', function ($q, $type) use ($search) {
+                            // Reach deactivated accounts too, otherwise searching
+                            // for one finds nothing at all.
+                            $q->withoutGlobalScope(SoftDeletingScope::class);
+
                             match ($type) {
                                 CertificateRequest::class => $q->whereHas('service', function ($q) use ($search) {
                                         $q->where('label', 'like', "%{$search}%");
@@ -82,7 +91,9 @@ class AuditTrailController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $logs->getCollection()->transform(function ($log) use ($statusMap) {
+        $trashedUsers = $this->trashedUsers($logs->getCollection());
+
+        $logs->getCollection()->transform(function ($log) use ($statusMap, $trashedUsers) {
             $changes = [];
             if ($log->attribute_changes) {
                 $attrs = $log->attribute_changes['attributes'] ?? [];
@@ -109,8 +120,8 @@ class AuditTrailController extends Controller
 
             $subjectName = match ($log->subject_type) {
                 CertificateRequest::class => $log->subject?->service?->label ?? 'Certificate Request',
-                User::class => $log->subject
-                    ? trim(($log->subject->first_name ?? '') . ' ' . ($log->subject->last_name ?? ''))
+                User::class => (($user = $log->subject ?? $trashedUsers->get($log->subject_id)))
+                    ? trim(($user->first_name ?? '').' '.($user->last_name ?? ''))
                     : null,
                 default => $log->subject_type ? class_basename($log->subject_type) : null,
             };
@@ -123,8 +134,8 @@ class AuditTrailController extends Controller
                 'subject_type' => $log->subject_type ? class_basename($log->subject_type) : null,
                 'subject_id' => $log->subject_id,
                 'subject_name' => $subjectName,
-                'causer_name' => $log->causer
-                    ? trim(($log->causer->first_name ?? '') . ' ' . ($log->causer->last_name ?? '')) ?: 'Unknown'
+                'causer_name' => ($causer = $log->causer ?? $trashedUsers->get($log->causer_id))
+                    ? trim(($causer->first_name ?? '').' '.($causer->last_name ?? '')) ?: 'Unknown'
                     : 'System',
                 'changes' => $changes,
                 'properties' => $log->properties,
@@ -153,5 +164,29 @@ class AuditTrailController extends Controller
                 ->map(fn($service) => ['value' => $service->id, 'label' => $service->label])
                 ->values(),
         ]);
+    }
+
+    /**
+     * Deactivated accounts are soft deleted, so the eager loads cannot resolve
+     * them and their row would show up nameless. One extra query brings them
+     * back instead of leaving a gap in the trail.
+     *
+     * @param  Collection<int, Activity>  $logs
+     * @return Collection<int, User>
+     */
+    private function trashedUsers($logs)
+    {
+        $ids = $logs
+            ->flatMap(fn ($log) => [
+                $log->causer_type === User::class && $log->causer === null ? $log->causer_id : null,
+                $log->subject_type === User::class && $log->subject === null ? $log->subject_id : null,
+            ])
+            ->filter(fn ($id) => $id !== null)
+            ->unique()
+            ->values();
+
+        return $ids->isEmpty()
+            ? collect()
+            : User::withTrashed()->findMany($ids)->keyBy('id');
     }
 }

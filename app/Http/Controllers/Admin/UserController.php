@@ -35,6 +35,16 @@ class UserController extends Controller
     // Whitelist: the sort key comes from the URL, so never trust it directly
     private const SORTS = ['student_id', 'name', 'user_type', 'course'];
 
+    // Credentials and one-time codes never belong in the audit trail
+    private const HIDDEN_FROM_AUDIT = [
+        'password',
+        'remember_token',
+        'otp',
+        'otp_expires_at',
+        'email_verified_at',
+        'updated_at',
+    ];
+
     public function loadUsers(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
@@ -267,6 +277,10 @@ class UserController extends Controller
         $emailChanged = ! hash_equals((string) $user->email, (string) $data['email']);
         $otp = $emailChanged && ! $isAdmin ? random_int(100000, 999999) : null;
 
+        // Captured before the save, because afterwards the model only remembers
+        // the new values.
+        $before = $user->getAttributes();
+
         DB::transaction(function () use ($data, $request, $user, $isStudent, $isAlumni, $isAdmin, $emailChanged, $otp) {
             $payload = [
                 'first_name' => $data['first_name'],
@@ -324,6 +338,13 @@ class UserController extends Controller
             $user->syncRoles([$role]);
         });
 
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($user)
+            ->event('updated')
+            ->withChanges($this->editedFields($user, $before))
+            ->log('Updated user profile: '.$user->fullName());
+
         $mailed = $this->sendOtp($user, $otp);
 
         return back()->with(
@@ -332,6 +353,29 @@ class UserController extends Controller
                 ? 'User updated successfully.'
                 : 'User updated, but the security code email could not be sent. Ask them to click "Resend code" after logging in.'
         );
+    }
+
+    /**
+     * Old/new pairs for the fields the admin just edited, in the shape the
+     * audit trail renders.
+     *
+     * @param  array<string, mixed>  $before  attributes captured before the save
+     * @return array{attributes: array<string, mixed>, old: array<string, mixed>}
+     */
+    private function editedFields(User $user, array $before): array
+    {
+        $changes = ['attributes' => [], 'old' => []];
+
+        foreach ($user->getChanges() as $field => $value) {
+            if (in_array($field, self::HIDDEN_FROM_AUDIT, true)) {
+                continue;
+            }
+
+            $changes['attributes'][$field] = $value;
+            $changes['old'][$field] = $before[$field] ?? null;
+        }
+
+        return $changes;
     }
 
     // currently in used
@@ -351,6 +395,12 @@ class UserController extends Controller
 
         $user->delete(); // soft delete only / records remains
 
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($user)
+            ->event('deactivated')
+            ->log('Deactivated user account: '.$user->fullName());
+
         return back()->with('success', 'User account deactivated.');
     }
 
@@ -359,6 +409,12 @@ class UserController extends Controller
         // Roles and all related records are untouched, so restoring re-grants access
         $user = User::onlyTrashed()->findOrFail($id);
         $user->restore();
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($user)
+            ->event('reactivated')
+            ->log('Reactivated user account: '.$user->fullName());
 
         return back()->with('success', 'User account reactivated.');
     }

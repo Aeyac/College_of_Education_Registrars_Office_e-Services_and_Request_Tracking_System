@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\Course;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Role;
 
 function adminUser(): User
@@ -27,6 +30,13 @@ test('deactivating a user keeps the record and hides it from the active list', f
         ->assertSessionHasNoErrors();
 
     $this->assertSoftDeleted('users', ['id' => $student->id]);
+
+    $log = Activity::where('event', 'deactivated')->sole();
+
+    expect($log->causer_id)->toBe($admin->id)
+        ->and($log->subject_type)->toBe(User::class)
+        ->and($log->subject_id)->toBe($student->id)
+        ->and($log->description)->toBe('Deactivated user account: '.$student->fullName());
 
     // The row is kept on the table but scoped out of every normal query
     expect(User::withTrashed()->count())->toBe(2)
@@ -103,6 +113,58 @@ test('a deactivated account can be reactivated with its data and roles intact', 
     expect($student->first_name)->toBe('Juan')
         ->and($student->last_name)->toBe('Dela Cruz')
         ->and($student->hasRole('student'))->toBeTrue();
+
+    $log = Activity::where('event', 'reactivated')->sole();
+
+    expect($log->causer_id)->toBe($admin->id)
+        ->and($log->subject_id)->toBe($student->id)
+        ->and($log->description)->toBe('Reactivated user account: Juan Dela Cruz');
+});
+
+test('editing a user is recorded in the activity log without leaking credentials', function () {
+    $admin = adminUser();
+    $course = Course::create(['code' => 'test_course', 'label' => 'Test Course']);
+
+    // The enrollment year has to sit inside the allowed year levels
+    $academicYear = now()->month >= 6 ? now()->year : now()->year - 1;
+    $studentNumber = sprintf('%02d-0001', $academicYear % 100);
+
+    $student = studentUser([
+        'first_name' => 'Juan',
+        'last_name' => 'Dela Cruz',
+        'email' => 'juan.dc@clsu.edu.ph',
+        'user_type' => 'student',
+        'student_number' => $studentNumber,
+        'course_id' => $course->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->from('/admin/users')
+        ->put("/admin/users/{$student->id}", [
+            'first_name' => 'Juan Miguel',
+            'last_name' => 'Dela Cruz',
+            'email' => $student->email,
+            'user_type' => 'student',
+            'student_number' => $studentNumber,
+            'course_id' => $course->id,
+            'contact_number' => '+639171234567',
+            'password' => 'a-new-secret',
+            'password_confirmation' => 'a-new-secret',
+        ])
+        ->assertSessionHasNoErrors();
+
+    $log = Activity::where('event', 'updated')->sole();
+
+    expect($log->causer_id)->toBe($admin->id)
+        ->and($log->subject_type)->toBe(User::class)
+        ->and($log->subject_id)->toBe($student->id)
+        ->and($log->description)->toBe('Updated user profile: Juan Miguel Dela Cruz')
+        ->and($log->attribute_changes['attributes']['first_name'])->toBe('Juan Miguel')
+        ->and($log->attribute_changes['old']['first_name'])->toBe('Juan')
+        ->and($log->attribute_changes['attributes'])->not->toHaveKey('password');
+
+    // The password really changed, it just never reaches the audit trail
+    expect(Hash::check('a-new-secret', $student->refresh()->password))->toBeTrue();
 });
 
 test('non admins cannot deactivate or reactivate users', function () {
