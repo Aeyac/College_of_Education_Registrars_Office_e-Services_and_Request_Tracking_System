@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Throwable;
+use App\Support\ScheduleRules;
 
 class FacultyController extends Controller
 {
@@ -91,28 +92,28 @@ class FacultyController extends Controller
         ]);
     }
 
-    public function storeFaculty(Request $request)
+    private function facultyRules(bool $requireBlocks): array
     {
-        Faculty::create($request->validate([
+        return array_merge([
             'name' => 'required|string|max:255',
             'role' => 'required|string|max:255',
             'department_or_program' => 'required|string|max:255',
             'room_or_location' => 'required|string|max:255',
-            'weekly_schedule' => 'nullable|array',
-        ]));
+        ], ScheduleRules::rules($requireBlocks));
+    }
+
+    public function storeFaculty(Request $request)
+    {
+        Faculty::create($request->validate($this->facultyRules(true), ScheduleRules::messages()));
 
         return back()->with('success', 'Faculty added.');
     }
 
     public function updateFaculty(Request $request, $id)
     {
-        Faculty::findOrFail($id)->update($request->validate([
-            'name' => 'required|string|max:255',
-            'role' => 'required|string|max:255',
-            'department_or_program' => 'required|string|max:255',
-            'room_or_location' => 'required|string|max:255',
-            'weekly_schedule' => 'nullable|array',
-        ]));
+        Faculty::findOrFail($id)->update(
+            $request->validate($this->facultyRules(false), ScheduleRules::messages())
+        );
 
         return back()->with('success', 'Faculty updated.');
     }

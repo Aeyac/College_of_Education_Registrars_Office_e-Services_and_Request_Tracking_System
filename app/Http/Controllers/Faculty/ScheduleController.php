@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Throwable;
+use App\Support\ScheduleRules;
 
 class ScheduleController extends Controller
 {
@@ -20,12 +21,11 @@ class ScheduleController extends Controller
 
     public function update(Request $request)
     {
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'role' => 'required|string|max:255',
             'department_or_program' => 'required|string|max:255',
             'room_or_location' => 'required|string|max:255',
-            'weekly_schedule' => 'nullable|array',
-        ]);
+        ], ScheduleRules::rules(false)), ScheduleRules::messages());
 
         $request->user()->facultyProfile()->update($validated);
 

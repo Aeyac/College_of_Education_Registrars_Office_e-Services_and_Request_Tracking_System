@@ -1,5 +1,5 @@
 import { Head, useForm, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
@@ -9,6 +9,8 @@ import sanitizeHtml from '@/Utils/sanitizeHtml';
 export default function ManageAnnouncements({ announcements = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState({ show: false, id: null });
+    const [previews, setPreviews] = useState([]);
+    const fileInputRef = useRef(null);
     const { data, setData, post, processing } = useForm({ id: null, title: '', content: '', attachments: [], existing_attachments: [], remove_attachments: [], _method: 'post' });
 
     const quillModules = {
@@ -24,20 +26,60 @@ export default function ManageAnnouncements({ announcements = [] }) {
         ],
     };
 
+    // Build/revoke an object URL whenever new files are selected so images
+    // render right away instead of waiting for the form to be submitted.
+    useEffect(() => {
+        const files = (data.attachments || []).filter(file => file instanceof File);
+
+        if (files.length === 0) {
+            setPreviews([]);
+
+            return undefined;
+        }
+
+        const urls = files.map(file => URL.createObjectURL(file));
+        setPreviews(files.map((file, idx) => ({
+            name: file.name,
+            size: file.size,
+            url: urls[idx],
+            isImage: file.type.startsWith('image/'),
+        })));
+
+        return () => urls.forEach(url => URL.revokeObjectURL(url));
+    }, [data.attachments]);
+
+    const resetFileInput = () => {
+        setPreviews([]);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     const openNewPost = () => {
         setData({ id: null, title: '', content: '', attachments: [], existing_attachments: [], remove_attachments: [], _method: 'post' });
+        resetFileInput();
         setIsModalOpen(true);
     };
 
     const openEditPost = ann => {
         setData({ id: ann.id, title: ann.title || '', content: ann.content || '', attachments: [], existing_attachments: ann.attachments || [], remove_attachments: [], _method: 'put' });
+        resetFileInput();
         setIsModalOpen(true);
     };
 
     const closeModal = () => {
         setIsModalOpen(false);
         setData({ id: null, title: '', content: '', attachments: [], existing_attachments: [], remove_attachments: [], _method: 'post' });
+        resetFileInput();
     };
+
+    const handleRemoveNewFile = index => {
+        setData('attachments', (data.attachments || []).filter((_, idx) => idx !== index));
+    };
+
+    const isImage = file => typeof file.type === 'string' && file.type.startsWith('image/');
+
+    const formatSize = bytes => `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 
     const handleSave = e => {
         e.preventDefault();
@@ -94,13 +136,28 @@ export default function ManageAnnouncements({ announcements = [] }) {
                         />
 
                         {ann.attachments && ann.attachments.length > 0 && (
-                            <div className="mb-6 flex flex-wrap gap-2">
-                                {ann.attachments.map((file, idx) => (
-                                    <a key={idx} href={`/storage/${file.path}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-yellow-600 hover:border-yellow-200 hover:bg-yellow-50 transition-colors">
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                                        <span className="truncate max-w-[200px]">{file.name}</span>
-                                    </a>
-                                ))}
+                            <div className="mb-6 space-y-3">
+                                {ann.attachments.some(file => isImage(file)) && (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                                        {ann.attachments.filter(file => isImage(file)).map((file, idx) => (
+                                            <a key={`img-${idx}`} href={`/storage/${file.path}`} target="_blank" rel="noopener noreferrer" className="group/img block overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                                <img src={`/storage/${file.path}`} alt={file.name} className="h-24 w-full object-cover transition-transform duration-200 group-hover/img:scale-105" />
+                                                <p className="px-2 py-1.5 text-[11px] font-bold text-slate-600 truncate">{file.name}</p>
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {ann.attachments.some(file => !isImage(file)) && (
+                                    <div className="flex flex-wrap gap-2">
+                                        {ann.attachments.filter(file => !isImage(file)).map((file, idx) => (
+                                            <a key={`file-${idx}`} href={`/storage/${file.path}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-yellow-600 hover:border-yellow-200 hover:bg-yellow-50 transition-colors">
+                                                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                                <span className="truncate max-w-[200px]">{file.name}</span>
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -155,25 +212,59 @@ export default function ManageAnnouncements({ announcements = [] }) {
 
                                 <div className="space-y-2">
                                     <label className="block text-xs font-bold text-slate-700">Attachments</label>
-                                    
+
+                                    {data.existing_attachments && data.existing_attachments.filter(file => !data.remove_attachments.includes(file.path)).length > 0 && (
+                                        <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Saved files</p>
+                                    )}
+
                                     {data.existing_attachments && data.existing_attachments.map((file, idx) => {
                                         if (data.remove_attachments.includes(file.path)) return null;
+
                                         return (
-                                            <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
-                                                <div className="flex items-center gap-2 truncate">
-                                                    <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                                                    <span className="truncate font-medium">{file.name}</span>
+                                            <div key={`existing-${idx}`} className="flex items-center gap-3 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                                                {isImage(file) ? (
+                                                    <img src={`/storage/${file.path}`} alt={file.name} className="h-12 w-12 shrink-0 object-cover rounded-md border border-slate-200" />
+                                                ) : (
+                                                    <div className="w-12 h-12 shrink-0 bg-white rounded-md border border-slate-200 flex items-center justify-center text-slate-400">
+                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                                    </div>
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="truncate font-medium text-slate-700">{file.name}</p>
+                                                    <p className="text-[11px] text-slate-400 mt-0.5">{formatSize(file.size || 0)}</p>
                                                 </div>
-                                                <button type="button" onClick={() => setData('remove_attachments', [...data.remove_attachments, file.path])} className="text-red-500 hover:text-red-700 shrink-0 px-2 py-1 bg-red-50 rounded font-bold">Remove</button>
+                                                <button type="button" onClick={() => setData('remove_attachments', [...data.remove_attachments, file.path])} className="shrink-0 px-2 py-1 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 rounded font-bold">Remove</button>
                                             </div>
                                         );
                                     })}
 
-                                    <input 
-                                        type="file" 
-                                        multiple 
-                                        onChange={e => setData('attachments', Array.from(e.target.files))} 
-                                        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100 transition-colors" 
+                                    {previews.length > 0 && (
+                                        <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">New uploads</p>
+                                    )}
+
+                                    {previews.map((preview, idx) => (
+                                        <div key={`preview-${idx}`} className="flex items-center gap-3 p-2 bg-yellow-50/60 border border-yellow-200 rounded-lg text-xs">
+                                            {preview.isImage ? (
+                                                <img src={preview.url} alt={preview.name} className="h-12 w-12 shrink-0 object-cover rounded-md border border-yellow-200 bg-white" />
+                                            ) : (
+                                                <div className="w-12 h-12 shrink-0 bg-white rounded-md border border-yellow-200 flex items-center justify-center text-slate-400">
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                                </div>
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="truncate font-medium text-slate-700">{preview.name}</p>
+                                                <p className="text-[11px] text-slate-400 mt-0.5">{formatSize(preview.size)}</p>
+                                            </div>
+                                            <button type="button" onClick={() => handleRemoveNewFile(idx)} className="shrink-0 px-2 py-1 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 rounded font-bold">Remove</button>
+                                        </div>
+                                    ))}
+
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        multiple
+                                        onChange={e => setData('attachments', Array.from(e.target.files))}
+                                        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100 transition-colors"
                                     />
                                 </div>
                             </div>

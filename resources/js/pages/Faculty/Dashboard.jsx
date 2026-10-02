@@ -153,7 +153,7 @@ export default function Dashboard({ faculty }) {
                             <div className="space-y-4">
                                 <div>
                                     <p className="text-yellow-600 text-xs font-medium mb-1">Role / Position</p>
-                                    <p className="font-semibold text-slate-800 p-1">
+                                    <p className="font-semibold text-sl ate-800 p-1">
                                        {faculty?.role || 'Not specified'}
                                     </p>
                                 </div>

@@ -90,7 +90,7 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
 
         const ws = XLSX.utils.aoa_to_sheet(ws_data);
         const colWidths = [
-            { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, 
+            { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 },
             { wch: 15 }, { wch: 15 }, { wch: 15 }
         ];
         ws['!cols'] = colWidths;
@@ -125,6 +125,12 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
         consultation_time_end: '',
         weekly_schedule: []
     });
+
+    // Server-side schedule errors. Inertia flattens nested errors into keys like
+    // "weekly_schedule.0.start_time", so we look them up by prefix.
+    const scheduleError = errors.weekly_schedule;
+    const getBlockError = (index) =>
+        Object.entries(errors).find(([key]) => key.startsWith(`weekly_schedule.${index}.`))?.[1];
 
     // Apply filters once the inputs differ from what the server last returned.
     useEffect(() => {
@@ -277,6 +283,8 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
     const removeScheduleBlock = (index) => {
         const newSchedule = (data.weekly_schedule || []).filter((_, i) => i !== index);
         setData('weekly_schedule', newSchedule);
+        // Block indexes shift after a removal, so old per-block errors no longer line up.
+        clearErrors();
     };
 
     const handleSave = (e) => {
@@ -301,10 +309,10 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
                     showConfirmButton: false
                 });
             },
-            onError: () => {
+            onError: (errs) => {
                 MySwal.fire({
                     title: 'Validation Error',
-                    text: 'Please make sure all required fields are filled out correctly.',
+                    text: Object.values(errs)[0] || 'Please make sure all required fields are filled out correctly.',
                     icon: 'warning',
                     showConfirmButton: true
                 });
@@ -360,7 +368,7 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
     return (
         <AdminLayout>
             <Head title="Faculty Schedules" />
-            
+
             <style>
                 {`
                 @media print {
@@ -506,10 +514,10 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
                                 <div className="flex gap-2 mt-5">
                                     <button onClick={() => { setExtractionQueue([]); setQueuePosition(0); setData(prof); clearErrors(); setIsModalOpen(true); }} className="flex-1 py-2 text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 transition-colors shadow-sm">Edit</button>
                                     <button onClick={() => confirmDelete(prof.id)} className="flex-1 py-2 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors shadow-sm">Remove</button>
-                                    
+
                                     <div className="relative flex-1">
-                                        <button 
-                                            onClick={() => setExportMenuProfId(exportMenuProfId === prof.id ? null : prof.id)} 
+                                        <button
+                                            onClick={() => setExportMenuProfId(exportMenuProfId === prof.id ? null : prof.id)}
                                             className="w-full py-2 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition-colors shadow-sm flex items-center justify-center gap-1"
                                         >
                                             Export
@@ -609,91 +617,106 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
                                             </button>
                                         </div>
 
+                                        {scheduleError && (
+                                            <p className="text-red-500 text-xs font-bold">{scheduleError}</p>
+                                        )}
+
                                         {data.weekly_schedule && data.weekly_schedule.length > 0 ? (
                                             <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                                                {data.weekly_schedule.map((block, index) => (
-                                                    <div key={index} className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
-                                                        <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
-                                                            <select
-                                                                value={block.day}
-                                                                onChange={e => updateScheduleBlock(index, 'day', e.target.value)}
-                                                                className="flex-1 sm:w-auto border-slate-300 rounded-lg text-xs py-2 px-3 outline-none focus:ring-yellow-400"
-                                                                required
-                                                            >
-                                                                <option value="Monday">Monday</option>
-                                                                <option value="Tuesday">Tuesday</option>
-                                                                <option value="Wednesday">Wednesday</option>
-                                                                <option value="Thursday">Thursday</option>
-                                                                <option value="Friday">Friday</option>
-                                                                <option value="Saturday">Saturday</option>
-                                                            </select>
+                                                {data.weekly_schedule.map((block, index) => {
+                                                    const blockError = getBlockError(index);
 
-                                                            <input
-                                                                type="time"
-                                                                value={block.start_time}
-                                                                onChange={e => updateScheduleBlock(index, 'start_time', e.target.value)}
-                                                                className="flex-1 sm:w-auto border-slate-300 rounded-lg text-xs py-2 px-2 outline-none focus:ring-yellow-400"
-                                                                required
-                                                            />
-                                                            <span className="text-slate-400 text-xs font-medium">to</span>
-                                                            <input
-                                                                type="time"
-                                                                value={block.end_time}
-                                                                onChange={e => updateScheduleBlock(index, 'end_time', e.target.value)}
-                                                                className="flex-1 sm:w-auto border-slate-300 rounded-lg text-xs py-2 px-2 outline-none focus:ring-yellow-400"
-                                                                required
-                                                            />
+                                                    return (
+                                                        <div
+                                                            key={index}
+                                                            className={`bg-slate-50 p-3 rounded-xl border space-y-2 ${blockError ? 'border-red-300' : 'border-slate-200'}`}
+                                                        >
+                                                            <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
+                                                                <select
+                                                                    value={block.day}
+                                                                    onChange={e => updateScheduleBlock(index, 'day', e.target.value)}
+                                                                    className="flex-1 sm:w-auto border-slate-300 rounded-lg text-xs py-2 px-3 outline-none focus:ring-yellow-400"
+                                                                    required
+                                                                >
+                                                                    <option value="Monday">Monday</option>
+                                                                    <option value="Tuesday">Tuesday</option>
+                                                                    <option value="Wednesday">Wednesday</option>
+                                                                    <option value="Thursday">Thursday</option>
+                                                                    <option value="Friday">Friday</option>
+                                                                    <option value="Saturday">Saturday</option>
+                                                                </select>
 
-                                                            <select
-                                                                value={block.type || 'class'}
-                                                                onChange={e => updateScheduleBlock(index, 'type', e.target.value)}
-                                                                className="flex-1 sm:w-auto border-slate-300 rounded-lg text-xs py-2 px-3 outline-none focus:ring-yellow-400"
-                                                                title="Block type"
-                                                                required
-                                                            >
-                                                                <option value="class">Class</option>
-                                                                <option value="consultation">Consultation</option>
-                                                                <option value="other">Other</option>
-                                                            </select>
+                                                                <input
+                                                                    type="time"
+                                                                    value={block.start_time}
+                                                                    onChange={e => updateScheduleBlock(index, 'start_time', e.target.value)}
+                                                                    className="flex-1 sm:w-auto border-slate-300 rounded-lg text-xs py-2 px-2 outline-none focus:ring-yellow-400"
+                                                                    required
+                                                                />
+                                                                <span className="text-slate-400 text-xs font-medium">to</span>
+                                                                <input
+                                                                    type="time"
+                                                                    value={block.end_time}
+                                                                    onChange={e => updateScheduleBlock(index, 'end_time', e.target.value)}
+                                                                    className="flex-1 sm:w-auto border-slate-300 rounded-lg text-xs py-2 px-2 outline-none focus:ring-yellow-400"
+                                                                    required
+                                                                />
 
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => removeScheduleBlock(index)}
-                                                                className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors"
-                                                                title="Remove Block"
-                                                            >
-                                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                            </button>
+                                                                <select
+                                                                    value={block.type || 'class'}
+                                                                    onChange={e => updateScheduleBlock(index, 'type', e.target.value)}
+                                                                    className="flex-1 sm:w-auto border-slate-300 rounded-lg text-xs py-2 px-3 outline-none focus:ring-yellow-400"
+                                                                    title="Block type"
+                                                                    required
+                                                                >
+                                                                    <option value="class">Class</option>
+                                                                    <option value="consultation">Consultation</option>
+                                                                    <option value="other">Other</option>
+                                                                </select>
+
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => removeScheduleBlock(index)}
+                                                                    className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors"
+                                                                    title="Remove Block"
+                                                                >
+                                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                                </button>
+                                                            </div>
+
+                                                            <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Room (e.g. CED 105)"
+                                                                    value={block.room}
+                                                                    onChange={e => updateScheduleBlock(index, 'room', e.target.value)}
+                                                                    className="flex-1 sm:w-auto border-slate-300 rounded-lg text-xs py-2 px-3 outline-none focus:ring-yellow-400"
+                                                                    required
+                                                                />
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Course (e.g. TLEIA 2102)"
+                                                                    value={block.course_code || ''}
+                                                                    onChange={e => updateScheduleBlock(index, 'course_code', e.target.value)}
+                                                                    className="flex-1 sm:w-auto border-slate-300 rounded-lg text-xs py-2 px-3 outline-none focus:ring-yellow-400"
+                                                                    disabled={block.type !== 'class'}
+                                                                />
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Section (e.g. BTLED-IA_2-1)"
+                                                                    value={block.section_code || ''}
+                                                                    onChange={e => updateScheduleBlock(index, 'section_code', e.target.value)}
+                                                                    className="flex-1 sm:w-auto border-slate-300 rounded-lg text-xs py-2 px-3 outline-none focus:ring-yellow-400"
+                                                                    disabled={block.type !== 'class'}
+                                                                />
+                                                            </div>
+
+                                                            {blockError && (
+                                                                <p className="text-red-500 text-xs font-bold">{blockError}</p>
+                                                            )}
                                                         </div>
-
-                                                        <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Room (e.g. CED 105)"
-                                                                value={block.room}
-                                                                onChange={e => updateScheduleBlock(index, 'room', e.target.value)}
-                                                                className="flex-1 sm:w-auto border-slate-300 rounded-lg text-xs py-2 px-3 outline-none focus:ring-yellow-400"
-                                                                required
-                                                            />
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Course (e.g. TLEIA 2102)"
-                                                                value={block.course_code || ''}
-                                                                onChange={e => updateScheduleBlock(index, 'course_code', e.target.value)}
-                                                                className="flex-1 sm:w-auto border-slate-300 rounded-lg text-xs py-2 px-3 outline-none focus:ring-yellow-400"
-                                                                disabled={block.type !== 'class'}
-                                                            />
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Section (e.g. BTLED-IA_2-1)"
-                                                                value={block.section_code || ''}
-                                                                onChange={e => updateScheduleBlock(index, 'section_code', e.target.value)}
-                                                                className="flex-1 sm:w-auto border-slate-300 rounded-lg text-xs py-2 px-3 outline-none focus:ring-yellow-400"
-                                                                disabled={block.type !== 'class'}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         ) : (
                                             <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
@@ -740,7 +763,7 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-6">
                             {exportingProf.user?.profile_picture ? (
                                 <img src={`/storage/${exportingProf.user.profile_picture}`} alt={exportingProf.name} className="w-24 h-24 rounded-2xl object-cover shadow-sm border border-slate-200 shrink-0" />
@@ -751,19 +774,19 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
                             )}
                             <div className="flex-1 grid grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Name</span> 
+                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Name</span>
                                     <span className="font-bold text-slate-900 text-lg">{exportingProf.name || 'Not specified'}</span>
                                 </div>
                                 <div>
-                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Role</span> 
+                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Role</span>
                                     <span className="font-bold text-slate-900">{exportingProf.role || 'Not specified'}</span>
                                 </div>
                                 <div>
-                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Department</span> 
+                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Department</span>
                                     <span className="font-bold text-slate-900">{exportingProf.department_or_program || 'Not specified'}</span>
                                 </div>
                                 <div>
-                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Office/Room</span> 
+                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Office/Room</span>
                                     <span className="font-bold text-slate-900">{exportingProf.room_or_location || 'Not specified'}</span>
                                 </div>
                             </div>

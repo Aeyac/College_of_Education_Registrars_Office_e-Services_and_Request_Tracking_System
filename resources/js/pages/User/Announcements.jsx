@@ -8,6 +8,10 @@ export default function Announcements({ announcements = [] }) {
     useHighlightRow('announcement-row');
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
 
+    const isImage = file => typeof file.type === 'string' && file.type.startsWith('image/');
+    const imagesOf = ann => (ann.attachments || []).filter(isImage);
+    const filesOf = ann => (ann.attachments || []).filter(file => !isImage(file));
+
     return (
         <UserLayout>
             <Head title="Announcements" />
@@ -31,10 +35,18 @@ export default function Announcements({ announcements = [] }) {
                             </div>
                             <div className="text-sm text-slate-600 leading-relaxed pl-2 quill-content line-clamp-3 overflow-hidden break-words [overflow-wrap:anywhere]" dangerouslySetInnerHTML={{ __html: sanitizeHtml(ann.content) }} />
                             
-                            {ann.attachments && ann.attachments.length > 0 && (
+                            {imagesOf(ann).length > 0 && (
+                                <div className="pl-2 mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                    {imagesOf(ann).map((file, idx) => (
+                                        <img key={`img-${idx}`} src={`/storage/${file.path}`} alt={file.name} loading="lazy" className="h-20 sm:h-24 w-full object-cover rounded-lg border border-slate-200" />
+                                    ))}
+                                </div>
+                            )}
+
+                            {filesOf(ann).length > 0 && (
                                 <div className="pl-2 mt-3 flex items-center gap-1.5 text-xs font-bold text-slate-500">
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                                    {ann.attachments.length} attachment{ann.attachments.length !== 1 ? 's' : ''}
+                                    {filesOf(ann).length} file{filesOf(ann).length !== 1 ? 's' : ''}
                                 </div>
                             )}
 
@@ -72,24 +84,42 @@ export default function Announcements({ announcements = [] }) {
                             <div className="text-sm sm:text-base text-slate-700 leading-relaxed quill-content min-w-0 break-words [overflow-wrap:anywhere]" dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedAnnouncement.content) }} />
                             
                             {selectedAnnouncement.attachments && selectedAnnouncement.attachments.length > 0 && (
-                                <div className="mt-8 border-t border-slate-100 pt-6">
-                                    <h4 className="text-sm font-bold text-slate-900 mb-4">Attachments</h4>
-                                    <div className="flex flex-col gap-3">
-                                        {selectedAnnouncement.attachments.map((file, idx) => (
-                                            <a key={idx} href={`/storage/${file.path}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-xl hover:bg-yellow-50 hover:border-yellow-200 transition-colors group/file">
-                                                <div className="w-10 h-10 shrink-0 bg-white rounded-lg shadow-sm flex items-center justify-center text-slate-400 group-hover/file:text-yellow-600 border border-slate-100">
-                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-bold text-slate-900 truncate group-hover/file:text-yellow-800 transition-colors">{file.name}</p>
-                                                    <p className="text-xs text-slate-500 mt-0.5">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                                                </div>
-                                                <div className="shrink-0 px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg group-hover/file:bg-yellow-400 group-hover/file:border-yellow-400 group-hover/file:text-yellow-950 transition-colors shadow-sm">
-                                                    Download
-                                                </div>
-                                            </a>
-                                        ))}
-                                    </div>
+                                <div className="mt-8 border-t border-slate-100 pt-6 space-y-6">
+                                    {imagesOf(selectedAnnouncement).length > 0 && (
+                                        <div>
+                                            <h4 className="text-sm font-bold text-slate-900 mb-4">Photos</h4>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                                {imagesOf(selectedAnnouncement).map((file, idx) => (
+                                                    <a key={`img-${idx}`} href={`/storage/${file.path}`} target="_blank" rel="noopener noreferrer" className="group/img block overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                                        <img src={`/storage/${file.path}`} alt={file.name} loading="lazy" className="h-32 sm:h-40 w-full object-cover transition-transform duration-200 group-hover/img:scale-105" />
+                                                        <p className="px-2 py-1.5 text-[11px] font-bold text-slate-600 truncate">View image</p>
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {filesOf(selectedAnnouncement).length > 0 && (
+                                        <div>
+                                            <h4 className="text-sm font-bold text-slate-900 mb-4">Attachments</h4>
+                                            <div className="flex flex-col gap-3">
+                                                {filesOf(selectedAnnouncement).map((file, idx) => (
+                                                    <a key={`file-${idx}`} href={`/storage/${file.path}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-xl hover:bg-yellow-50 hover:border-yellow-200 transition-colors group/file">
+                                                        <div className="w-10 h-10 shrink-0 bg-white rounded-lg shadow-sm flex items-center justify-center text-slate-400 group-hover/file:text-yellow-600 border border-slate-100">
+                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-bold text-slate-900 truncate group-hover/file:text-yellow-800 transition-colors">{file.name}</p>
+                                                            <p className="text-xs text-slate-500 mt-0.5">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                                        </div>
+                                                        <div className="shrink-0 px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg group-hover/file:bg-yellow-400 group-hover/file:border-yellow-400 group-hover/file:text-yellow-950 transition-colors shadow-sm">
+                                                            Download
+                                                        </div>
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

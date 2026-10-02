@@ -9,13 +9,19 @@ export default function Schedule({ faculty }) {
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [isExtracting, setIsExtracting] = useState(false);
     const fileInputRef = useRef(null);
-    
-    const { data, setData, put, processing, errors } = useForm({
+
+    const { data, setData, put, processing, errors, clearErrors } = useForm({
         role: faculty?.role || '',
         department_or_program: faculty?.department_or_program || '',
         room_or_location: faculty?.room_or_location || '',
         weekly_schedule: faculty?.weekly_schedule || []
     });
+
+    // Server-side schedule errors. Inertia flattens nested errors into keys like
+    // "weekly_schedule.0.start_time", so we look them up by prefix.
+    const scheduleError = errors.weekly_schedule;
+    const getBlockError = (index) =>
+        Object.entries(errors).find(([key]) => key.startsWith(`weekly_schedule.${index}.`))?.[1];
 
     const formatTime = (timeString) => {
         if (!timeString) return '';
@@ -54,10 +60,10 @@ export default function Schedule({ faculty }) {
         }
 
         const ws = XLSX.utils.aoa_to_sheet(ws_data);
-        
+
         // Auto-size columns
         const colWidths = [
-            { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, 
+            { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 },
             { wch: 15 }, { wch: 15 }, { wch: 15 }
         ];
         ws['!cols'] = colWidths;
@@ -100,11 +106,11 @@ export default function Schedule({ faculty }) {
 
             const extractedName = result.data.name || '';
             const myName = faculty?.name || '';
-            
+
             // Very simple fuzzy matching: check if last name is in the extracted name
             const myNameParts = myName.toLowerCase().split(' ').filter(p => p.length > 2);
             let matchFound = false;
-            
+
             for (const part of myNameParts) {
                 if (extractedName.toLowerCase().includes(part)) {
                     matchFound = true;
@@ -123,6 +129,7 @@ export default function Schedule({ faculty }) {
                 return;
             }
 
+            clearErrors();
             setData({
                 ...data,
                 role: result.data.role || data.role,
@@ -169,6 +176,8 @@ export default function Schedule({ faculty }) {
     const removeScheduleBlock = (index) => {
         const newSchedule = (data.weekly_schedule || []).filter((_, i) => i !== index);
         setData('weekly_schedule', newSchedule);
+        // Block indexes shift after a removal, so old per-block errors no longer line up.
+        clearErrors();
     };
 
     const handleSubmit = (e) => {
@@ -185,10 +194,10 @@ export default function Schedule({ faculty }) {
                     customClass: { popup: 'rounded-3xl' }
                 });
             },
-            onError: () => {
+            onError: (errs) => {
                 Swal.fire({
                     title: 'Validation Error',
-                    text: 'Please check your inputs.',
+                    text: Object.values(errs)[0] || 'Please check your inputs.',
                     icon: 'error',
                     showConfirmButton: true,
                     customClass: { popup: 'rounded-3xl' }
@@ -246,9 +255,9 @@ export default function Schedule({ faculty }) {
                                 {isExtracting ? 'Scanning...' : 'Scan Document'}
                             </button>
 
-                            <button 
-                                type="button" 
-                                onClick={() => setShowExportMenu(!showExportMenu)} 
+                            <button
+                                type="button"
+                                onClick={() => setShowExportMenu(!showExportMenu)}
                                 className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl shadow-sm hover:bg-slate-50 transition-colors"
                             >
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -258,7 +267,7 @@ export default function Schedule({ faculty }) {
 
                             {showExportMenu && (
                                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={handleExportPDF}
                                         className="w-full text-left px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-rose-600 flex items-center gap-3 transition-colors"
@@ -266,7 +275,7 @@ export default function Schedule({ faculty }) {
                                         <svg className="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 9h1.5m1.5 0H12m2.5 4H9m6 4H9" /></svg>
                                         Export as PDF
                                     </button>
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={handleExportExcel}
                                         className="w-full text-left px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-600 flex items-center gap-3 transition-colors border-t border-slate-100"
@@ -290,7 +299,7 @@ export default function Schedule({ faculty }) {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-6">
                             {faculty?.user?.profile_picture ? (
                                 <img src={`/storage/${faculty.user.profile_picture}`} alt={faculty.name} className="w-24 h-24 rounded-2xl object-cover shadow-sm border border-slate-200 shrink-0" />
@@ -301,19 +310,19 @@ export default function Schedule({ faculty }) {
                             )}
                             <div className="flex-1 grid grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Name</span> 
+                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Name</span>
                                     <span className="font-bold text-slate-900 text-lg">{faculty?.name || 'Not specified'}</span>
                                 </div>
                                 <div>
-                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Role</span> 
+                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Role</span>
                                     <span className="font-bold text-slate-900">{data.role || 'Not specified'}</span>
                                 </div>
                                 <div>
-                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Department</span> 
+                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Department</span>
                                     <span className="font-bold text-slate-900">{data.department_or_program || 'Not specified'}</span>
                                 </div>
                                 <div>
-                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Office/Room</span> 
+                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Office/Room</span>
                                     <span className="font-bold text-slate-900">{data.room_or_location || 'Not specified'}</span>
                                 </div>
                             </div>
@@ -325,37 +334,37 @@ export default function Schedule({ faculty }) {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Role / Position</label>
-                                    <input 
-                                        type="text" 
-                                        value={data.role} 
-                                        onChange={e => setData('role', e.target.value)} 
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl shadow-sm text-sm py-3 px-4 outline-none focus:ring-yellow-500 focus:bg-white transition-colors" 
-                                        placeholder="e.g. Instructor I, Faculty" 
-                                        required 
+                                    <input
+                                        type="text"
+                                        value={data.role}
+                                        onChange={e => setData('role', e.target.value)}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl shadow-sm text-sm py-3 px-4 outline-none focus:ring-yellow-500 focus:bg-white transition-colors"
+                                        placeholder="e.g. Instructor I, Faculty"
+                                        required
                                     />
                                     {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Department / Program</label>
-                                    <input 
-                                        type="text" 
-                                        value={data.department_or_program} 
-                                        onChange={e => setData('department_or_program', e.target.value)} 
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl shadow-sm text-sm py-3 px-4 outline-none focus:ring-yellow-500 focus:bg-white transition-colors" 
-                                        placeholder="e.g. DTLLSED" 
-                                        required 
+                                    <input
+                                        type="text"
+                                        value={data.department_or_program}
+                                        onChange={e => setData('department_or_program', e.target.value)}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl shadow-sm text-sm py-3 px-4 outline-none focus:ring-yellow-500 focus:bg-white transition-colors"
+                                        placeholder="e.g. DTLLSED"
+                                        required
                                     />
                                     {errors.department_or_program && <p className="text-red-500 text-xs mt-1">{errors.department_or_program}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Main Office Room</label>
-                                    <input 
-                                        type="text" 
-                                        value={data.room_or_location} 
-                                        onChange={e => setData('room_or_location', e.target.value)} 
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl shadow-sm text-sm py-3 px-4 outline-none focus:ring-yellow-500 focus:bg-white transition-colors" 
-                                        placeholder="e.g. CED Rm 101" 
-                                        required 
+                                    <input
+                                        type="text"
+                                        value={data.room_or_location}
+                                        onChange={e => setData('room_or_location', e.target.value)}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl shadow-sm text-sm py-3 px-4 outline-none focus:ring-yellow-500 focus:bg-white transition-colors"
+                                        placeholder="e.g. CED Rm 101"
+                                        required
                                     />
                                     {errors.room_or_location && <p className="text-red-500 text-xs mt-1">{errors.room_or_location}</p>}
                                 </div>
@@ -370,94 +379,109 @@ export default function Schedule({ faculty }) {
                                 </div>
                                 <h4 className="hidden print:block text-lg font-bold text-slate-900 mb-4 border-b border-slate-200 pb-2">Weekly Schedule</h4>
 
+                                {scheduleError && (
+                                    <p className="text-red-500 text-xs font-bold mb-3 print:hidden">{scheduleError}</p>
+                                )}
+
                                 {data.weekly_schedule && data.weekly_schedule.length > 0 ? (
                                     <>
                                         <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 print:hidden">
-                                            {data.weekly_schedule.map((block, index) => (
-                                                <div key={index} className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                                                    <div className="flex flex-wrap sm:flex-nowrap gap-3 items-center">
-                                                        <select
-                                                            value={block.day}
-                                                            onChange={e => updateScheduleBlock(index, 'day', e.target.value)}
-                                                            className="flex-1 sm:w-auto border border-slate-300 bg-white rounded-xl text-sm py-2 px-3 outline-none focus:ring-yellow-400 focus:border-yellow-400 shadow-sm"
-                                                            required
-                                                        >
-                                                            <option value="Monday">Monday</option>
-                                                            <option value="Tuesday">Tuesday</option>
-                                                            <option value="Wednesday">Wednesday</option>
-                                                            <option value="Thursday">Thursday</option>
-                                                            <option value="Friday">Friday</option>
-                                                            <option value="Saturday">Saturday</option>
-                                                        </select>
+                                            {data.weekly_schedule.map((block, index) => {
+                                                const blockError = getBlockError(index);
 
-                                                        <input
-                                                            type="time"
-                                                            value={block.start_time}
-                                                            onChange={e => updateScheduleBlock(index, 'start_time', e.target.value)}
-                                                            className="flex-1 sm:w-auto border border-slate-300 bg-white rounded-xl text-sm py-2 px-2 outline-none focus:ring-yellow-400 focus:border-yellow-400 shadow-sm"
-                                                            required
-                                                        />
-                                                        <span className="text-slate-400 text-xs font-bold">to</span>
-                                                        <input
-                                                            type="time"
-                                                            value={block.end_time}
-                                                            onChange={e => updateScheduleBlock(index, 'end_time', e.target.value)}
-                                                            className="flex-1 sm:w-auto border border-slate-300 bg-white rounded-xl text-sm py-2 px-2 outline-none focus:ring-yellow-400 focus:border-yellow-400 shadow-sm"
-                                                            required
-                                                        />
+                                                return (
+                                                    <div
+                                                        key={index}
+                                                        className={`bg-slate-50 p-4 rounded-xl border space-y-3 ${blockError ? 'border-red-300' : 'border-slate-200'}`}
+                                                    >
+                                                        <div className="flex flex-wrap sm:flex-nowrap gap-3 items-center">
+                                                            <select
+                                                                value={block.day}
+                                                                onChange={e => updateScheduleBlock(index, 'day', e.target.value)}
+                                                                className="flex-1 sm:w-auto border border-slate-300 bg-white rounded-xl text-sm py-2 px-3 outline-none focus:ring-yellow-400 focus:border-yellow-400 shadow-sm"
+                                                                required
+                                                            >
+                                                                <option value="Monday">Monday</option>
+                                                                <option value="Tuesday">Tuesday</option>
+                                                                <option value="Wednesday">Wednesday</option>
+                                                                <option value="Thursday">Thursday</option>
+                                                                <option value="Friday">Friday</option>
+                                                                <option value="Saturday">Saturday</option>
+                                                            </select>
 
-                                                        <select
-                                                            value={block.type || 'class'}
-                                                            onChange={e => updateScheduleBlock(index, 'type', e.target.value)}
-                                                            className="flex-1 sm:w-auto border border-slate-300 bg-white rounded-xl text-sm py-2 px-3 outline-none focus:ring-yellow-400 focus:border-yellow-400 shadow-sm"
-                                                            title="Block type"
-                                                            required
-                                                        >
-                                                            <option value="class">Class</option>
-                                                            <option value="consultation">Consultation</option>
-                                                            <option value="other">Other</option>
-                                                        </select>
+                                                            <input
+                                                                type="time"
+                                                                value={block.start_time}
+                                                                onChange={e => updateScheduleBlock(index, 'start_time', e.target.value)}
+                                                                className="flex-1 sm:w-auto border border-slate-300 bg-white rounded-xl text-sm py-2 px-2 outline-none focus:ring-yellow-400 focus:border-yellow-400 shadow-sm"
+                                                                required
+                                                            />
+                                                            <span className="text-slate-400 text-xs font-bold">to</span>
+                                                            <input
+                                                                type="time"
+                                                                value={block.end_time}
+                                                                onChange={e => updateScheduleBlock(index, 'end_time', e.target.value)}
+                                                                className="flex-1 sm:w-auto border border-slate-300 bg-white rounded-xl text-sm py-2 px-2 outline-none focus:ring-yellow-400 focus:border-yellow-400 shadow-sm"
+                                                                required
+                                                            />
 
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => removeScheduleBlock(index)}
-                                                            className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors ml-auto sm:ml-0 print:hidden"
-                                                            title="Remove Block"
-                                                        >
-                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                        </button>
+                                                            <select
+                                                                value={block.type || 'class'}
+                                                                onChange={e => updateScheduleBlock(index, 'type', e.target.value)}
+                                                                className="flex-1 sm:w-auto border border-slate-300 bg-white rounded-xl text-sm py-2 px-3 outline-none focus:ring-yellow-400 focus:border-yellow-400 shadow-sm"
+                                                                title="Block type"
+                                                                required
+                                                            >
+                                                                <option value="class">Class</option>
+                                                                <option value="consultation">Consultation</option>
+                                                                <option value="other">Other</option>
+                                                            </select>
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeScheduleBlock(index)}
+                                                                className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors ml-auto sm:ml-0 print:hidden"
+                                                                title="Remove Block"
+                                                            >
+                                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="flex flex-wrap sm:flex-nowrap gap-3 items-center">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Room (e.g. CED 105)"
+                                                                value={block.room}
+                                                                onChange={e => updateScheduleBlock(index, 'room', e.target.value)}
+                                                                className="flex-1 border border-slate-300 bg-white rounded-xl text-sm py-2 px-3 outline-none focus:ring-yellow-400 focus:border-yellow-400 shadow-sm"
+                                                                required
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Course (e.g. TLEIA 2102)"
+                                                                value={block.course_code || ''}
+                                                                onChange={e => updateScheduleBlock(index, 'course_code', e.target.value)}
+                                                                className="flex-1 border border-slate-300 bg-white rounded-xl text-sm py-2 px-3 outline-none focus:ring-yellow-400 focus:border-yellow-400 shadow-sm disabled:bg-slate-100 disabled:text-slate-400"
+                                                                disabled={block.type !== 'class'}
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Section (e.g. BTLED-IA_2-1)"
+                                                                value={block.section_code || ''}
+                                                                onChange={e => updateScheduleBlock(index, 'section_code', e.target.value)}
+                                                                className="flex-1 border border-slate-300 bg-white rounded-xl text-sm py-2 px-3 outline-none focus:ring-yellow-400 focus:border-yellow-400 shadow-sm disabled:bg-slate-100 disabled:text-slate-400"
+                                                                disabled={block.type !== 'class'}
+                                                            />
+                                                        </div>
+
+                                                        {blockError && (
+                                                            <p className="text-red-500 text-xs font-bold">{blockError}</p>
+                                                        )}
                                                     </div>
-
-                                                    <div className="flex flex-wrap sm:flex-nowrap gap-3 items-center">
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Room (e.g. CED 105)"
-                                                            value={block.room}
-                                                            onChange={e => updateScheduleBlock(index, 'room', e.target.value)}
-                                                            className="flex-1 border border-slate-300 bg-white rounded-xl text-sm py-2 px-3 outline-none focus:ring-yellow-400 focus:border-yellow-400 shadow-sm"
-                                                            required
-                                                        />
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Course (e.g. TLEIA 2102)"
-                                                            value={block.course_code || ''}
-                                                            onChange={e => updateScheduleBlock(index, 'course_code', e.target.value)}
-                                                            className="flex-1 border border-slate-300 bg-white rounded-xl text-sm py-2 px-3 outline-none focus:ring-yellow-400 focus:border-yellow-400 shadow-sm disabled:bg-slate-100 disabled:text-slate-400"
-                                                            disabled={block.type !== 'class'}
-                                                        />
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Section (e.g. BTLED-IA_2-1)"
-                                                            value={block.section_code || ''}
-                                                            onChange={e => updateScheduleBlock(index, 'section_code', e.target.value)}
-                                                            className="flex-1 border border-slate-300 bg-white rounded-xl text-sm py-2 px-3 outline-none focus:ring-yellow-400 focus:border-yellow-400 shadow-sm disabled:bg-slate-100 disabled:text-slate-400"
-                                                            disabled={block.type !== 'class'}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
-                                        
+
                                         {/* Print Layout Table */}
                                         <div className="hidden print:block">
                                             <table className="w-full border-collapse">
