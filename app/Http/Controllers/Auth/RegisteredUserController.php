@@ -9,7 +9,6 @@ use App\Models\Course;
 use App\Models\User;
 use App\Notifications\AlumniVerificationSubmitted;
 use App\Rules\ValidatesUserAccount;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -99,8 +98,8 @@ class RegisteredUserController extends Controller
             }
         }
 
-        event(new Registered($user));
-
+        // No Registered event: its only listener builds a signed `verification.verify`
+        // URL, and verification here is OTP-based (OtpVerificationController).
         Auth::login($user);
 
         return Inertia::location(route('verification.notice'));

@@ -1,9 +1,8 @@
 <?php
 
+use App\Mail\OtpMail;
 use App\Models\User;
-use Illuminate\Auth\Events\Verified;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Mail;
 
 test('email verification screen can be rendered', function () {
     $user = User::factory()->unverified()->create();
@@ -13,34 +12,67 @@ test('email verification screen can be rendered', function () {
     $response->assertStatus(200);
 });
 
-test('email can be verified', function () {
-    $user = User::factory()->unverified()->create();
+test('email can be verified with a valid code', function () {
+    $user = User::factory()->unverified()->create([
+        'otp' => 123456,
+        'otp_expires_at' => now()->addMinutes(10),
+    ]);
 
-    Event::fake();
+    $response = $this->actingAs($user)->post('/verify-email', ['otp' => '123456']);
 
-    $verificationUrl = URL::temporarySignedRoute(
-        'verification.verify',
-        now()->addMinutes(60),
-        ['id' => $user->id, 'hash' => sha1($user->email)]
-    );
-
-    $response = $this->actingAs($user)->get($verificationUrl);
-
-    Event::assertDispatched(Verified::class);
+    $response->assertRedirect(route('user.dashboard', absolute: false));
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
-    $response->assertRedirect(route('user.dashboard', absolute: false).'?verified=1');
+    expect($user->fresh()->otp)->toBeNull();
+    expect($user->fresh()->otp_expires_at)->toBeNull();
 });
 
-test('email is not verified with invalid hash', function () {
-    $user = User::factory()->unverified()->create();
+test('email is not verified with an invalid code', function () {
+    $user = User::factory()->unverified()->create([
+        'otp' => 123456,
+        'otp_expires_at' => now()->addMinutes(10),
+    ]);
 
-    $verificationUrl = URL::temporarySignedRoute(
-        'verification.verify',
-        now()->addMinutes(60),
-        ['id' => $user->id, 'hash' => sha1('wrong-email')]
-    );
+    $response = $this->actingAs($user)->post('/verify-email', ['otp' => '654321']);
 
-    $this->actingAs($user)->get($verificationUrl);
-
+    $response->assertSessionHasErrors('otp');
     expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
+});
+
+test('email is not verified with an expired code', function () {
+    $user = User::factory()->unverified()->create([
+        'otp' => 123456,
+        'otp_expires_at' => now()->subMinute(),
+    ]);
+
+    $response = $this->actingAs($user)->post('/verify-email', ['otp' => '123456']);
+
+    $response->assertSessionHasErrors('otp');
+    expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
+});
+
+test('a new code is emailed while verification is still pending', function () {
+    Mail::fake();
+
+    $user = User::factory()->unverified()->create([
+        'otp' => null,
+        'otp_expires_at' => null,
+    ]);
+
+    $response = $this->actingAs($user)->post('/email/verification-notification');
+
+    $response->assertRedirect();
+    Mail::assertSent(OtpMail::class);
+    expect($user->fresh()->otp)->not->toBeNull();
+    expect($user->fresh()->otp_expires_at)->not->toBeNull();
+});
+
+test('no new code is emailed once the address is verified', function () {
+    Mail::fake();
+
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->post('/email/verification-notification');
+
+    $response->assertRedirect(route('user.dashboard', absolute: false));
+    Mail::assertNothingSent();
 });
