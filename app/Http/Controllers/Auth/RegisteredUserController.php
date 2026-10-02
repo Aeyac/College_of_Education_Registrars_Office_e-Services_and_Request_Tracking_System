@@ -7,31 +7,22 @@ use App\Mail\OtpMail;
 use App\Models\AlumniVerification;
 use App\Models\Course;
 use App\Models\User;
-use Closure;
+use App\Notifications\AlumniVerificationSubmitted;
+use App\Rules\ValidatesUserAccount;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Notifications\AlumniVerificationSubmitted;
-use Illuminate\Support\Facades\Notification;
 
 class RegisteredUserController extends Controller
 {
-    // irreg students max
-    private const MAX_YEAR_LEVEL = 6;
-
-    // Month when a new academic year starts, and everyone's year level goes up by one.
-    private const ACADEMIC_YEAR_START_MONTH = 6; // June
-
-    private const MIN_BATCH_YEAR = 1900;
+    // Same rules the admin User Management screen applies when adding an account.
+    use ValidatesUserAccount;
 
     private const OTP_TTL_MINUTES = 10;
 
@@ -44,70 +35,12 @@ class RegisteredUserController extends Controller
 
     public function store(Request $request): \Symfony\Component\HttpFoundation\Response
     {
-        $request->merge(['email' => Str::lower(trim((string) $request->input('email')))]);
+        $this->normalizeEmail($request);
 
-        $isStudent = $request->input('user_type') === 'student';
-        $isAlumni = $request->input('user_type') === 'alumni';
-        $currentYear = now()->year;
-
-        $emailRules = ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class];
-        if ($isStudent) {
-            $emailRules[] = 'regex:/@clsu2?\.edu\.ph$/';
-        }
-
-        $validated = $request->validate([
-            'first_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
-            'email' => $emailRules,
-            'user_type' => ['required', Rule::in(['student', 'alumni', 'faculty'])],
-            'student_number' => [
-                Rule::requiredIf($isStudent),
-                'nullable',
-                'string',
-                'regex:/^\d{2}-\d{4}$/',
-                Rule::unique(User::class, 'student_number'),
-                function (string $attribute, mixed $value, Closure $fail) {
-                    if ($this->yearLevelFromStudentNumber($value) === null) {
-                        $academicYear = $this->academicYear();
-
-                        $fail(sprintf(
-                            'The student number must start with %02d to %02d.',
-                            ($academicYear - (self::MAX_YEAR_LEVEL - 1)) % 100,
-                            $academicYear % 100
-                        ));
-                    }
-                },
-            ],
-            'course_id' => [$request->input('user_type') === 'faculty' ? 'nullable' : 'required', 'exists:courses,id'],
-            // The major must belong to the selected course.
-            'major_id' => [
-                'nullable',
-                Rule::exists('majors', 'id')->where('course_id', $request->input('course_id')),
-            ],
-            'batch_year' => [
-                Rule::requiredIf($isAlumni),
-                'nullable',
-                'integer',
-                'digits:4',
-                'min:' . self::MIN_BATCH_YEAR,
-                'max:' . $currentYear,
-            ],
-            'contact_number' => ['required', 'string', 'regex:/^\+[1-9]\d{7,14}$/'],
-            'password' => ['required', 'confirmed', Password::defaults()],
-            'proof' => [
-                Rule::requiredIf($isAlumni),
-                'nullable',
-                'file',
-                'mimes:jpg,jpeg,png,pdf',
-                'max:10240', // 10MB
-            ],
-        ], [
-            'batch_year.max' => "The batch year cannot be in the future (latest: {$currentYear}).",
-            'batch_year.min' => 'The batch year cannot be earlier than ' . self::MIN_BATCH_YEAR . '.',
-            'batch_year.digits' => 'The batch year must be a 4-digit year.',
-        ]);
+        $validated = $request->validate($this->accountRules($request), $this->accountMessages());
 
         $isStudent = $validated['user_type'] === 'student';
+        $isAlumni = $validated['user_type'] === 'alumni';
         $otp = random_int(100000, 999999);
 
         // Everything is saved together, or nothing is (no half-created accounts).
@@ -141,7 +74,7 @@ class RegisteredUserController extends Controller
                 ]);
             } elseif ($validated['user_type'] === 'faculty') {
                 $user->facultyProfile()->create([
-                    'name' => $validated['first_name'] . ' ' . $validated['last_name'],
+                    'name' => $validated['first_name'].' '.$validated['last_name'],
                     'role' => 'Not specified',
                     'department_or_program' => 'Not specified',
                     'room_or_location' => 'Not specified',
@@ -171,20 +104,5 @@ class RegisteredUserController extends Controller
         Auth::login($user);
 
         return Inertia::location(route('verification.notice'));
-    }
-
-    private function academicYear(): int
-    {
-        $now = now();
-
-        return $now->month >= self::ACADEMIC_YEAR_START_MONTH ? $now->year : $now->year - 1;
-    }
-
-    private function yearLevelFromStudentNumber(string $studentNumber): ?int
-    {
-        $enrollmentYear = 2000 + (int) substr($studentNumber, 0, 2);
-        $yearLevel = $this->academicYear() - $enrollmentYear + 1;
-
-        return $yearLevel >= 1 && $yearLevel <= self::MAX_YEAR_LEVEL ? $yearLevel : null;
     }
 }

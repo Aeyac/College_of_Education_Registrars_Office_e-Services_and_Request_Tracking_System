@@ -16,6 +16,56 @@ const SORT_LABELS = {
 
 const inputCls = 'w-full border-slate-300 rounded-xl text-sm focus:ring-yellow-400 focus:border-yellow-400';
 
+// Mirrors the helpers the registration page (pages/Auth/Register.jsx) uses, so both
+// forms derive the same messages before the server ever sees the payload.
+const MAX_YEAR_LEVEL = 6;
+const ACADEMIC_YEAR_START_MONTH = 6; // June
+const MIN_BATCH_YEAR = 1900;
+const TODAY = new Date();
+const CURRENT_YEAR = TODAY.getFullYear();
+// Jan-May still belongs to the academic year that started last June.
+const ACADEMIC_YEAR = TODAY.getMonth() + 1 >= ACADEMIC_YEAR_START_MONTH ? CURRENT_YEAR : CURRENT_YEAR - 1;
+const MIN_YEAR = ACADEMIC_YEAR - (MAX_YEAR_LEVEL - 1);
+const toYearCode = (year) => String(year % 100).padStart(2, '0');
+const YEAR_CODE_RANGE = `${toYearCode(MIN_YEAR)}–${toYearCode(ACADEMIC_YEAR)}`;
+const YEAR_LABELS = { 1: '1st Year', 2: '2nd Year', 3: '3rd Year' };
+
+// "26-1234" -> 1 (Dec 2026 - May 2027), 2 (from June 2027). Null if out of range.
+const getYearLevel = (studentNumber) => {
+    if (!studentNumber || studentNumber.length < 2) return null;
+    const enrollmentYear = 2000 + Number(studentNumber.slice(0, 2));
+    const level = ACADEMIC_YEAR - enrollmentYear + 1;
+    return level >= 1 && level <= MAX_YEAR_LEVEL ? level : null;
+};
+
+const formatYearLevel = (level) => (level ? (YEAR_LABELS[level] ?? `${level}th Year`) : '');
+
+// Error message for a complete (4-digit) batch year, or null if it's valid / still being typed.
+const getBatchYearError = (value) => {
+    if (!value || String(value).length < 4) return null;
+    const year = Number(value);
+    if (year > CURRENT_YEAR) return `Batch year cannot be in the future (latest: ${CURRENT_YEAR}).`;
+    if (year < MIN_BATCH_YEAR) return `Batch year cannot be earlier than ${MIN_BATCH_YEAR}.`;
+    return null;
+};
+
+const formatStudentNumber = (raw) => {
+    const digits = raw.replace(/\D/g, '').slice(0, 6);
+    return digits.length > 2 ? `${digits.slice(0, 2)}-${digits.slice(2)}` : digits;
+};
+
+// Stored value is "+639171234567"; this only affects what is displayed.
+const formatContactNumber = (value) => {
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+    if (!digits.startsWith('63')) return `+${digits}`;
+    const rest = digits.slice(2);
+    const groups = [rest.slice(0, 3), rest.slice(3, 6), rest.slice(6)].filter(Boolean);
+    return ['+63', ...groups].join(' ');
+};
+
+const Hint = ({ children }) => <p className="text-[11px] text-slate-400 mt-1">{children}</p>;
+
 // Created once instead of on every render
 const MySwal = Swal.mixin({
     customClass: {
@@ -101,13 +151,18 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
         student_number: '',
         course_id: '',
         major_id: '',
-        year_level: '',
         batch_year: '',
         password: '',
+        password_confirmation: '',
     });
 
     const selectedCourse = courses.find((c) => c.id === Number(data.course_id));
     const availableMajors = selectedCourse?.majors ?? [];
+
+    // Mirrors the server-side year level derivation used by registration.
+    const derivedYearLevel = getYearLevel(data.student_number ?? '');
+    const studentNumberError = data.student_number.length >= 2 && !derivedYearLevel ? `Student number must start with ${YEAR_CODE_RANGE}.` : null;
+    const batchYearError = data.user_type === 'alumni' ? getBatchYearError(data.batch_year) : null;
 
     // ---------- Server-side filtering / sorting ----------
     const applyFilters = (overrides = {}) => {
@@ -180,9 +235,24 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
         setData((prev) => ({ ...prev, course_id: e.target.value, major_id: '' }));
     };
 
+    // Stored as "+639171234567" so the server's E.164 regex accepts it, then displayed grouped.
+    const handleContactNumberChange = (e) => {
+        let digits = e.target.value.replace(/\D/g, '');
+
+        // Local format 09XX... -> international 639XX...
+        if (digits.startsWith('0')) digits = `63${digits.slice(1)}`;
+
+        digits = digits.slice(0, 12);
+        setData('contact_number', digits ? `+${digits}` : '');
+    };
+
     const handleSave = (e) => {
         e.preventDefault();
         const isEditing = !!data.id;
+
+        // The same guards the registration page applies before posting.
+        if (data.user_type === 'student' && !derivedYearLevel) return;
+        if (data.user_type === 'alumni' && batchYearError) return;
 
         const onSuccess = () => {
             closeModal();
@@ -195,6 +265,7 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
             });
         };
 
+        // year_level is derived server-side from the student number, as in registration.
         if (isEditing) {
             put(`/admin/users/${data.id}`, { onSuccess, preserveScroll: true });
         } else {
@@ -278,9 +349,9 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
             student_number: user.student_id || '',
             course_id: user.course_id || '',
             major_id: user.major_id || '',
-            year_level: user.year_level || '',
             batch_year: user.batch_year || '',
             password: '',
+            password_confirmation: '',
         });
         setIsModalOpen(true);
     };
@@ -573,10 +644,29 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <Field label="Email Address" error={errors.email}>
-                                        <input type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} className={inputCls} required />
+                                        <input
+                                            type="email"
+                                            value={data.email}
+                                            onChange={(e) => setData('email', e.target.value.toLowerCase().trim())}
+                                            className={inputCls}
+                                            placeholder={data.user_type === 'student' ? 'username@clsu.edu.ph' : 'name@example.com'}
+                                            autoComplete="off"
+                                            required
+                                        />
+                                        {data.user_type === 'student' && <Hint>Please use the official CLSU email address.</Hint>}
                                     </Field>
                                     <Field label="Contact Number" error={errors.contact_number}>
-                                        <input type="text" value={data.contact_number} onChange={(e) => setData('contact_number', e.target.value)} className={inputCls} />
+                                        <input
+                                            type="tel"
+                                            value={formatContactNumber(data.contact_number)}
+                                            onChange={handleContactNumberChange}
+                                            className={inputCls}
+                                            placeholder="+63 917 123 4567"
+                                            inputMode="tel"
+                                            autoComplete="tel"
+                                            maxLength={16}
+                                            required
+                                        />
                                     </Field>
                                 </div>
 
@@ -584,7 +674,7 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
                                     <Field label="Account Type" error={errors.user_type}>
                                         <select
                                             value={data.user_type}
-                                            onChange={(e) => setData((prev) => ({ ...prev, user_type: e.target.value, student_number: '', year_level: '', batch_year: '', course_id: '', major_id: '' }))}
+                                            onChange={(e) => setData((prev) => ({ ...prev, user_type: e.target.value, student_number: '', batch_year: '', course_id: '', major_id: '' }))}
                                             className={inputCls}
                                         >
                                             <option value="student">Student</option>
@@ -595,13 +685,37 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
                                     </Field>
 
                                     {data.user_type === 'student' && (
-                                        <Field label="Student Number" error={errors.student_number}>
-                                            <input type="text" value={data.student_number} onChange={(e) => setData('student_number', e.target.value)} className={inputCls} required />
+                                        <Field label="Student Number" error={errors.student_number || studentNumberError}>
+                                            <input
+                                                type="text"
+                                                value={data.student_number}
+                                                onChange={(e) => setData('student_number', formatStudentNumber(e.target.value))}
+                                                className={inputCls}
+                                                placeholder="26-1234"
+                                                inputMode="numeric"
+                                                pattern="\d{2}-\d{4}"
+                                                title="Format: YY-NNNN"
+                                                maxLength={7}
+                                                required
+                                            />
+                                            <Hint>Format YY-NNNN, starting {YEAR_CODE_RANGE}.</Hint>
                                         </Field>
                                     )}
                                     {data.user_type === 'alumni' && (
-                                        <Field label="Batch Year" error={errors.batch_year}>
-                                            <input type="number" value={data.batch_year} onChange={(e) => setData('batch_year', e.target.value)} className={inputCls} required />
+                                        <Field label="Batch Year" error={errors.batch_year || batchYearError}>
+                                            <input
+                                                type="text"
+                                                value={data.batch_year}
+                                                onChange={(e) => setData('batch_year', e.target.value.replace(/\D/g, '').slice(0, 4))}
+                                                className={inputCls}
+                                                placeholder="2024"
+                                                inputMode="numeric"
+                                                pattern="\d{4}"
+                                                title="4-digit year"
+                                                maxLength={4}
+                                                required
+                                            />
+                                            <Hint>Cannot be in the future (latest: {CURRENT_YEAR}).</Hint>
                                         </Field>
                                     )}
                                 </div>
@@ -631,10 +745,15 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
 
                                             {data.user_type === 'student' && (
                                                 <Field label="Year Level" error={errors.year_level}>
-                                                    <select value={data.year_level} onChange={(e) => setData('year_level', e.target.value)} className={inputCls} required>
-                                                        <option value="" disabled>Select year</option>
-                                                        {[1, 2, 3, 4, 5].map((y) => <option key={y} value={y}>{y}</option>)}
-                                                    </select>
+                                                    <input
+                                                        type="text"
+                                                        value={formatYearLevel(derivedYearLevel)}
+                                                        readOnly
+                                                        tabIndex={-1}
+                                                        placeholder="Automatically determined from the student number"
+                                                        className={`${inputCls} bg-slate-100 cursor-not-allowed`}
+                                                    />
+                                                    <Hint>Derived from the student number, same as registration.</Hint>
                                                 </Field>
                                             )}
                                         </div>
@@ -642,17 +761,34 @@ export default function UserManagement({ users, courses = [], filters = {} }) {
                                 )}
 
                                 <div className="border-t border-slate-100 pt-4 mt-2">
-                                    <Field label={data.id ? 'Change Password (Optional)' : 'Password'} error={errors.password}>
-                                        <input
-                                            type="password"
-                                            value={data.password}
-                                            onChange={(e) => setData('password', e.target.value)}
-                                            className={inputCls}
-                                            placeholder={data.id ? 'Leave blank to keep current' : 'Create password (min. 8 characters)'}
-                                            autoComplete="new-password"
-                                            required={!data.id}
-                                        />
-                                    </Field>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <Field label={data.id ? 'Change Password (Optional)' : 'Password'} error={errors.password}>
+                                            <input
+                                                type="password"
+                                                value={data.password}
+                                                onChange={(e) => setData('password', e.target.value)}
+                                                className={inputCls}
+                                                placeholder={data.id ? 'Leave blank to keep current' : 'Create password (min. 8 characters)'}
+                                                autoComplete="new-password"
+                                                required={!data.id}
+                                            />
+                                        </Field>
+
+                                        <Field
+                                            label={data.id ? 'Confirm New Password' : 'Confirm Password'}
+                                            error={errors.password_confirmation}
+                                        >
+                                            <input
+                                                type="password"
+                                                value={data.password_confirmation}
+                                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                                className={inputCls}
+                                                placeholder={data.id ? 'Only needed if changing the password' : 'Re-enter password'}
+                                                autoComplete="new-password"
+                                                required={!data.id || !!data.password}
+                                            />
+                                        </Field>
+                                    </div>
                                 </div>
 
                                 <div className="pt-2 flex gap-3">

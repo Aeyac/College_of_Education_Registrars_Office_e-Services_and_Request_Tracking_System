@@ -301,9 +301,15 @@ export default function AlumniVerifications({ alumni, courses = [], filters: raw
 
                             <div className="border-t border-slate-100 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <ActionLink variant="secondary" icon={ICONS.eye} href={alum.proof_url}>
-                                        View Proof
-                                    </ActionLink>
+                                    {alum.proof_url ? (
+                                        <ActionLink variant="secondary" icon={ICONS.eye} href={alum.proof_url}>
+                                            View Proof
+                                        </ActionLink>
+                                    ) : (
+                                        <span className="text-xs font-bold uppercase tracking-wider text-slate-400 border border-slate-200 bg-slate-50 rounded-lg px-3 py-2">
+                                            No proof on file
+                                        </span>
+                                    )}
                                     <ActionButton variant="primary" icon={ICONS.shield} onClick={() => setSelectedAlumni(alum)}>
                                         Review
                                     </ActionButton>
@@ -378,9 +384,13 @@ export default function AlumniVerifications({ alumni, courses = [], filters: raw
                                         </td>
                                         <td className="py-4 px-6 text-sm text-slate-600 whitespace-nowrap">{alum.batch}</td>
                                         <td className="py-4 px-6 text-sm whitespace-nowrap">
-                                            <a href={alum.proof_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-blue-700 font-bold bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors">
-                                                View Proof
-                                            </a>
+                                            {alum.proof_url ? (
+                                                <a href={alum.proof_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-blue-700 font-bold bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors">
+                                                    View Proof
+                                                </a>
+                                            ) : (
+                                                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">No proof on file</span>
+                                            )}
                                         </td>
                                         <td className="py-4 px-6 whitespace-nowrap">
                                             <StatusBadge label={alum.status} />
@@ -447,9 +457,15 @@ export default function AlumniVerifications({ alumni, courses = [], filters: raw
                             <h4 className="font-extrabold text-slate-900 text-lg mb-2 break-words">{selectedAlumni.name}</h4>
                             <p className="text-sm text-slate-500 mb-6">Review the uploaded proof to grant access to certificate requests.</p>
 
-                            <a href={selectedAlumni.proof_url} target="_blank" rel="noopener noreferrer" className="inline-block px-4 py-3 bg-slate-50 text-blue-700 font-bold rounded-xl text-sm mb-6 w-full border border-slate-200 truncate shadow-sm hover:bg-slate-100">
-                                {selectedAlumni.proof}
-                            </a>
+                            {selectedAlumni.proof_url ? (
+                                <a href={selectedAlumni.proof_url} target="_blank" rel="noopener noreferrer" className="inline-block px-4 py-3 bg-slate-50 text-blue-700 font-bold rounded-xl text-sm mb-6 w-full border border-slate-200 truncate shadow-sm hover:bg-slate-100">
+                                    {selectedAlumni.proof}
+                                </a>
+                            ) : (
+                                <p className="px-4 py-3 bg-slate-50 text-slate-500 font-bold rounded-xl text-sm mb-6 w-full border border-slate-200 truncate shadow-sm">
+                                    No proof on file
+                                </p>
+                            )}
 
                             <div className="flex gap-3">
                                 <button

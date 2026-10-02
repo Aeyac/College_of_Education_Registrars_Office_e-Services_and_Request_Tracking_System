@@ -35,13 +35,13 @@ class AlumniController extends Controller
             'direction' => $request->query('direction', 'desc'),
         ];
 
-        if (!in_array($filters['status'], ['all', 'pending', 'verified', 'rejected'], true)) {
+        if (! in_array($filters['status'], ['all', 'pending', 'verified', 'rejected'], true)) {
             $filters['status'] = 'pending';
         }
-        if (!array_key_exists($filters['sort'], $sorts)) {
+        if (! array_key_exists($filters['sort'], $sorts)) {
             $filters['sort'] = 'id';
         }
-        if (!in_array($filters['direction'], ['asc', 'desc'], true)) {
+        if (! in_array($filters['direction'], ['asc', 'desc'], true)) {
             $filters['direction'] = 'desc';
         }
 
@@ -62,12 +62,12 @@ class AlumniController extends Controller
             ->leftJoin('users', 'users.id', '=', 'alumni_verifications.user_id')
             ->leftJoin('courses', 'courses.id', '=', 'users.course_id')
             ->leftJoin('majors', 'majors.id', '=', 'users.major_id')
-            ->when($filters['status'] !== 'all', fn($q) => $q->where('alumni_verifications.status', $filters['status']))
-            ->when($filters['course'] !== 'all', fn($q) => $q->where('users.course_id', $filters['course']))
+            ->when($filters['status'] !== 'all', fn ($q) => $q->where('alumni_verifications.status', $filters['status']))
+            ->when($filters['course'] !== 'all', fn ($q) => $q->where('users.course_id', $filters['course']))
             ->when($filters['search'] !== '', function ($q) use ($filters) {
                 // Every word must match the first name, last name, major, or ID
                 foreach (preg_split('/\s+/', $filters['search']) as $term) {
-                    $like = '%' . addcslashes($term, '%_\\') . '%';
+                    $like = '%'.addcslashes($term, '%_\\').'%';
                     $q->where(function ($w) use ($like, $term) {
                         $w->where('users.first_name', 'like', $like)
                             ->orWhere('users.last_name', 'like', $like)
@@ -93,21 +93,22 @@ class AlumniController extends Controller
             ->with(['user:id,first_name,last_name,course_id,major_id,batch_year', 'user.course:id,label', 'user.major:id,label'])
             ->paginate(self::PER_PAGE, ['*'], 'page', $page)
             ->onEachSide(1)
-            ->appends(array_filter($filters, fn($v) => $v !== ''));
+            ->appends(array_filter($filters, fn ($v) => $v !== ''));
 
         // Verifying the last row of a page leaves it empty, so jump to the new last page.
         if ($paginator->isEmpty() && $paginator->currentPage() > 1) {
             return redirect()->to($request->fullUrlWithQuery(['page' => $paginator->lastPage()]));
         }
 
-        $paginator->through(fn($a) => [
+        $paginator->through(fn ($a) => [
             'id' => $a->id,
-            'name' => $a->user ? $a->user->first_name . ' ' . $a->user->last_name : 'Unknown',
+            'name' => $a->user ? $a->user->first_name.' '.$a->user->last_name : 'Unknown',
             'course' => $a->user?->course?->label ?? 'N/A',
             'major' => $a->user?->major?->label ?? 'N/A',
             'batch' => $a->user?->batch_year ?? 'N/A',
-            'proof' => basename($a->path),
-            'proof_url' => route('admin.alumni.proof', $a->id),
+            // Admin-created alumni are verified without a proof on file.
+            'proof' => $a->path ? basename($a->path) : null,
+            'proof_url' => $a->path ? route('admin.alumni.proof', $a->id) : null,
             'status' => ucfirst($a->status),
         ]);
 
@@ -150,7 +151,7 @@ class AlumniController extends Controller
     {
         $alumni = AlumniVerification::findOrFail($id);
 
-        if (!Storage::disk('private')->exists($alumni->path)) {
+        if (! $alumni->path || ! Storage::disk('private')->exists($alumni->path)) {
             abort(404);
         }
 

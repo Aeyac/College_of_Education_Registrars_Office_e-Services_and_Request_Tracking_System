@@ -8,12 +8,12 @@ use App\Models\CertificateRequest;
 use App\Models\Course;
 use App\Models\Feedback;
 use App\Models\Inquiry;
+use App\Models\InquiryMessage;
 use App\Models\InternshipRequestDetail;
 use App\Models\RequestDocument;
-use App\Models\RequestStatus;
 use App\Models\RequestStatusHistory;
 use App\Models\User;
-use App\Notifications\RequestStatusChanged;
+use App\Rules\ValidatesUserAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -22,6 +22,9 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
+    // Same rules the public registration page applies.
+    use ValidatesUserAccount;
+
     private const PER_PAGE = 15;
 
     // Whitelist: the sort key comes from the URL, so never trust it directly
@@ -50,7 +53,7 @@ class UserController extends Controller
             ->whereIn('user_type', ['student', 'alumni', 'admin', 'faculty']);
 
         if ($q !== '') {
-            $like = '%' . addcslashes($q, '\\%_') . '%';
+            $like = '%'.addcslashes($q, '\\%_').'%';
 
             $query->where(function ($w) use ($like) {
                 $w->where('first_name', 'like', $like)
@@ -58,8 +61,8 @@ class UserController extends Controller
                     ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", [$like])
                     ->orWhere('student_number', 'like', $like)
                     ->orWhere('email', 'like', $like)
-                    ->orWhereHas('course', fn($c) => $c->where('label', 'like', $like))
-                    ->orWhereHas('major', fn($m) => $m->where('label', 'like', $like));
+                    ->orWhereHas('course', fn ($c) => $c->where('label', 'like', $like))
+                    ->orWhereHas('major', fn ($m) => $m->where('label', 'like', $like));
             });
         }
 
@@ -96,11 +99,11 @@ class UserController extends Controller
         // After deleting the last row on a page, go to the last valid page
         if ($users->isEmpty() && $users->currentPage() > 1) {
             return redirect()->to(
-                $request->url() . '?' . http_build_query(array_merge($request->query(), ['page' => $users->lastPage()]))
+                $request->url().'?'.http_build_query(array_merge($request->query(), ['page' => $users->lastPage()]))
             );
         }
 
-        $users->through(fn($u) => [
+        $users->through(fn ($u) => [
             'id' => $u->id,
             'student_id' => $u->student_number,
             'first_name' => $u->first_name,
@@ -119,7 +122,7 @@ class UserController extends Controller
 
         return Inertia::render('Admin/UserManagement', [
             'users' => $users,
-            'courses' => fn() => Course::with('majors')->where('is_active', true)->orderBy('sort_order')->get(),
+            'courses' => fn () => Course::with('majors')->where('is_active', true)->orderBy('sort_order')->get(),
             'filters' => [
                 'q' => $q,
                 'type' => $type,
@@ -133,36 +136,61 @@ class UserController extends Controller
 
     public function storeUser(Request $request)
     {
-        $data = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'user_type' => 'required|in:student,alumni,admin,faculty',
-            'student_number' => 'nullable|string',
-            'course_id' => 'nullable|exists:courses,id',
-            'major_id' => 'nullable|exists:majors,id',
-            'year_level' => 'nullable|integer',
-            'batch_year' => 'nullable|integer',
-            'contact_number' => 'nullable|string',
-            'password' => 'required|string|min:8',
-        ]);
+        $this->normalizeEmail($request);
 
-        $data['password'] = Hash::make($data['password']);
+        // Identical to public registration, except an admin may also create an
+        // admin account, and the admin vouches for the alumni proof themselves.
+        $data = $request->validate(
+            $this->accountRules($request, ['admin'], requireProof: false),
+            $this->accountMessages()
+        );
 
-        $user = User::create($data);
+        $isStudent = $data['user_type'] === 'student';
+        $isAlumni = $data['user_type'] === 'alumni';
 
-        if ($data['user_type'] === 'faculty') {
-            $user->facultyProfile()->create([
-                'name' => trim($data['first_name'] . ' ' . $data['last_name']),
-                'role' => 'Not specified',
-                'department_or_program' => 'Not specified',
-                'room_or_location' => 'Not specified',
-                'weekly_schedule' => [],
+        DB::transaction(function () use ($data, $request, $isStudent, $isAlumni) {
+            $user = User::create([
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'email' => $data['email'],
+                'user_type' => $data['user_type'],
+                'student_number' => $isStudent ? $data['student_number'] : null,
+                'year_level' => $isStudent
+                    ? $this->yearLevelFromStudentNumber($data['student_number'])
+                    : null,
+                'batch_year' => $isStudent ? null : ($data['batch_year'] ?? null),
+                'course_id' => $data['course_id'] ?? null,
+                'major_id' => $data['major_id'] ?? null,
+                'contact_number' => $data['contact_number'],
+                'password' => Hash::make($data['password']),
             ]);
-        }
 
-        $role = Role::firstOrCreate(['name' => $data['user_type']]);
-        $user->assignRole($role);
+            if ($data['user_type'] === 'faculty') {
+                $user->facultyProfile()->create([
+                    'name' => trim($data['first_name'].' '.$data['last_name']),
+                    'role' => 'Not specified',
+                    'department_or_program' => 'Not specified',
+                    'room_or_location' => 'Not specified',
+                    'weekly_schedule' => [],
+                ]);
+            }
+
+            if ($isAlumni) {
+                // No proof is collected here, so the admin's own action is the
+                // attestation and the account is usable straight away.
+                AlumniVerification::create([
+                    'user_id' => $user->id,
+                    'document_type' => null,
+                    'path' => null,
+                    'verified_by' => $request->user()?->id,
+                    'verified_at' => now(),
+                    'status' => 'verified',
+                ]);
+            }
+
+            $role = Role::firstOrCreate(['name' => $data['user_type']]);
+            $user->assignRole($role);
+        });
 
         return back()->with('success', 'User added successfully.');
     }
@@ -171,37 +199,65 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
-        $data = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $id,
-            'user_type' => 'required|in:student,alumni,admin,faculty',
-            'student_number' => 'nullable|string',
-            'course_id' => 'nullable|exists:courses,id',
-            'major_id' => 'nullable|exists:majors,id',
-            'year_level' => 'nullable|integer',
-            'batch_year' => 'nullable|integer',
-            'contact_number' => 'nullable|string',
-        ]);
+        $this->normalizeEmail($request);
 
-        if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
-        }
+        // The same rules as adding a user, except the account keeps its own
+        // email/student number and the password may be left untouched.
+        $data = $request->validate(
+            $this->accountRules($request, ['admin'], requireProof: false, ignoreUserId: $user->id, requirePassword: false),
+            $this->accountMessages()
+        );
 
-        $user->update($data);
+        $isStudent = $data['user_type'] === 'student';
+        $isAlumni = $data['user_type'] === 'alumni';
 
-        if ($data['user_type'] === 'faculty' && !$user->facultyProfile) {
-            $user->facultyProfile()->create([
-                'name' => trim($data['first_name'] . ' ' . $data['last_name']),
-                'role' => 'Not specified',
-                'department_or_program' => 'Not specified',
-                'room_or_location' => 'Not specified',
-                'weekly_schedule' => [],
-            ]);
-        }
+        DB::transaction(function () use ($data, $request, $user, $isStudent, $isAlumni) {
+            $payload = [
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'email' => $data['email'],
+                'user_type' => $data['user_type'],
+                'student_number' => $isStudent ? $data['student_number'] : null,
+                'year_level' => $isStudent
+                    ? $this->yearLevelFromStudentNumber($data['student_number'])
+                    : null,
+                'batch_year' => $isStudent ? null : ($data['batch_year'] ?? null),
+                'course_id' => $data['course_id'] ?? null,
+                'major_id' => $data['major_id'] ?? null,
+                'contact_number' => $data['contact_number'],
+            ];
 
-        $role = Role::firstOrCreate(['name' => $data['user_type']]);
-        $user->syncRoles([$role]);
+            if ($request->filled('password')) {
+                $payload['password'] = Hash::make($data['password']);
+            }
+
+            $user->update($payload);
+
+            if ($data['user_type'] === 'faculty' && ! $user->facultyProfile) {
+                $user->facultyProfile()->create([
+                    'name' => trim($data['first_name'].' '.$data['last_name']),
+                    'role' => 'Not specified',
+                    'department_or_program' => 'Not specified',
+                    'room_or_location' => 'Not specified',
+                    'weekly_schedule' => [],
+                ]);
+            }
+
+            // Turning an account into an alumni would otherwise leave it stuck
+            // behind the verified.alumni gate with no proof to review.
+            if ($isAlumni && ! $user->alumniVerification()->exists()) {
+                $user->alumniVerification()->create([
+                    'document_type' => null,
+                    'path' => null,
+                    'verified_by' => $request->user()?->id,
+                    'verified_at' => now(),
+                    'status' => 'verified',
+                ]);
+            }
+
+            $role = Role::firstOrCreate(['name' => $data['user_type']]);
+            $user->syncRoles([$role]);
+        });
 
         return back()->with('success', 'User updated successfully in the database.');
     }
@@ -222,6 +278,7 @@ class UserController extends Controller
         }
 
         $user->delete(); // soft delete only / records remains
+
         return back()->with('success', 'User account deactivated.');
     }
 
@@ -245,7 +302,7 @@ class UserController extends Controller
 
             $inquiries = Inquiry::where('user_id', $user->id)->get();
             foreach ($inquiries as $inq) {
-                \App\Models\InquiryMessage::where('inquiry_id', $inq->id)->delete();
+                InquiryMessage::where('inquiry_id', $inq->id)->delete();
                 $inq->delete();
             }
 
