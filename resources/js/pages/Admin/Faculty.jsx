@@ -5,6 +5,8 @@ import Pagination from '@/Components/Pagination';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
+import PrintSchedule from '@/Components/PrintSchedule';
+
 
 const MAX_FILES = 5;
 const RELOAD_ONLY = ['faculty', 'filters'];
@@ -903,79 +905,7 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
 
 
             {/* Hidden Print Section */}
-            {exportingProf && (
-                <div id="print-section" className="hidden print:block bg-white text-black min-h-screen">
-                    <div className="p-8">
-                        <div className="text-center mb-6">
-                            <div className="flex justify-center items-center gap-4 mb-4">
-                                <img src="/images/cedlogo.png" alt="CED Logo" className="w-16 h-16 object-contain" />
-                                <div>
-                                    <h1 className="text-2xl font-bold text-slate-900 uppercase tracking-widest">Faculty Schedule</h1>
-                                    <p className="text-sm text-slate-600 mt-1">College of Education, Central Luzon State University</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-6">
-                            {exportingProf.user?.profile_picture ? (
-                                <img src={`/storage/${exportingProf.user.profile_picture}`} alt={exportingProf.name} className="w-24 h-24 rounded-2xl object-cover shadow-sm border border-slate-200 shrink-0" />
-                            ) : (
-                                <div className="w-24 h-24 rounded-2xl bg-white border border-slate-200 text-slate-700 flex items-center justify-center font-black text-3xl shrink-0 shadow-sm">
-                                    {(exportingProf.name || 'U').charAt(0)}
-                                </div>
-                            )}
-                            <div className="flex-1 grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Name</span>
-                                    <span className="font-bold text-slate-900 text-lg">{exportingProf.name || 'Not specified'}</span>
-                                </div>
-                                <div>
-                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Role</span>
-                                    <span className="font-bold text-slate-900">{exportingProf.role || 'Not specified'}</span>
-                                </div>
-                                <div>
-                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Department</span>
-                                    <span className="font-bold text-slate-900">{exportingProf.department_or_program || 'Not specified'}</span>
-                                </div>
-                                <div>
-                                    <span className="font-bold text-slate-400 block text-xs uppercase tracking-wider mb-1">Office/Room</span>
-                                    <span className="font-bold text-slate-900">{exportingProf.room_or_location || 'Not specified'}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="mt-8">
-                            <h2 className="text-lg font-bold text-slate-900 mb-4 border-b border-slate-200 pb-2">Weekly Schedule</h2>
-                            {exportingProf.weekly_schedule && exportingProf.weekly_schedule.length > 0 ? (
-                                <table className="w-full border-collapse">
-                                    <thead>
-                                        <tr className="bg-slate-100 border-y border-slate-300">
-                                            <th className="py-2 px-4 text-left text-sm font-bold text-slate-700">Day</th>
-                                            <th className="py-2 px-4 text-left text-sm font-bold text-slate-700">Time</th>
-                                            <th className="py-2 px-4 text-left text-sm font-bold text-slate-700">Type</th>
-                                            <th className="py-2 px-4 text-left text-sm font-bold text-slate-700">Course & Section</th>
-                                            <th className="py-2 px-4 text-left text-sm font-bold text-slate-700">Room</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {exportingProf.weekly_schedule.map((block, idx) => (
-                                            <tr key={idx} className="border-b border-slate-200 text-sm">
-                                                <td className="py-2 px-4 font-semibold">{block.day}</td>
-                                                <td className="py-2 px-4">{formatTime(block.start_time)} - {formatTime(block.end_time)}</td>
-                                                <td className="py-2 px-4 text-slate-600">{block.type === 'consultation' ? 'Consultation' : 'Class'}</td>
-                                                <td className="py-2 px-4 font-semibold">{block.course_code || '-'} {block.section_code ? `(${block.section_code})` : ''}</td>
-                                                <td className="py-2 px-4 text-slate-600">{block.room || 'TBA'}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            ) : (
-                                <p className="text-sm text-slate-500 italic py-4">No schedule blocks found.</p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
+            {exportingProf && <PrintSchedule prof={exportingProf} />}
         </AdminLayout>
     );
 }
