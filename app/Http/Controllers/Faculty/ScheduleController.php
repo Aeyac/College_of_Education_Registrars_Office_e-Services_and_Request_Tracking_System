@@ -3,23 +3,30 @@
 namespace App\Http\Controllers\Faculty;
 
 use App\Http\Controllers\Controller;
+use App\Services\FacultyProfileLinker;
 use App\Services\ScheduleExtraction\ScheduleExtractorContract;
+use App\Support\ScheduleRules;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Throwable;
-use App\Support\ScheduleRules;
 
 class ScheduleController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, FacultyProfileLinker $linker)
     {
+        $user = $request->user();
+
+        // An account can reach this page before it owns a row -- the registrar
+        // may have uploaded its schedule without linking it yet. Adopting that
+        // upload here is what puts the registrar's copy on the professor's screen
+        // without anyone re-uploading anything.
         return Inertia::render('Faculty/Schedule', [
-            'faculty' => $request->user()->facultyProfile,
+            'faculty' => $linker->adoptForDisplay($user)?->load('user'),
         ]);
     }
 
-    public function update(Request $request)
+    public function update(Request $request, FacultyProfileLinker $linker)
     {
         $validated = $request->validate(array_merge([
             'role' => 'required|string|max:255',
@@ -29,13 +36,23 @@ class ScheduleController extends Controller
 
         $user = $request->user();
 
-        // Admin-created faculty rows have no user_id, so a faculty login can land
-        // here with no profile at all. updateOrCreate() runs through the model, so
-        // the weekly_schedule array cast is applied, and it seeds name from the
-        // authenticated user exactly like registration and profile completion do.
-        $user->facultyProfile()->updateOrCreate([], array_merge([
-            'name' => trim($user->first_name.' '.$user->last_name),
-        ], $validated));
+        // The same row the registrar edits, so a save here shows up in the admin
+        // listing and a save there shows up on this page.
+        $faculty = $linker->resolve($user);
+
+        $this->authorize('update', $faculty);
+
+        // update() rather than a create, so the array cast on weekly_schedule is
+        // applied and the row keeps the name the registrar gave it.
+        $faculty->update($validated);
+
+        $linker->stamp($faculty, $user, 'faculty');
+
+        activity()
+            ->causedBy($user)
+            ->performedOn($faculty)
+            ->event('updated')
+            ->log('Updated own faculty schedule');
 
         return back()->with('success', 'Schedule updated successfully.');
     }

@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Services\FacultyProfileLinker;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 
 class ProfileCompletionController extends Controller
@@ -18,6 +21,7 @@ class ProfileCompletionController extends Controller
             } elseif ($user->user_type === 'faculty') {
                 return Inertia::location(route('faculty.dashboard'));
             }
+
             return Inertia::location(route('user.dashboard'));
         }
 
@@ -25,7 +29,7 @@ class ProfileCompletionController extends Controller
         $courses = Course::with('majors')->orderBy('sort_order')->get();
 
         return Inertia::render('Auth/CompleteProfile', [
-            'courses' => $courses
+            'courses' => $courses,
         ]);
     }
 
@@ -37,11 +41,11 @@ class ProfileCompletionController extends Controller
             'student_number' => 'required_if:user_type,student',
             'year_level' => 'required_if:user_type,student',
             'batch_year' => 'required_if:user_type,alumni',
-            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
+            'password' => ['required', 'confirmed', Password::defaults()],
         ]);
-    
+
         $user = auth()->user();
-        
+
         $user->update([
             'user_type' => $request->user_type,
             'student_number' => $request->student_number,
@@ -49,26 +53,20 @@ class ProfileCompletionController extends Controller
             'major_id' => $request->major_id,
             'year_level' => $request->year_level,
             'batch_year' => $request->batch_year,
-            'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+            'password' => Hash::make($request->password),
         ]);
-    
-        if ($request->user_type === 'faculty' && !$user->facultyProfile) {
-            $user->facultyProfile()->create([
-                'name' => trim($user->first_name . ' ' . $user->last_name),
-                'role' => 'Not specified',
-                'department_or_program' => 'Not specified',
-                'room_or_location' => 'Not specified',
-                'weekly_schedule' => [],
-            ]);
+
+        if ($request->user_type === 'faculty' && ! $user->facultyProfile) {
+            app(FacultyProfileLinker::class)->resolve($user);
         }
 
         // Assign the actual security role so the middleware lets them in
         $user->syncRoles([$request->user_type]);
-    
+
         if ($request->user_type === 'faculty') {
             return Inertia::location(route('faculty.dashboard'));
         }
-        
+
         return Inertia::location(route('user.dashboard'));
     }
 }

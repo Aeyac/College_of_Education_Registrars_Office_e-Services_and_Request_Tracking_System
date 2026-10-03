@@ -15,6 +15,7 @@ use App\Models\RequestDocument;
 use App\Models\RequestStatusHistory;
 use App\Models\User;
 use App\Rules\ValidatesUserAccount;
+use App\Services\FacultyProfileLinker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -193,13 +194,9 @@ class UserController extends Controller
             }
 
             if ($data['user_type'] === 'faculty') {
-                $user->facultyProfile()->create([
-                    'name' => trim($data['first_name'].' '.$data['last_name']),
-                    'role' => 'Not specified',
-                    'department_or_program' => 'Not specified',
-                    'room_or_location' => 'Not specified',
-                    'weekly_schedule' => [],
-                ]);
+                // Picks up an unlinked schedule the registrar already uploaded for
+                // this person, so the new account does not start with a blank one.
+                app(FacultyProfileLinker::class)->resolve($user);
             }
 
             if ($isAlumni) {
@@ -313,13 +310,7 @@ class UserController extends Controller
             $user->update($payload);
 
             if ($data['user_type'] === 'faculty' && ! $user->facultyProfile) {
-                $user->facultyProfile()->create([
-                    'name' => trim($data['first_name'].' '.$data['last_name']),
-                    'role' => 'Not specified',
-                    'department_or_program' => 'Not specified',
-                    'room_or_location' => 'Not specified',
-                    'weekly_schedule' => [],
-                ]);
+                app(FacultyProfileLinker::class)->resolve($user);
             }
 
             // Turning an account into an alumni would otherwise leave it stuck

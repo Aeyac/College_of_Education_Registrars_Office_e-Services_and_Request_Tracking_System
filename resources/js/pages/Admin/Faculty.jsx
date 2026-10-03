@@ -52,6 +52,68 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
     const [exportMenuProfId, setExportMenuProfId] = useState(null);
     const [exportingProf, setExportingProf] = useState(null);
 
+    // Account linking: which schedule belongs to which faculty login.
+    const [linkingId, setLinkingId] = useState(null);
+    const [accountQuery, setAccountQuery] = useState('');
+    const [accounts, setAccounts] = useState([]);
+    const [loadingAccounts, setLoadingAccounts] = useState(false);
+
+    const loadAccounts = async (query = '') => {
+        setLoadingAccounts(true);
+        try {
+            const response = await axios.get('/admin/faculty/accounts', {
+                params: { search: query },
+                headers: { Accept: 'application/json' },
+            });
+            setAccounts(response.data.accounts || []);
+        } catch {
+            setAccounts([]);
+        } finally {
+            setLoadingAccounts(false);
+        }
+    };
+
+    const openLinker = (prof) => {
+        setLinkingId(prof.id);
+        setAccountQuery('');
+        loadAccounts('');
+    };
+
+    const closeLinker = () => {
+        setLinkingId(null);
+        setAccounts([]);
+        setAccountQuery('');
+    };
+
+    const submitLink = (facultyId, userId) => {
+        router.put(
+            '/admin/faculty/link',
+            { faculty_id: facultyId, user_id: userId },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    closeLinker();
+                    MySwal.fire({
+                        title: userId ? 'Linked!' : 'Unlinked',
+                        text: userId
+                            ? 'This schedule and that account now share one record.'
+                            : 'The schedule stays here, but no longer belongs to that account.',
+                        icon: 'success',
+                        timer: 2200,
+                        showConfirmButton: false,
+                    });
+                },
+                onError: (errs) => {
+                    MySwal.fire({
+                        title: 'Could not link',
+                        text: Object.values(errs)[0] || 'Please try again.',
+                        icon: 'warning',
+                    });
+                },
+            }
+        );
+    };
+
     const formatTime = (timeString) => {
         if (!timeString) return '';
         const [hours, minutes] = timeString.split(':');
@@ -120,9 +182,6 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
         role: '',
         department_or_program: '',
         room_or_location: '',
-        consultation_days: '',
-        consultation_time_start: '',
-        consultation_time_end: '',
         weekly_schedule: []
     });
 
@@ -176,9 +235,6 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
             role: item.data.role || '',
             department_or_program: item.data.department_or_program,
             room_or_location: item.data.room_or_location,
-            consultation_days: '',
-            consultation_time_start: '',
-            consultation_time_end: '',
             weekly_schedule: item.data.weekly_schedule,
         });
     };
@@ -294,7 +350,7 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
 
         const options = {
             preserveScroll: true,
-            onSuccess: () => {
+            onSuccess: (page) => {
                 if (isFromQueue) {
                     advanceQueueOrClose(isEditing ? 'Updated!' : 'Added!');
                     return;
@@ -303,7 +359,10 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
                 reset();
                 MySwal.fire({
                     title: isEditing ? 'Updated!' : 'Added!',
-                    text: isEditing ? 'The schedule has been successfully updated.' : 'A new faculty schedule has been created.',
+                    // The server decides whether this was a new schedule or landed on
+                    // the one already on file, so let it say which.
+                    text: page.props.flash?.success
+                        || (isEditing ? 'The schedule has been successfully updated.' : 'A new faculty schedule has been created.'),
                     icon: 'success',
                     timer: 2000,
                     showConfirmButton: false
@@ -476,6 +535,92 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
                                         </div>
                                     </div>
 
+                                    {/* Whether the professor can see and edit this row themselves. */}
+                                    <div className="flex flex-wrap gap-1.5 mb-4">
+                                        {prof.user ? (
+                                            <span
+                                                title={`${prof.user.email} can sign in and edit this schedule`}
+                                                className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                            >
+                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                                Linked to account
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-50 text-slate-500 border border-slate-200">
+                                                No account yet
+                                            </span>
+                                        )}
+                                        {prof.edited_by_role && (
+                                            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+                                                Last edited by {prof.edited_by_role === 'admin' ? 'Registrar' : 'Faculty'}
+                                            </span>
+                                        )}
+                                        {prof.collision && (
+                                            <span
+                                                title={`"${prof.collision}" already has a linked account. Nothing was merged — link or remove one of them by hand.`}
+                                                className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200"
+                                            >
+                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01M5.07 19h13.86a2 2 0 001.74-3L13.74 4a2 2 0 00-3.48 0l-7 12a2 2 0 001.74 3z" /></svg>
+                                                Possible duplicate of {prof.collision}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {linkingId === prof.id && (
+                                        <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                                            <p className="text-xs font-bold text-slate-600">
+                                                Give this schedule to a faculty account so they can keep it up to date themselves.
+                                            </p>
+                                            <input
+                                                type="text"
+                                                value={accountQuery}
+                                                onChange={(e) => {
+                                                    setAccountQuery(e.target.value);
+                                                    loadAccounts(e.target.value);
+                                                }}
+                                                placeholder="Search by name or email..."
+                                                className="w-full bg-white border border-slate-200 rounded-lg text-xs py-2 px-3 outline-none focus:ring-yellow-400"
+                                            />
+                                            {loadingAccounts ? (
+                                                <p className="text-xs text-slate-400">Searching...</p>
+                                            ) : accounts.length === 0 ? (
+                                                <p className="text-xs text-slate-400">
+                                                    No faculty accounts are waiting for a schedule.
+                                                </p>
+                                            ) : (
+                                                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                                                    {accounts.map((account) => (
+                                                        <button
+                                                            key={account.id}
+                                                            type="button"
+                                                            onClick={() => submitLink(prof.id, account.id)}
+                                                            className="w-full text-left px-3 py-2 bg-white border border-slate-200 rounded-lg hover:border-yellow-300 hover:bg-yellow-50 transition-colors"
+                                                        >
+                                                            <span className="block text-xs font-bold text-slate-800">{account.name}</span>
+                                                            <span className="block text-[11px] text-slate-500">{account.email}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {prof.user && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => submitLink(prof.id, null)}
+                                                    className="w-full text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-lg py-2 hover:bg-red-100 transition-colors"
+                                                >
+                                                    Unlink from {prof.user.email}
+                                                </button>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={closeLinker}
+                                                className="w-full text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg py-2 hover:bg-slate-50 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    )}
+
                                     <div className="space-y-3 text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100">
                                         <div>
                                             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Courses</p>
@@ -513,6 +658,13 @@ export default function FacultySchedules({ faculty, departments = [], filters: r
 
                                 <div className="flex gap-2 mt-5">
                                     <button onClick={() => { setExtractionQueue([]); setQueuePosition(0); setData(prof); clearErrors(); setIsModalOpen(true); }} className="flex-1 py-2 text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 transition-colors shadow-sm">Edit</button>
+                                    <button
+                                        onClick={() => (linkingId === prof.id ? closeLinker() : openLinker(prof))}
+                                        title={prof.user ? 'Linked to a faculty account — change or remove the link' : 'No faculty account owns this schedule yet'}
+                                        className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-colors shadow-sm ${prof.user ? 'text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100' : 'text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100'}`}
+                                    >
+                                        Account
+                                    </button>
                                     <button onClick={() => confirmDelete(prof.id)} className="flex-1 py-2 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors shadow-sm">Remove</button>
 
                                     <div className="relative flex-1">

@@ -5,30 +5,31 @@ use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\AuditTrailController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FacultyController;
+use App\Http\Controllers\Admin\FeedbackController as AdminFeedbackController;
 use App\Http\Controllers\Admin\FilteredWordController;
 use App\Http\Controllers\Admin\InquiryController as AdminInquiryController;
-use App\Http\Controllers\Admin\RequestDocumentController;
-use App\Http\Controllers\FaqController;
-use App\Http\Controllers\SoftCopyController;
-use App\Http\Controllers\User\InquiryController as UserInquiryController;
-use App\Http\Controllers\Admin\FeedbackController as AdminFeedbackController;
 use App\Http\Controllers\Admin\RequestController;
+use App\Http\Controllers\Admin\RequestDocumentController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\Auth\OtpVerificationController;
+use App\Http\Controllers\Auth\ProfileCompletionController;
 use App\Http\Controllers\CertificateRequestController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\Faculty\ScheduleController;
+use App\Http\Controllers\FaqController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SoftCopyController;
 use App\Http\Controllers\User\AlumniVerificationController;
 use App\Http\Controllers\User\FeedbackController;
+use App\Http\Controllers\User\InquiryController as UserInquiryController;
 use App\Http\Controllers\User\StaticPageController;
-use App\Http\Controllers\HomeController;
-use App\Models\Faq;
-use App\Http\Controllers\Auth\GoogleController;
-use App\Http\Controllers\Auth\ProfileCompletionController;
-use App\Http\Controllers\Auth\OtpVerificationController;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 // === PUBLIC ROUTES ===
@@ -41,7 +42,7 @@ Route::get('/', function () {
     ]);
 });
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::post('/chat/ask', [\App\Http\Controllers\ChatbotController::class, 'ask'])->name('chat.ask');
+Route::post('/chat/ask', [ChatbotController::class, 'ask'])->name('chat.ask');
 
 // === GOOGLE AUTH ROUTES ===
 Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('google.redirect');
@@ -59,7 +60,6 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         ->name('requests.soft-copy.show');
     Route::get('/requests/{certificateRequest}/soft-copy/download', [SoftCopyController::class, 'download'])
         ->name('requests.soft-copy.download');
-
 
     Route::prefix('user')->name('user.')->middleware('role:student|alumni')->group(function () {
 
@@ -92,7 +92,7 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
             Route::get('/terms-of-service', [StaticPageController::class, 'terms'])->name('terms');
             Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
             Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markNotificationAsRead'])->name('notifications.read.single');
-            
+
             Route::get('/inquiries', [UserInquiryController::class, 'index'])->name('inquiries');
             Route::get('/inquiries/attachment/{id}', [UserInquiryController::class, 'viewAttachment'])->name('inquiries.attachment');
             Route::post('/inquiries', [UserInquiryController::class, 'store'])->name('inquiries.store');
@@ -110,9 +110,9 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     // === FACULTY ROUTES ===
     Route::prefix('faculty')->name('faculty.')->middleware('role:faculty')->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\Faculty\DashboardController::class, 'index'])->name('dashboard');
-        Route::get('/schedule', [App\Http\Controllers\Faculty\ScheduleController::class, 'index'])->name('schedule');
-        Route::put('/schedule', [App\Http\Controllers\Faculty\ScheduleController::class, 'update'])->name('schedule.update');
-        Route::post('/schedule/extract', [App\Http\Controllers\Faculty\ScheduleController::class, 'extract'])->name('schedule.extract');
+        Route::get('/schedule', [ScheduleController::class, 'index'])->name('schedule');
+        Route::put('/schedule', [ScheduleController::class, 'update'])->name('schedule.update');
+        Route::post('/schedule/extract', [ScheduleController::class, 'extract'])->name('schedule.extract');
         Route::get('/announcements', [App\Http\Controllers\User\AnnouncementController::class, 'index'])->name('announcements');
         Route::post('/notifications/mark-as-read', [NotificationController::class, 'markNotificationsAsRead'])->name('notifications.read');
         Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markNotificationAsRead'])->name('notifications.read.single');
@@ -136,6 +136,9 @@ Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
         Route::get('/faculty', [FacultyController::class, 'loadFaculty'])->name('faculty');
         Route::post('/faculty/extract', [FacultyController::class, 'extractSchedule'])->name('faculty.extract'); // Inserted extract route here
         Route::post('/faculty', [FacultyController::class, 'storeFaculty'])->name('faculty.store');
+        // Declared before {id} so the literal segment is not swallowed by the route below.
+        Route::put('/faculty/link', [FacultyController::class, 'linkAccount'])->name('faculty.link');
+        Route::get('/faculty/accounts', [FacultyController::class, 'unlinkedAccounts'])->name('faculty.accounts');
         Route::put('/faculty/{id}', [FacultyController::class, 'updateFaculty'])->name('faculty.update');
         Route::delete('/faculty/{id}', [FacultyController::class, 'destroyFaculty'])->name('faculty.destroy');
 
@@ -201,9 +204,10 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/auto-seed', function () {
     Artisan::call('db:seed', [
-        '--class' => 'CourseAndMajorSeeder'
+        '--class' => 'CourseAndMajorSeeder',
     ]);
+
     return 'Course and Major Seeder executed successfully!';
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

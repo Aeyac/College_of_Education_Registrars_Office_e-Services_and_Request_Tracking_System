@@ -23,9 +23,14 @@ class FacultyPolicy
         return $user->isAdmin();
     }
 
+    /**
+     * A schedule row is shared, so editing it is allowed for the registrar and
+     * for the faculty account it is linked to. Anyone else has no business
+     * writing to it.
+     */
     public function update(User $user, Faculty $faculty): bool
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $faculty->user_id === $user->id;
     }
 
     public function delete(User $user, Faculty $faculty): bool

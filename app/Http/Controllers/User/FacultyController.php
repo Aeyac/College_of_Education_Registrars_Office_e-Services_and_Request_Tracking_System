@@ -27,7 +27,6 @@ class FacultyController extends Controller
                 'current_status' => $prof->current_status,
                 'role' => $prof->role,
                 'room' => $prof->room_or_location,
-                'hours' => $prof->formattedConsultationHours(),
             ]);
 
         return Inertia::render('User/Faculty', [

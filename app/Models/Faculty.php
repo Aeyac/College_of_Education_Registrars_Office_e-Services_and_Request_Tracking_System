@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Faculty extends Model
 {
@@ -17,25 +17,27 @@ class Faculty extends Model
         'name',
         'role',
         'department_or_program',
-        'consultation_days',
-        'consultation_time_start',
-        'consultation_time_end',
         'room_or_location',
         'weekly_schedule',
         'is_active',
+        'last_edited_by',
+        'edited_by_role',
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function lastEditor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'last_edited_by');
     }
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
-            'consultation_time_start' => 'datetime:H:i',
-            'consultation_time_end' => 'datetime:H:i',
             'weekly_schedule' => 'array',
         ];
     }
@@ -52,7 +54,7 @@ class Faculty extends Model
         }
 
         $now = now()->timezone('Asia/Manila');
-        $currentDay = $now->format('l'); 
+        $currentDay = $now->format('l');
         $currentTime = $now->format('H:i');
 
         foreach ($this->weekly_schedule as $block) {
@@ -63,19 +65,11 @@ class Faculty extends Model
                 if ($block['type'] === 'class') {
                     return ['status' => 'In Class', 'room' => $block['room'], 'color' => 'rose'];
                 }
+
                 return ['status' => 'In a Meeting/Busy', 'room' => $block['room'], 'color' => 'amber'];
             }
         }
 
         return ['status' => 'Unavailable / Off Schedule', 'room' => null, 'color' => 'slate'];
-    }
-
-    public function formattedConsultationHours(): string
-    {
-        $start = $this->consultation_time_start ? Carbon::parse($this->consultation_time_start) : null;
-        $end = $this->consultation_time_end ? Carbon::parse($this->consultation_time_end) : null;
-        $range = trim(($start?->format('g:i A') ?? '') . ($start && $end ? ' - ' : '') . ($end?->format('g:i A') ?? ''));
-        $hours = trim(($this->consultation_days ?? '') . ' ' . $range);
-        return $hours ?: 'No schedule set';
     }
 }

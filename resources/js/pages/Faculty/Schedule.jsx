@@ -17,6 +17,44 @@ export default function Schedule({ faculty }) {
         weekly_schedule: faculty?.weekly_schedule || []
     });
 
+    const hasBlocks = (data.weekly_schedule || []).length > 0;
+
+    const editedAt = faculty?.updated_at
+        ? new Date(faculty.updated_at).toLocaleString('en-PH', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit'
+          })
+        : null;
+
+    const confirmClear = () => {
+        Swal.fire({
+            title: 'Clear your whole schedule?',
+            text: 'Every block will be removed for you and for the registrar. You can add them again afterwards.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, clear it',
+            cancelButtonText: 'Keep my schedule',
+            reverseButtons: true,
+            customClass: { popup: 'rounded-3xl' }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                setData('weekly_schedule', []);
+                clearErrors();
+                Swal.fire({
+                    title: 'Cleared',
+                    text: 'Remember to press "Save Schedule" to publish the change.',
+                    icon: 'success',
+                    timer: 2500,
+                    showConfirmButton: false,
+                    customClass: { popup: 'rounded-3xl' }
+                });
+            }
+        });
+    };
+
     // Server-side schedule errors. Inertia flattens nested errors into keys like
     // "weekly_schedule.0.start_time", so we look them up by prefix.
     const scheduleError = errors.weekly_schedule;
@@ -331,6 +369,17 @@ export default function Schedule({ faculty }) {
 
                     <form onSubmit={handleSubmit}>
                         <div className="p-6 space-y-6">
+                            {/* Explains why the schedule can change without them touching it. */}
+                            {faculty?.edited_by_role === 'admin' && (
+                                <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 text-blue-900 rounded-xl px-4 py-3 print:hidden">
+                                    <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <p className="text-xs font-semibold leading-relaxed">
+                                        You and the registrar share this one schedule, so either of your edits appears on both sides.
+                                        {editedAt && <> The registrar last changed it {editedAt}.</>}
+                                    </p>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Role / Position</label>
@@ -520,8 +569,19 @@ export default function Schedule({ faculty }) {
                             </div>
                         </div>
 
-                        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-2xl print:hidden">
-                            <button type="submit" disabled={processing} className="px-8 py-3 bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold rounded-xl shadow-md transition-colors text-sm flex items-center">
+                        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 rounded-b-2xl print:hidden">
+                            <div className="flex gap-3">
+                                {hasBlocks && (
+                                    <button
+                                        type="button"
+                                        onClick={confirmClear}
+                                        className="px-5 py-3 bg-white border border-red-200 text-red-600 font-bold rounded-xl transition-colors text-sm hover:bg-red-50"
+                                    >
+                                        Clear Schedule
+                                    </button>
+                                )}
+                            </div>
+                            <button type="submit" disabled={processing} className="px-8 py-3 bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold rounded-xl shadow-md transition-colors text-sm flex items-center justify-center">
                                 {processing ? 'Saving...' : 'Save Schedule'}
                             </button>
                         </div>

@@ -523,16 +523,6 @@ class UserDashboardController extends Controller
     //     ]);
     // }
 
-    // private function formatConsultationHours(Faculty $prof): string
-    // {
-    //     $start = $prof->consultation_time_start ? \Carbon\Carbon::parse($prof->consultation_time_start) : null;
-    //     $end = $prof->consultation_time_end ? \Carbon\Carbon::parse($prof->consultation_time_end) : null;
-    //     $range = trim(($start?->format('g:i A') ?? '') . ($start && $end ? ' - ' : '') . ($end?->format('g:i A') ?? ''));
-
-    //     $hours = trim(($prof->consultation_days ?? '') . ' ' . $range);
-    //     return $hours ?: 'No schedule set';
-    // }
-
     // private function defaultRequestStatus(): RequestStatus
     // {
     //     return RequestStatus::where('code', self::DEFAULT_REQUEST_STATUS_CODE)->firstOrFail();

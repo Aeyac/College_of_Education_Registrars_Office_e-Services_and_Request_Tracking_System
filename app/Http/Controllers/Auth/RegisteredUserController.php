@@ -9,6 +9,7 @@ use App\Models\Course;
 use App\Models\User;
 use App\Notifications\AlumniVerificationSubmitted;
 use App\Rules\ValidatesUserAccount;
+use App\Services\FacultyProfileLinker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -72,13 +73,9 @@ class RegisteredUserController extends Controller
                     'status' => 'pending',
                 ]);
             } elseif ($validated['user_type'] === 'faculty') {
-                $user->facultyProfile()->create([
-                    'name' => $validated['first_name'].' '.$validated['last_name'],
-                    'role' => 'Not specified',
-                    'department_or_program' => 'Not specified',
-                    'room_or_location' => 'Not specified',
-                    'weekly_schedule' => [],
-                ]);
+                // If the registrar already uploaded this professor's schedule, that
+                // row becomes their profile instead of a blank one sitting next to it.
+                app(FacultyProfileLinker::class)->resolve($user);
             }
 
             return [$user, $verification];
